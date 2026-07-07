@@ -11,3 +11,7 @@ tmp/
 .superpowers/
 *.log
 *.tsbuildinfo
+data/
+public/uploads/
+public/generated/
+

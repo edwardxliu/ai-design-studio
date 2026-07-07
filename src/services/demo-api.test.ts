@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+﻿import { describe, expect, it, vi } from "vitest";
 import {
   buildDemoPdp,
   generateDemoImage,
@@ -17,6 +17,33 @@ describe("demo API helpers", () => {
 
     expect(result.url).toBe("/mock/generated/task-api-image.png");
     expect(result.isFallback).toBe(true);
+  });
+
+  it("records image generation cost details when a ledger is supplied", async () => {
+    const appendRecord = vi.fn().mockResolvedValue(undefined);
+
+    await generateDemoImage({
+      taskId: "task-cost-image",
+      taskLabel: "Hero image",
+      prompt: "Generate a product image",
+      sourceAssetIds: ["asset-1"],
+      country: "Mexico",
+      language: "Spanish",
+      forceMock: true,
+      costLedger: { appendRecord, readRecords: vi.fn() }
+    });
+
+    expect(appendRecord).toHaveBeenCalledWith({
+      taskId: "task-cost-image",
+      task: "Hero image",
+      model: "mock-image-provider",
+      mode: "mock fallback",
+      country: "Mexico",
+      language: "Spanish",
+      estimatedUnits: 1,
+      isFallback: true,
+      sourceAssetIds: ["asset-1"]
+    });
   });
 
   it("generates a POP product-scene prompt and mock output", async () => {
@@ -50,4 +77,3 @@ describe("demo API helpers", () => {
     expect(records[0]).toHaveProperty("mode");
   });
 });
-

@@ -1,5 +1,7 @@
-import { NextResponse } from "next/server";
+﻿import { NextResponse } from "next/server";
 import { generateDemoPopScene } from "@/src/services/demo-api";
+import { createDefaultCostLedger } from "@/src/services/cost-ledger";
+import { createDefaultLocalAssetStore } from "@/src/services/local-asset-store";
 
 export async function POST(request: Request) {
   const body = await request.json();
@@ -8,9 +10,12 @@ export async function POST(request: Request) {
     productName: String(body.productName ?? "Uploaded product"),
     placement: String(body.placement ?? "front panel"),
     flatPopAssetId: String(body.flatPopAssetId ?? "pop-flat-render"),
-    forceMock: body.forceMock
+    country: String(body.country ?? "Mexico"),
+    language: String(body.language ?? "Spanish"),
+    forceMock: body.forceMock,
+    imageStore: createDefaultLocalAssetStore(),
+    costLedger: createDefaultCostLedger()
   });
 
   return NextResponse.json(result);
 }
-

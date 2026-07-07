@@ -1,5 +1,6 @@
-import { AppShell } from "@/src/components/AppShell";
+﻿import { AppShell } from "@/src/components/AppShell";
 import { PdpBuilderView } from "@/src/components/PdpBuilderView";
+import { PdpExportPanel } from "@/src/components/PdpExportPanel";
 import { getPrimaryDemoProduct } from "@/src/domain/demo-data";
 import { buildPdpDocument } from "@/src/domain/pdp";
 
@@ -27,7 +28,7 @@ export default function PdpPage() {
   return (
     <AppShell>
       <PdpBuilderView document={document} productName={product.displayName ?? "Uploaded product"} />
+      <PdpExportPanel />
     </AppShell>
   );
 }
-
