@@ -1,7 +1,40 @@
-const metrics = [
+﻿const metrics = [
   { label: "Product profiles", value: "2", detail: "Demo pack + upload-ready" },
   { label: "Generation tasks", value: "12", detail: "POP, PDP, localization, motion" },
   { label: "Fallback safe", value: "On", detail: "Mock output when API is unavailable" }
+];
+
+const featureLinks = [
+  {
+    href: "/intake",
+    title: "Upload assets",
+    detail: "Import product photos, POP/PDP references, brand guides, and feature images."
+  },
+  {
+    href: "/tasks",
+    title: "Task center",
+    detail: "Review the generation tasks available for the current product profile."
+  },
+  {
+    href: "/pop",
+    title: "POP templates",
+    detail: "Edit fixed POP templates and generate realistic POP-on-product scenes."
+  },
+  {
+    href: "/pdp",
+    title: "PDP builder",
+    detail: "Create dynamic long-image PDP layouts from recognized selling points."
+  },
+  {
+    href: "/localization",
+    title: "Localization",
+    detail: "Preview country and language variants for overseas product marketing."
+  },
+  {
+    href: "/costs",
+    title: "Cost ledger",
+    detail: "Inspect generation records, model fallback state, and source asset traceability."
+  }
 ];
 
 export default function HomePage() {
@@ -30,6 +63,18 @@ export default function HomePage() {
       </section>
 
       <section className="workflow-panel">
+        <h2>Start demo workflow</h2>
+        <div className="feature-grid">
+          {featureLinks.map((item) => (
+            <a className="feature-link" href={item.href} key={item.href}>
+              <strong>{item.title}</strong>
+              <span>{item.detail}</span>
+            </a>
+          ))}
+        </div>
+      </section>
+
+      <section className="workflow-panel">
         <h2>Core workflow</h2>
         <ol>
           <li>Upload or load demo product assets.</li>
@@ -42,4 +87,3 @@ export default function HomePage() {
     </main>
   );
 }
-

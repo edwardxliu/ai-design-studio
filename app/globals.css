@@ -1,4 +1,4 @@
-:root {
+﻿:root {
   color-scheme: light;
   --background: #f6f7f9;
   --surface: #ffffff;
@@ -139,11 +139,49 @@ h2 {
   padding: 24px;
 }
 
+.workflow-panel + .workflow-panel {
+  margin-top: 18px;
+}
+
 .workflow-panel ol {
   margin: 0;
   padding-left: 22px;
   color: var(--muted);
   line-height: 1.75;
+}
+
+.feature-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.feature-link {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfcfd;
+  display: grid;
+  min-height: 118px;
+  padding: 16px;
+  text-decoration: none;
+}
+
+.feature-link strong {
+  color: var(--text);
+  font-size: 18px;
+  margin-bottom: 10px;
+}
+
+.feature-link span {
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.feature-link:hover,
+.feature-link:focus-visible {
+  border-color: var(--accent);
+  outline: 2px solid #bfe7f2;
+  outline-offset: 2px;
 }
 
 @media (max-width: 780px) {
@@ -164,8 +202,8 @@ h2 {
     margin-top: 18px;
   }
 
-  .metric-grid {
+  .metric-grid,
+  .feature-grid {
     grid-template-columns: 1fr;
   }
 }
-
