@@ -1,0 +1,404 @@
+.runner {
+  display: grid;
+  gap: 16px;
+}
+
+.controlBand,
+.sourceSection,
+.progressPanel,
+.error,
+.emptyState {
+  border: 1px solid #d9e0e7;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.controlBand {
+  display: grid;
+  grid-template-columns: minmax(320px, 1fr) minmax(560px, 1.25fr);
+  gap: 20px;
+  align-items: end;
+  padding: 18px;
+}
+
+.taskCopy {
+  display: grid;
+  gap: 7px;
+  color: #17202a;
+  line-height: 1.55;
+}
+
+.taskCopy span {
+  color: #5f6c7b;
+  font-size: 14px;
+}
+
+.controls {
+  display: grid;
+  grid-template-columns: minmax(150px, 1fr) minmax(180px, 1fr) minmax(200px, auto);
+  gap: 12px;
+  align-items: end;
+}
+
+.field {
+  min-width: 0;
+  color: #34404c;
+  font-size: 13px;
+}
+
+.field select {
+  width: 100%;
+  min-width: 0;
+  height: 42px;
+  border: 1px solid #aeb8c3;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #17202a;
+  padding: 0 10px;
+}
+
+.generateButton,
+.uploadButton,
+.iconButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.generateButton {
+  gap: 8px;
+  min-height: 42px;
+  border: 1px solid #057ca2;
+  background: #057ca2;
+  color: #ffffff;
+  font-weight: 800;
+  padding: 0 14px;
+  white-space: nowrap;
+}
+
+.generateButton:disabled,
+.iconButton:disabled,
+.uploadButton:has(input:disabled) {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.sourceSection {
+  padding: 18px;
+}
+
+.sectionHeader,
+.slotHeader,
+.slotFooter,
+.resultHeader,
+.progressPanel > div:first-child {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.sectionHeader {
+  margin-bottom: 14px;
+}
+
+.sectionHeader h2,
+.resultHeader h2 {
+  margin: 0;
+  color: #17202a;
+  font-size: 18px;
+}
+
+.sectionHeader p {
+  margin: 5px 0 0;
+  color: #5f6c7b;
+  font-size: 13px;
+}
+
+.sectionHeader > strong {
+  color: #057ca2;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.sourceGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.sourceSlot {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid #cbd4dd;
+  border-radius: 8px;
+  background: #f8fafb;
+}
+
+.slotHeader,
+.slotFooter {
+  min-height: 56px;
+  padding: 10px 12px;
+}
+
+.slotHeader {
+  border-bottom: 1px solid #e1e6eb;
+  background: #ffffff;
+}
+
+.slotHeader > div {
+  display: grid;
+  gap: 3px;
+}
+
+.slotHeader strong {
+  color: #17202a;
+}
+
+.slotHeader span,
+.slotFooter > span {
+  color: #687481;
+  font-size: 12px;
+}
+
+.iconButton {
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  border: 1px solid #d5dce3;
+  background: #ffffff;
+  color: #9b2c2c;
+}
+
+.previewStage {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  background: #eef1f4;
+}
+
+.previewStage img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: contain;
+}
+
+.placeholder {
+  display: grid;
+  place-items: center;
+  gap: 8px;
+  color: #77828e;
+  font-size: 13px;
+}
+
+.slotFooter {
+  border-top: 1px solid #e1e6eb;
+  background: #ffffff;
+}
+
+.slotFooter > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.uploadButton {
+  position: relative;
+  flex: 0 0 auto;
+  gap: 7px;
+  min-height: 34px;
+  border: 1px solid #057ca2;
+  background: #ffffff;
+  color: #057ca2;
+  font-size: 13px;
+  font-weight: 800;
+  padding: 0 10px;
+}
+
+.uploadButton input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  opacity: 0;
+}
+
+.message {
+  margin: 12px 0 0;
+  color: #3f5668;
+  font-size: 13px;
+}
+
+.progressPanel {
+  display: grid;
+  gap: 10px;
+  padding: 14px 18px;
+}
+
+.progressPanel strong {
+  color: #057ca2;
+}
+
+.progressPanel span {
+  color: #687481;
+  font-size: 12px;
+}
+
+.progressTrack {
+  height: 8px;
+  overflow: hidden;
+  border-radius: 4px;
+  background: #e5e8ec;
+}
+
+.progressTrack div {
+  height: 100%;
+  background: #057ca2;
+  transition: width 0.3s;
+}
+
+.error {
+  padding: 14px 18px;
+  background: #fdecec;
+  color: #8f1f1f;
+}
+
+.results,
+.resultGroup {
+  display: grid;
+  gap: 12px;
+}
+
+.resultGroup {
+  border-top: 1px solid #ccd5de;
+  padding-top: 16px;
+}
+
+.resultHeader span {
+  color: #687481;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.resultGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.outputCard {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid #d9e0e7;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.outputPreview {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  background: #f3f5f6;
+}
+
+.outputPreview img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: contain;
+}
+
+.outputMeta {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  padding: 11px 12px;
+}
+
+.outputMeta > div,
+.outputMeta a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.outputMeta > span {
+  color: #5d6975;
+  font-size: 11px;
+}
+
+.outputMeta a {
+  grid-column: 1 / -1;
+  width: fit-content;
+  color: #057ca2;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.emptyState {
+  padding: 18px;
+  color: #3f4b56;
+}
+
+.emptyState a {
+  color: #057ca2;
+  font-weight: 700;
+}
+
+.spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (max-width: 1160px) {
+  .controlBand,
+  .controls {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .generateButton {
+    min-height: 42px;
+  }
+}
+
+@media (max-width: 760px) {
+  .sourceGrid,
+  .resultGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .sectionHeader {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 520px) {
+  .controlBand,
+  .sourceSection,
+  .progressPanel,
+  .error {
+    padding: 14px;
+  }
+
+  .slotFooter {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .uploadButton {
+    width: 100%;
+  }
+}

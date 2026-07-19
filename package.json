@@ -17,6 +17,7 @@
     "openai": "^4.77.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "undici": "^8.7.0",
     "zod": "^3.24.1"
   },
   "devDependencies": {
@@ -32,4 +33,3 @@
     "vitest": "^2.1.8"
   }
 }
-

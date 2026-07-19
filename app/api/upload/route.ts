@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createDefaultLocalAssetStore } from "@/src/services/local-asset-store";
+import { createDemoAssetStore } from "@/src/services/demo-api";
 import type { AssetType } from "@/src/domain/types";
 
 const allowedAssetTypes = new Set<AssetType>([
@@ -11,8 +11,21 @@ const allowedAssetTypes = new Set<AssetType>([
   "background",
   "pop-input",
   "pdp-input",
+  "white-background-closed",
+  "white-background-open",
+  "sku-product",
+  "sku-reference-part",
+  "sku-mask",
+  "icon-vi-color",
+  "icon-vi-style",
+  "icon-source",
   "document"
 ]);
+
+export async function GET() {
+  const store = createDemoAssetStore();
+  return NextResponse.json({ assets: await store.readAssetManifest() });
+}
 
 export async function POST(request: Request) {
   const form = await request.formData();
@@ -26,7 +39,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ assets: [], error: "No files uploaded." }, { status: 400 });
   }
 
-  const store = createDefaultLocalAssetStore();
+  const store = createDemoAssetStore();
   const assets = await Promise.all(
     files.map(async (file) =>
       store.saveUploadedAsset({

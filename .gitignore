@@ -15,3 +15,17 @@ data/
 public/uploads/
 public/generated/
 
+# Raw briefs and source design materials
+/需求/*
+!/需求/Font/
+!/需求/Font/**
+
+/img/
+/output/
+/.playwright-cli/
+/.claude/
+
+# macOS metadata
+.DS_Store
+._*
+**/__MACOSX/

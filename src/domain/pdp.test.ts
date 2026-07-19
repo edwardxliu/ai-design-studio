@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getPrimaryDemoProduct } from "./demo-data";
+import { getPrimaryDemoProduct } from "./test-fixtures";
 import { buildPdpDocument, getMissingPdpImageSlots } from "./pdp";
 
 const product = getPrimaryDemoProduct();
@@ -68,7 +68,7 @@ describe("buildPdpDocument", () => {
     ]);
   });
 
-  it("moves lower-priority features beyond five into moreFeatures", () => {
+  it("creates a section for every enabled selling point without a fixed cap", () => {
     const expanded = [
       ...product.profile.detectedFeatures,
       {
@@ -101,9 +101,8 @@ describe("buildPdpDocument", () => {
       sectionImageBySellingPointId: {}
     });
 
-    expect(document.sections).toHaveLength(5);
-    expect(document.moreFeatures).toHaveLength(1);
-    expect(document.moreFeatures[0].id).toBe("feature-extra-2");
+    expect(document.sections).toHaveLength(expanded.length);
+    expect(document.moreFeatures).toHaveLength(0);
   });
 });
 

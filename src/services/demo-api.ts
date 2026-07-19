@@ -1,41 +1,41 @@
-﻿import { getPrimaryDemoProduct } from "@/src/domain/demo-data";
-import { buildPopScenePrompt } from "@/src/domain/pop";
-import { buildPdpDocument, type PdpDocument } from "@/src/domain/pdp";
+import { buildPopScenePrompt, getPopTemplate, renderPopFlatSvg } from "@/src/domain/pop";
+import { buildPdpDocument, getMissingPdpImageSlots, type PdpDocument } from "@/src/domain/pdp";
+import type { PdpCanvasLayout } from "@/src/domain/pdp-canvas-layout";
+import {
+  DEFAULT_IMAGE_MODEL_CHOICE,
+  inferImageModelChoice,
+  type ImageModelChoice
+} from "@/src/domain/generation-models";
+import { renderPdpSvg } from "@/src/domain/pdp-export";
+import type { ProductWithProfile, SellingPoint } from "@/src/domain/types";
 import {
   createImageProvider,
-  type ImageProviderResult
+  DEFAULT_IMAGE_MODEL,
+  type ImageProvider,
+  type ImageProviderInput,
+  type ImageProviderResult,
+  type SourceImage
 } from "@/src/services/image-provider";
 import type { CostLedger, CostLedgerRecord } from "@/src/services/cost-ledger";
+import { createDoubaoImageProvider, DEFAULT_DOUBAO_IMAGE_MODEL } from "@/src/services/doubao-image-provider";
 import { createDefaultCostLedger } from "@/src/services/cost-ledger";
 import type { LocalAssetStore } from "@/src/services/local-asset-store";
+import { createDefaultLocalAssetStore } from "@/src/services/local-asset-store";
 
 export type GenerateDemoImageInput = {
   taskId: string;
   taskLabel?: string;
   prompt: string;
   sourceAssetIds: string[];
+  additionalSourceImages?: Array<SourceImage & { sourceId: string }>;
+  maskAssetId?: string;
   country?: string;
   language?: string;
-  forceMock?: boolean;
+  imageModel?: ImageModelChoice;
+  size?: ImageProviderInput["size"];
   imageStore?: LocalAssetStore;
   costLedger?: CostLedger;
-};
-
-export type GenerateDemoPopSceneInput = {
-  taskId: string;
-  productName: string;
-  placement: string;
-  flatPopAssetId: string;
-  country?: string;
-  language?: string;
-  forceMock?: boolean;
-  imageStore?: LocalAssetStore;
-  costLedger?: CostLedger;
-};
-
-export type BuildDemoPdpInput = {
-  country: string;
-  language: string;
+  provider?: ImageProvider;
 };
 
 export type DemoCostRecord = {
@@ -51,123 +51,451 @@ export type DemoCostRecord = {
   createdAt?: string;
 };
 
+const RASTER_IMAGE_TYPES = new Set(["image/png", "image/jpeg", "image/webp"]);
+
+export function createDemoAssetStore(): LocalAssetStore {
+  return createDefaultLocalAssetStore();
+}
+
+export async function resolveSourceImages(
+  imageStore: LocalAssetStore | undefined,
+  sourceAssetIds: string[]
+): Promise<SourceImage[]> {
+  if (!imageStore) {
+    return [];
+  }
+
+  const resolved: SourceImage[] = [];
+  for (const assetId of sourceAssetIds) {
+    const file = await imageStore.readAssetBytes(assetId);
+    if (file && RASTER_IMAGE_TYPES.has(file.contentType)) {
+      resolved.push({
+        bytes: file.bytes,
+        contentType: file.contentType,
+        filename: file.filename
+      });
+    }
+  }
+  return resolved;
+}
+
+export function createDemoImageProvider(options: {
+  imageStore?: LocalAssetStore;
+  imageModel?: ImageModelChoice;
+}): ImageProvider {
+  const imageModel = options.imageModel ?? DEFAULT_IMAGE_MODEL_CHOICE;
+  if (imageModel === "doubao") {
+    return createDoubaoImageProvider({
+      apiKey: process.env.ARK_API_KEY,
+      model: process.env.DOUBAO_IMAGE_MODEL ?? DEFAULT_DOUBAO_IMAGE_MODEL,
+      baseUrl: process.env.ARK_BASE_URL,
+      imageStore: options.imageStore
+    });
+  }
+
+  return createImageProvider({
+    apiKey: process.env.OPENAI_API_KEY,
+    model: process.env.OPENAI_IMAGE_MODEL ?? DEFAULT_IMAGE_MODEL,
+    baseUrl: process.env.OPENAI_BASE_URL,
+    imageStore: options.imageStore
+  });
+}
+
 export async function generateDemoImage(
   input: GenerateDemoImageInput
 ): Promise<ImageProviderResult> {
-  const provider = createImageProvider({
-    forceMock: input.forceMock ?? process.env.DEMO_USE_MOCK === "true",
-    apiKey: process.env.OPENAI_API_KEY,
-    model: process.env.OPENAI_IMAGE_MODEL ?? "gpt-image-2",
-    imageStore: input.imageStore
-  });
+  const provider =
+    input.provider ??
+    createDemoImageProvider({ imageStore: input.imageStore, imageModel: input.imageModel });
 
-  const result = await provider.generateImage({
+  const storedSourceImages = await resolveSourceImages(input.imageStore, input.sourceAssetIds);
+  const additionalSourceImages = input.additionalSourceImages ?? [];
+  const sourceImages: SourceImage[] = [
+    ...storedSourceImages,
+    ...additionalSourceImages.map(({ sourceId: _sourceId, ...image }) => image)
+  ];
+  const maskImage = input.maskAssetId
+    ? (await resolveSourceImages(input.imageStore, [input.maskAssetId]))[0]
+    : undefined;
+  if (input.maskAssetId && !maskImage) {
+    throw new Error("选区蒙版不存在或不是受支持的 PNG、JPEG、WebP 图片。");
+  }
+  const sourceAssetIds = [
+    ...input.sourceAssetIds,
+    ...additionalSourceImages.map((image) => image.sourceId),
+    ...(input.maskAssetId ? [input.maskAssetId] : [])
+  ];
+  const providerInput = {
     taskId: input.taskId,
     prompt: input.prompt,
-    sourceAssetIds: input.sourceAssetIds
-  });
+    sourceAssetIds,
+    ...(sourceImages.length ? { sourceImages } : {}),
+    ...(maskImage ? { maskImage } : {}),
+    ...(input.size ? { size: input.size } : {})
+  };
 
-  await recordGenerationCost(input, result, input.taskLabel ?? "Image generation");
-
-  return result;
-}
-
-export async function generateDemoPopScene(
-  input: GenerateDemoPopSceneInput
-): Promise<ImageProviderResult> {
-  const prompt = buildPopScenePrompt({
-    productName: input.productName,
-    placement: input.placement,
-    flatPopAssetId: input.flatPopAssetId
-  });
-
-  const provider = createImageProvider({
-    forceMock: input.forceMock ?? process.env.DEMO_USE_MOCK === "true",
-    apiKey: process.env.OPENAI_API_KEY,
-    model: process.env.OPENAI_IMAGE_MODEL ?? "gpt-image-2",
-    imageStore: input.imageStore
-  });
-
-  const result = await provider.editImage({
-    taskId: input.taskId,
-    prompt,
-    sourceAssetIds: [input.flatPopAssetId]
-  });
+  const result = sourceImages.length || maskImage
+    ? await provider.editImage(providerInput)
+    : await provider.generateImage(providerInput);
 
   await recordGenerationCost(
-    {
-      taskId: input.taskId,
-      taskLabel: "POP product scene",
-      sourceAssetIds: [input.flatPopAssetId],
-      country: input.country,
-      language: input.language,
-      costLedger: input.costLedger
-    },
+    { ...input, sourceAssetIds },
     result,
-    "POP product scene"
+    input.taskLabel ?? "Image generation"
   );
 
   return result;
 }
 
-export function buildDemoPdp(input: BuildDemoPdpInput): PdpDocument {
-  const product = getPrimaryDemoProduct();
+export type GeneratePopTemplateSceneInput = {
+  taskId: string;
+  templateId: string;
+  productId?: string;
+  /** Full product object (e.g. from the product registry); wins over productId lookup. */
+  product?: ProductWithProfile;
+  productAssetId?: string;
+  placement: string;
+  country: string;
+  language: string;
+  textValues: Record<string, string>;
+  imageAssetIds: Record<string, string>;
+  popImageBase64?: string;
+  imageModel?: ImageModelChoice;
+  size?: ImageProviderInput["size"];
+  imageStore?: LocalAssetStore;
+  costLedger?: CostLedger;
+  provider?: ImageProvider;
+};
 
-  return buildPdpDocument({
-    id: `pdp-${input.country.toLowerCase()}-${input.language.toLowerCase()}`,
+export type PopTemplateSceneResult = {
+  flatUrl: string;
+  flatPngUrl?: string;
+  scene: ImageProviderResult;
+  templateId: string;
+  templateVersion: string;
+};
+
+export async function generatePopTemplateScene(
+  input: GeneratePopTemplateSceneInput
+): Promise<PopTemplateSceneResult> {
+  const template = getPopTemplate(input.templateId);
+  const product = input.product;
+  if (!product) {
+    throw new Error("请先在素材库创建产品并上传素材,再执行生成。");
+  }
+  const productName = product.displayName ?? "Uploaded product";
+  const productAssetId =
+    input.productAssetId ??
+    product.assets.find((asset) => asset.type === "product-photo")?.id;
+
+  // Resolve user-selected slot images into data URIs for the flat artwork.
+  const imageDataUris: Record<string, string> = {};
+  for (const [slotId, assetId] of Object.entries(input.imageAssetIds)) {
+    const file = assetId ? await input.imageStore?.readAssetBytes(assetId) : null;
+    if (file && file.contentType.startsWith("image/")) {
+      imageDataUris[slotId] = `data:${file.contentType};base64,${file.bytes.toString("base64")}`;
+    }
+  }
+
+  const flatSvg = renderPopFlatSvg({
+    templateId: template.id,
+    textValues: input.textValues,
+    imageDataUris
+  });
+
+  const savedFlat = await input.imageStore?.saveGeneratedImage({
+    taskId: input.taskId,
+    filename: `${template.id}-flat.svg`,
+    contentType: "image/svg+xml",
+    bytes: Buffer.from(flatSvg, "utf8")
+  });
+
+  let flatPngUrl: string | undefined;
+  let popPngBytes: Buffer | undefined;
+  if (input.popImageBase64) {
+    popPngBytes = Buffer.from(input.popImageBase64, "base64");
+    const savedPng = await input.imageStore?.saveGeneratedImage({
+      taskId: input.taskId,
+      filename: `${template.id}-flat.png`,
+      contentType: "image/png",
+      bytes: popPngBytes
+    });
+    flatPngUrl = savedPng?.url;
+  }
+
+  await input.costLedger?.appendRecord({
+    taskId: input.taskId,
+    task: `POP flat render (${template.name})`,
+    model: "template-engine",
+    mode: "deterministic",
+    country: input.country,
+    language: input.language,
+    estimatedUnits: 0,
+    isFallback: false,
+    sourceAssetIds: Object.values(input.imageAssetIds).filter(Boolean)
+  });
+
+  const provider =
+    input.provider ??
+    createDemoImageProvider({ imageStore: input.imageStore, imageModel: input.imageModel });
+
+  const sourceAssetIds = [
+    ...(productAssetId ? [productAssetId] : []),
+    savedFlat?.id ?? "pop-flat-render"
+  ];
+  const sourceImages = await resolveSourceImages(
+    input.imageStore,
+    productAssetId ? [productAssetId] : []
+  );
+  if (popPngBytes) {
+    sourceImages.push({
+      bytes: popPngBytes,
+      contentType: "image/png",
+      filename: `${template.id}-flat.png`
+    });
+  }
+
+  const prompt = buildPopScenePrompt({
+    productName,
+    placement: input.placement,
+    flatPopAssetId: savedFlat?.id ?? "pop-flat-render"
+  });
+
+  const scene = await provider.editImage({
+    taskId: `${input.taskId}-scene`,
+    prompt,
+    sourceAssetIds,
+    ...(sourceImages.length ? { sourceImages } : {})
+  });
+
+  await input.costLedger?.appendRecord({
+    taskId: `${input.taskId}-scene`,
+    task: `POP product scene (${template.name})`,
+    model: scene.model,
+    mode: inferImageModelChoice(scene.model),
+    country: input.country,
+    language: input.language,
+    estimatedUnits: 1,
+    isFallback: false,
+    sourceAssetIds
+  });
+
+  return {
+    flatUrl: savedFlat?.url ?? "",
+    flatPngUrl,
+    scene,
+    templateId: template.id,
+    templateVersion: template.version
+  };
+}
+
+export type ExportDemoPdpInput = {
+  taskId: string;
+  country: string;
+  language: string;
+  productId?: string;
+  /** Full product object (e.g. from the product registry); wins over productId lookup. */
+  product?: ProductWithProfile;
+  templateVersion?: string;
+  sellingPoints?: SellingPoint[];
+  sectionImages?: Record<string, string>;
+  coverAssetId?: string;
+  layout?: PdpCanvasLayout;
+  imageStore?: LocalAssetStore;
+  costLedger?: CostLedger;
+};
+
+export type ExportDemoPdpResult = {
+  taskId: string;
+  url: string;
+  templateVersion: string;
+  sectionCount: number;
+  missingImageSlots: string[];
+  isFallback: boolean;
+};
+
+export async function exportDemoPdp(input: ExportDemoPdpInput): Promise<ExportDemoPdpResult> {
+  const product = input.product;
+  if (!product) {
+    throw new Error("请先在素材库创建产品并上传素材,再执行生成。");
+  }
+  const productName = product.displayName ?? "Uploaded product";
+  const sellingPoints = input.sellingPoints?.length
+    ? input.sellingPoints
+    : product.profile.detectedFeatures;
+  const sectionImages = input.sectionImages ?? {};
+  const coverAssetId =
+    input.coverAssetId ?? product.assets.find((asset) => asset.type === "product-photo")?.id ?? "asset-cover";
+  const templateVersion = input.templateVersion ?? "pdp-tree-v3";
+
+  const document = buildPdpDocument({
+    id: `pdp-${input.country.toLowerCase()}-${input.language.toLowerCase()}-${Date.now()}`,
     productId: product.id,
     country: input.country,
     language: input.language,
-    templateVersion: "pdp-dynamic-v1",
+    templateVersion,
     cover: {
-      title: product.displayName ?? "Uploaded product",
+      title: productName,
       subtitle: product.profile.valueProposition,
-      imageAssetId: "asset-cover"
+      imageAssetId: coverAssetId
     },
-    sellingPoints: product.profile.detectedFeatures,
-    sectionImageBySellingPointId: {
-      "feature-capacity": "asset-capacity",
-      "feature-slot-in": "asset-slot-in",
-      "feature-low-noise": "asset-low-noise",
-      "feature-energy": "asset-energy"
-    }
+    sellingPoints,
+    sectionImageBySellingPointId: sectionImages
   });
+
+  // Embed every referenced asset that resolves to a real raster image.
+  const assetIds = [
+    coverAssetId,
+    ...document.sections.flatMap((section) =>
+      section.largeImageAssetId ? [section.largeImageAssetId] : []
+    )
+  ];
+  const imageDataUris: Record<string, string> = {};
+  for (const assetId of new Set(assetIds)) {
+    const file = await input.imageStore?.readAssetBytes(assetId);
+    if (file && file.contentType.startsWith("image/")) {
+      imageDataUris[assetId] = `data:${file.contentType};base64,${file.bytes.toString("base64")}`;
+    }
+  }
+
+  const specification: Array<[string, string]> = sellingPoints
+    .filter((point) => point.enabled !== false)
+    .map((point) => [point.shortLabel || point.title, point.technicalProof ?? point.benefit]);
+
+  const svg = renderPdpSvg(document, productName, {
+    imageDataUris,
+    specification,
+    layout: input.layout
+  });
+
+  const saved = await input.imageStore?.saveGeneratedImage({
+    taskId: input.taskId,
+    filename: `${document.id}.svg`,
+    contentType: "image/svg+xml",
+    bytes: Buffer.from(svg, "utf8")
+  });
+
+  await input.costLedger?.appendRecord({
+    taskId: input.taskId,
+    task: "PDP long image export",
+    model: "template-engine",
+    mode: "deterministic",
+    country: input.country,
+    language: input.language,
+    estimatedUnits: 0,
+    isFallback: false,
+    sourceAssetIds: assetIds
+  });
+
+  return {
+    taskId: input.taskId,
+    url: saved?.url ?? "",
+    templateVersion,
+    sectionCount: document.sections.length,
+    missingImageSlots: getMissingPdpImageSlots(document),
+    isFallback: false
+  };
 }
 
-export function getDemoCostRecords(): DemoCostRecord[] {
-  return [
-    {
-      task: "POP scene",
-      model: process.env.OPENAI_IMAGE_MODEL ?? "gpt-image-2",
-      mode: process.env.DEMO_USE_MOCK === "false" ? "openai-ready" : "mock fallback",
-      country: "Mexico",
-      language: "Spanish",
-      estimatedUnits: 1
-    },
-    {
-      task: "PDP render",
-      model: "template-engine",
-      mode: "deterministic",
-      country: "Mexico",
-      language: "Spanish",
-      estimatedUnits: 0
-    },
-    {
-      task: "Localization variants",
-      model: "rules + future LLM",
-      mode: "mock fallback",
-      country: "Brazil",
-      language: "Portuguese",
-      estimatedUnits: 1
+export type LocalizeImageInput = {
+  taskId: string;
+  sourceUrl: string;
+  imageBytes: Buffer;
+  contentType: string;
+  country: string;
+  language: string;
+  size?: "1024x1024" | "1536x1024" | "1024x1536";
+  imageModel?: ImageModelChoice;
+  imageStore?: LocalAssetStore;
+  costLedger?: CostLedger;
+  provider?: ImageProvider;
+};
+
+export type LocalizeImageResult = ImageProviderResult & { sourceUrl: string };
+
+/** Replaces the visible text of a previously generated image with the target market language. */
+export async function localizeGeneratedImage(
+  input: LocalizeImageInput
+): Promise<LocalizeImageResult> {
+  const provider =
+    input.provider ??
+    createDemoImageProvider({ imageStore: input.imageStore, imageModel: input.imageModel });
+
+  const prompt = [
+    `Take the provided marketing image and replace ALL visible text with ${input.language}`,
+    `translations appropriate for the ${input.country} market.`,
+    "Keep the product appearance, layout, composition, colors, logo, and branding exactly the same.",
+    "Only the text language changes; do not add or remove any graphic elements."
+  ].join(" ");
+
+  const sourceImages = RASTER_IMAGE_TYPES.has(input.contentType)
+    ? [
+        {
+          bytes: input.imageBytes,
+          contentType: input.contentType,
+          filename: input.sourceUrl.split("/").pop() ?? "source.png"
+        }
+      ]
+    : [];
+
+  const result = await provider.editImage({
+    taskId: input.taskId,
+    prompt,
+    sourceAssetIds: [input.sourceUrl],
+    ...(sourceImages.length ? { sourceImages } : {}),
+    ...(input.size ? { size: input.size } : {})
+  });
+
+  await input.costLedger?.appendRecord({
+    taskId: input.taskId,
+    task: "Localization text replacement",
+    model: result.model,
+    mode: inferImageModelChoice(result.model),
+    country: input.country,
+    language: input.language,
+    estimatedUnits: 1,
+    isFallback: false,
+    sourceAssetIds: [input.sourceUrl]
+  });
+
+  return { ...result, sourceUrl: input.sourceUrl };
+}
+
+export type CostAggregateRow = { key: string; records: number; units: number };
+
+export type CostAggregateSummary = {
+  byTask: CostAggregateRow[];
+  byCountry: CostAggregateRow[];
+  byLanguage: CostAggregateRow[];
+  byMode: CostAggregateRow[];
+};
+
+export function aggregateCostRecords(records: DemoCostRecord[]): CostAggregateSummary {
+  function groupBy(selectKey: (record: DemoCostRecord) => string): CostAggregateRow[] {
+    const rows = new Map<string, CostAggregateRow>();
+    for (const record of records) {
+      const key = selectKey(record);
+      const row = rows.get(key) ?? { key, records: 0, units: 0 };
+      row.records += 1;
+      row.units += record.estimatedUnits;
+      rows.set(key, row);
     }
-  ];
+    return Array.from(rows.values());
+  }
+
+  return {
+    byTask: groupBy((record) => record.task),
+    byCountry: groupBy((record) => record.country),
+    byLanguage: groupBy((record) => record.language),
+    byMode: groupBy((record) => record.mode)
+  };
 }
 
 export async function readDemoCostRecords(
   ledger: CostLedger = createDefaultCostLedger()
 ): Promise<DemoCostRecord[]> {
   const liveRecords = await ledger.readRecords();
-  return [...liveRecords.map(toDemoCostRecord), ...getDemoCostRecords()];
+  return liveRecords.map(toDemoCostRecord);
 }
 
 async function recordGenerationCost(
@@ -186,11 +514,11 @@ async function recordGenerationCost(
     taskId: input.taskId,
     task: input.taskLabel ?? fallbackTaskLabel,
     model: result.model,
-    mode: result.isFallback ? "mock fallback" : "openai",
+    mode: inferImageModelChoice(result.model),
     country: input.country ?? "Demo market",
     language: input.language ?? "Demo language",
     estimatedUnits: 1,
-    isFallback: result.isFallback,
+    isFallback: false,
     sourceAssetIds: result.sourceAssetIds
   });
 }

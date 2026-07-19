@@ -45,7 +45,9 @@ export function buildPdpDocument(input: BuildPdpInput): PdpDocument {
     .filter((point) => point.enabled !== false)
     .sort((a, b) => a.priority - b.priority);
 
-  const sections = selected.slice(0, 5).map((point, index): PdpSection => {
+  // The template is dynamic: every enabled selling point becomes a section and
+  // the canvas grows with the count — no fixed cap.
+  const sections = selected.map((point, index): PdpSection => {
     return {
       id: `pdp-section-${point.id}`,
       sellingPointId: point.id,
@@ -65,7 +67,7 @@ export function buildPdpDocument(input: BuildPdpInput): PdpDocument {
     templateVersion: input.templateVersion,
     cover: input.cover,
     sections,
-    moreFeatures: selected.slice(5)
+    moreFeatures: []
   };
 }
 

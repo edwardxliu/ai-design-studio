@@ -1,34 +1,18 @@
-﻿import { AppShell } from "@/src/components/AppShell";
-import { PdpBuilderView } from "@/src/components/PdpBuilderView";
-import { PdpExportPanel } from "@/src/components/PdpExportPanel";
-import { getPrimaryDemoProduct } from "@/src/domain/demo-data";
-import { buildPdpDocument } from "@/src/domain/pdp";
+import { AppShell } from "@/src/components/AppShell";
+import { PdpEditor } from "@/src/components/PdpEditor";
+import { createDemoAssetStore } from "@/src/services/demo-api";
+import { createDefaultProductRegistry } from "@/src/services/product-registry";
 
-export default function PdpPage() {
-  const product = getPrimaryDemoProduct();
-  const document = buildPdpDocument({
-    id: "pdp-demo",
-    productId: product.id,
-    country: "Mexico",
-    language: "Spanish",
-    templateVersion: "pdp-dynamic-v1",
-    cover: {
-      title: product.displayName ?? "Uploaded product",
-      subtitle: product.profile.valueProposition,
-      imageAssetId: "asset-cover"
-    },
-    sellingPoints: product.profile.detectedFeatures,
-    sectionImageBySellingPointId: {
-      "feature-capacity": "asset-capacity",
-      "feature-slot-in": "asset-slot-in",
-      "feature-low-noise": "asset-low-noise"
-    }
-  });
+// Product list includes user-created products, so render per request.
+export const dynamic = "force-dynamic";
+
+export default async function PdpPage() {
+  const products = await createDefaultProductRegistry(createDemoAssetStore()).listProducts();
 
   return (
     <AppShell>
-      <PdpBuilderView document={document} productName={product.displayName ?? "Uploaded product"} />
-      <PdpExportPanel />
+      <h1 style={{ fontSize: 30, marginBottom: 16 }}>PDP 构建</h1>
+      <PdpEditor products={products} />
     </AppShell>
   );
 }

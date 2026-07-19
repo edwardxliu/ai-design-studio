@@ -9,7 +9,16 @@ export type AssetType =
   | "background"
   | "pop-input"
   | "pdp-input"
+  | "white-background-closed"
+  | "white-background-open"
+  | "sku-product"
+  | "sku-reference-part"
+  | "sku-mask"
+  | "icon-vi-color"
+  | "icon-vi-style"
+  | "icon-source"
   | "document";
+
 
 export type AssetSource = "uploaded" | "demo-seed" | "generated";
 
@@ -84,6 +93,7 @@ export type GenerationTaskType =
   | "pop-product-scene"
   | "pdp-render"
   | "localization"
+  | "icon-design"
   | "motion-storyboard";
 
 export type GenerationTask = {
@@ -116,6 +126,6 @@ export type OutputArtifact = {
     sourceAssetIds: string[];
     generatedAt: string;
     isFallback: boolean;
+    failureReason?: string;
   };
 };
-

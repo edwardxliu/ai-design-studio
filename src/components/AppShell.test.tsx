@@ -3,18 +3,31 @@ import { describe, expect, it } from "vitest";
 import { AppShell } from "./AppShell";
 
 describe("AppShell", () => {
-  it("renders the core workbench navigation", () => {
+  it("renders every capability as its own sidebar entry", () => {
     render(
       <AppShell>
         <div>Workbench content</div>
       </AppShell>
     );
 
-    expect(screen.getByText("AI Content Studio")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /Intake/i })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /POP/i })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /PDP/i })).toBeInTheDocument();
+    const links = screen.getAllByRole("link").map((link) => link.textContent);
+    expect(links).toEqual([
+      "工作台",
+      "素材库",
+      "产品档案",
+      "白底多角度",
+      "手机图标准化",
+      "SKU 替换",
+      "风格迁移",
+      "Icon Design",
+      "视频方向",
+      "产品视频",
+      "POP 设计",
+      "PDP 构建",
+      "本地化",
+      "资源消耗"
+    ]);
+    expect(screen.queryByText("图像工作室")).not.toBeInTheDocument();
     expect(screen.getByText("Workbench content")).toBeInTheDocument();
   });
 });
-

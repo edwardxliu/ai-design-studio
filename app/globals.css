@@ -10,6 +10,14 @@
   --accent-strong: #057ca2;
   --success: #12805c;
   --warning: #b36b00;
+  --font-ui:
+    var(--font-gotham),
+    "Microsoft YaHei",
+    "PingFang SC",
+    "Noto Sans CJK SC",
+    "Segoe UI",
+    Arial,
+    sans-serif;
 }
 
 * {
@@ -20,11 +28,7 @@ body {
   margin: 0;
   background: var(--background);
   color: var(--text);
-  font-family:
-    Inter,
-    "Segoe UI",
-    Arial,
-    sans-serif;
+  font-family: var(--font-ui);
 }
 
 a {
@@ -205,5 +209,75 @@ h2 {
   .metric-grid,
   .feature-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+.app-shell-layout {
+  display: grid;
+  min-height: 100vh;
+  grid-template-columns: 260px minmax(0, 1fr);
+}
+
+.app-shell-sidebar {
+  padding: 22px;
+  border-right: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.app-shell-brand {
+  margin-bottom: 28px;
+}
+
+.app-shell-nav {
+  display: grid;
+  gap: 8px;
+}
+
+.app-shell-path {
+  margin-top: 24px;
+  color: #9aa7b4;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.app-shell-main {
+  min-width: 0;
+  padding: 28px;
+}
+
+@media (max-width: 780px) {
+  .app-shell-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .app-shell-sidebar {
+    min-width: 0;
+    padding: 14px 16px;
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .app-shell-brand {
+    margin-bottom: 12px;
+  }
+
+  .app-shell-nav {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    scrollbar-width: thin;
+  }
+
+  .app-shell-nav a {
+    flex: 0 0 auto;
+  }
+
+  .app-shell-path {
+    display: none;
+  }
+
+  .app-shell-main {
+    padding: 18px;
   }
 }

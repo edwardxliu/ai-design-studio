@@ -1,0 +1,356 @@
+"use client";
+
+import { useCallback, useEffect, useMemo, useState } from "react";
+import type { Asset, AssetType, ProductWithProfile } from "@/src/domain/types";
+import {
+  getMaterialCategoryForAssetType,
+  materialCategories,
+  type MaterialCategory
+} from "@/src/domain/material-categories";
+
+const sampleSubTypes: Array<{ value: AssetType; label: string }> = [
+  { value: "product-photo", label: "产品照片" },
+  { value: "phone-shot", label: "手机实拍" },
+  { value: "feature-icon", label: "功能图标" },
+  { value: "background", label: "背景素材" }
+];
+
+export function AssetLibrary() {
+  const [products, setProducts] = useState<ProductWithProfile[]>([]);
+  const [productId, setProductId] = useState("");
+  const [assets, setAssets] = useState<Asset[]>([]);
+  const [uploadCategory, setUploadCategory] = useState<MaterialCategory>(materialCategories[3]);
+  const [sampleType, setSampleType] = useState<AssetType>("product-photo");
+  const [files, setFiles] = useState<FileList | null>(null);
+  const [newProduct, setNewProduct] = useState({ name: "", category: "" });
+  const [status, setStatus] = useState("");
+  const [error, setError] = useState("");
+
+  const refresh = useCallback(async () => {
+    try {
+      const [productsResponse, assetsResponse] = await Promise.all([
+        fetch("/api/products"),
+        fetch("/api/upload")
+      ]);
+      if (productsResponse.ok) {
+        const payload = await productsResponse.json();
+        if (Array.isArray(payload.products)) {
+          setProducts(payload.products);
+          setProductId((current) => current || payload.products[0]?.id || "");
+        }
+      }
+      if (assetsResponse.ok) {
+        const payload = await assetsResponse.json();
+        if (Array.isArray(payload.assets)) {
+          setAssets(payload.assets);
+        }
+      }
+    } catch {
+      setError("加载素材失败,请刷新页面。");
+    }
+  }, []);
+
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
+
+  const product = products.find((item) => item.id === productId);
+
+  const productAssets = useMemo(() => {
+    const fromProduct = product?.assets ?? [];
+    const uploadedElsewhere = assets.filter(
+      (asset) =>
+        asset.productId === productId && !fromProduct.some((item) => item.id === asset.id)
+    );
+    return [...fromProduct, ...uploadedElsewhere];
+  }, [assets, product, productId]);
+
+  function assetsForCategory(category: MaterialCategory): Asset[] {
+    return productAssets.filter(
+      (asset) => getMaterialCategoryForAssetType(asset.type)?.key === category.key
+    );
+  }
+
+  async function createProduct() {
+    if (!newProduct.name.trim() || !newProduct.category.trim()) {
+      setError("请填写产品名称与品类。");
+      return;
+    }
+    setError("");
+    try {
+      const response = await fetch("/api/products", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newProduct)
+      });
+      const payload = await response.json();
+      if (!response.ok || payload.error) {
+        throw new Error(payload.error ?? "创建产品失败");
+      }
+      setNewProduct({ name: "", category: "" });
+      setStatus(`已创建产品:${payload.product?.displayName ?? ""}`);
+      await refresh();
+      if (payload.product?.id) {
+        setProductId(payload.product.id);
+      }
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "创建产品失败");
+    }
+  }
+
+  async function uploadFiles() {
+    if (!files?.length || !productId) {
+      setError("请选择要上传的文件。");
+      return;
+    }
+    setError("");
+    setStatus("上传中…");
+    try {
+      const form = new FormData();
+      form.set("projectId", "project-user-workspace");
+      form.set("productId", productId);
+      form.set(
+        "type",
+        uploadCategory.key === "sample" ? sampleType : uploadCategory.defaultAssetType
+      );
+      for (const file of Array.from(files)) {
+        form.append("files", file);
+      }
+      const response = await fetch("/api/upload", { method: "POST", body: form });
+      const payload = await response.json();
+      if (!response.ok || payload.error) {
+        throw new Error(payload.error ?? "上传失败");
+      }
+      setStatus(`已入库 ${payload.assets?.length ?? 0} 个素材`);
+      setFiles(null);
+      await refresh();
+    } catch (cause) {
+      setStatus("");
+      setError(cause instanceof Error ? cause.message : "上传失败");
+    }
+  }
+
+  async function deleteProduct() {
+    if (!product || product.projectId !== "project-user-workspace") {
+      return;
+    }
+    setError("");
+    try {
+      const response = await fetch(`/api/products?id=${encodeURIComponent(product.id)}`, {
+        method: "DELETE"
+      });
+      const payload = await response.json();
+      if (!response.ok || payload.error) {
+        throw new Error(payload.error ?? "删除产品失败");
+      }
+      setStatus(`已删除产品及其上传素材:${product.displayName ?? product.id}`);
+      setProductId("");
+      await refresh();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "删除产品失败");
+    }
+  }
+
+  async function removeAsset(assetId: string) {
+    setError("");
+    try {
+      const response = await fetch(`/api/assets?id=${encodeURIComponent(assetId)}`, {
+        method: "DELETE"
+      });
+      const payload = await response.json();
+      if (!response.ok || payload.error) {
+        throw new Error(payload.error ?? "删除失败");
+      }
+      await refresh();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "删除失败");
+    }
+  }
+
+  return (
+    <section style={{ display: "grid", gap: 16 }}>
+      <div style={panelStyle}>
+        <div style={{ display: "grid", gap: 12, gridTemplateColumns: "minmax(220px, 1fr) auto minmax(360px, 2fr)", alignItems: "end" }}>
+          <div style={{ alignItems: "end", display: "grid", gap: 8, gridTemplateColumns: "1fr auto" }}>
+            <label style={fieldStyle}>
+              当前产品
+              <select value={productId} onChange={(event) => setProductId(event.target.value)}>
+                {products.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.displayName ?? item.id}
+                  </option>
+                ))}
+              </select>
+            </label>
+            {product?.projectId === "project-user-workspace" ? (
+              <button onClick={deleteProduct} style={dangerButtonStyle} type="button">
+                删除产品
+              </button>
+            ) : null}
+          </div>
+          <span style={{ color: "#5f6c7b" }}>或</span>
+          <div style={{ alignItems: "end", display: "grid", gap: 8, gridTemplateColumns: "1fr 1fr auto" }}>
+            <label style={fieldStyle}>
+              新产品名称
+              <input
+                value={newProduct.name}
+                onChange={(event) => setNewProduct((c) => ({ ...c, name: event.target.value }))}
+              />
+            </label>
+            <label style={fieldStyle}>
+              新产品品类
+              <input
+                placeholder="如 Laundry appliance"
+                value={newProduct.category}
+                onChange={(event) => setNewProduct((c) => ({ ...c, category: event.target.value }))}
+              />
+            </label>
+            <button onClick={createProduct} style={primaryButtonStyle} type="button">
+              创建产品
+            </button>
+          </div>
+        </div>
+        <p style={{ color: "#5f6c7b", margin: "10px 0 0" }}>
+          创建产品并上传素材,即可获得全部生成能力(不限品类)。
+        </p>
+      </div>
+
+      <div style={panelStyle}>
+        <h2 style={{ fontSize: 16, margin: "0 0 10px" }}>上传素材到「{product?.displayName ?? "…"}」</h2>
+        <div style={{ alignItems: "end", display: "grid", gap: 12, gridTemplateColumns: "auto auto 1fr auto" }}>
+          <label style={fieldStyle}>
+            素材类别
+            <select
+              value={uploadCategory.key}
+              onChange={(event) =>
+                setUploadCategory(
+                  materialCategories.find((item) => item.key === event.target.value) ??
+                    materialCategories[3]
+                )
+              }
+            >
+              {materialCategories.map((category) => (
+                <option key={category.key} value={category.key}>
+                  {category.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          {uploadCategory.key === "sample" ? (
+            <label style={fieldStyle}>
+              样例类型
+              <select
+                value={sampleType}
+                onChange={(event) => setSampleType(event.target.value as AssetType)}
+              >
+                {sampleSubTypes.map((item) => (
+                  <option key={item.value} value={item.value}>
+                    {item.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : (
+            <span />
+          )}
+          <label style={fieldStyle}>
+            文件
+            <input
+              accept={uploadCategory.accept}
+              multiple
+              onChange={(event) => setFiles(event.target.files)}
+              type="file"
+            />
+          </label>
+          <button onClick={uploadFiles} style={primaryButtonStyle} type="button">
+            上传入库
+          </button>
+        </div>
+        <p style={{ color: "#5f6c7b", margin: "10px 0 0" }}>{uploadCategory.description}</p>
+        {status ? <p style={{ color: "#12805c", margin: "8px 0 0" }}>{status}</p> : null}
+        {error ? <p style={{ color: "#8f1f1f", margin: "8px 0 0" }}>{error}</p> : null}
+      </div>
+
+      <div style={{ display: "grid", gap: 14, gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))" }}>
+        {materialCategories.map((category) => {
+          const categoryAssets = assetsForCategory(category);
+          return (
+            <div data-testid={`material-group-${category.key}`} key={category.key} style={panelStyle}>
+              <div style={{ alignItems: "baseline", display: "flex", gap: 8, justifyContent: "space-between" }}>
+                <h3 style={{ fontSize: 15, margin: 0 }}>{category.label}</h3>
+                <span style={{ color: "#5f6c7b", fontSize: 12 }}>{categoryAssets.length} 项</span>
+              </div>
+              <p style={{ color: "#5f6c7b", fontSize: 12, margin: "6px 0 12px" }}>{category.description}</p>
+              <div style={{ display: "grid", gap: 8 }}>
+                {categoryAssets.length === 0 ? (
+                  <span style={{ color: "#9aa7b4", fontSize: 13 }}>暂无素材,可在上方上传。</span>
+                ) : null}
+                {categoryAssets.map((asset) => (
+                  <div
+                    data-testid={`asset-row-${asset.id}`}
+                    key={asset.id}
+                    style={{ alignItems: "center", border: "1px solid #e5e8ec", borderRadius: 8, display: "flex", gap: 10, padding: 8 }}
+                  >
+                    {/\.(png|jpe?g|webp|svg)$/i.test(asset.url) ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        alt={asset.filename}
+                        src={asset.url}
+                        style={{ background: "#f7f8fa", height: 44, objectFit: "contain", width: 44 }}
+                      />
+                    ) : (
+                      <span style={{ fontSize: 22 }}>📄</span>
+                    )}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {asset.filename}
+                      </div>
+                      <div style={{ color: "#9aa7b4", fontSize: 12 }}>{asset.type}</div>
+                    </div>
+                    <button
+                      aria-label={`删除 ${asset.filename}`}
+                      onClick={() => removeAsset(asset.id)}
+                      style={dangerButtonStyle}
+                      type="button"
+                    >
+                      删除
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+const panelStyle = {
+  background: "#ffffff",
+  border: "1px solid #d9e0e7",
+  borderRadius: 8,
+  padding: 16
+} as const;
+
+const fieldStyle = { display: "grid", gap: 6 } as const;
+
+const primaryButtonStyle = {
+  background: "#057ca2",
+  border: "1px solid #057ca2",
+  borderRadius: 8,
+  color: "#ffffff",
+  cursor: "pointer",
+  fontWeight: 800,
+  padding: "10px 14px"
+} as const;
+
+const dangerButtonStyle = {
+  background: "#ffffff",
+  border: "1px solid #e0b4b4",
+  borderRadius: 8,
+  color: "#8f1f1f",
+  cursor: "pointer",
+  padding: "6px 10px"
+} as const;
+

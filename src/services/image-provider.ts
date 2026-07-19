@@ -1,9 +1,20 @@
-﻿import type { LocalAssetStore } from "@/src/services/local-asset-store";
+import { randomUUID } from "node:crypto";
+import { fetch as undiciFetch, ProxyAgent } from "undici";
+import type { LocalAssetStore } from "@/src/services/local-asset-store";
+
+export type SourceImage = {
+  bytes: Buffer;
+  contentType: string;
+  filename: string;
+};
 
 export type ImageProviderInput = {
   taskId: string;
   prompt: string;
   sourceAssetIds: string[];
+  sourceImages?: SourceImage[];
+  maskImage?: SourceImage;
+  size?: "1024x1024" | "1536x1024" | "1024x1536";
 };
 
 export type ImageProviderResult = {
@@ -13,6 +24,7 @@ export type ImageProviderResult = {
   sourceAssetIds: string[];
   isFallback: boolean;
   generatedAt: string;
+  failureReason?: string;
 };
 
 export type ImageProvider = {
@@ -23,7 +35,15 @@ export type ImageProvider = {
 export type ImageGenerationRequest = {
   model: string;
   prompt: string;
-  size: "1024x1024";
+  size: string;
+};
+
+export type ImageEditRequest = {
+  model: string;
+  prompt: string;
+  size: string;
+  images: SourceImage[];
+  mask?: SourceImage;
 };
 
 export type ImageGenerationResponse = {
@@ -38,48 +58,55 @@ export type ImageGenerationOutput = NonNullable<ImageGenerationResponse["data"]>
 export type ImageApiClient = {
   images: {
     generate(input: ImageGenerationRequest): Promise<ImageGenerationResponse>;
+    edit(input: ImageEditRequest): Promise<ImageGenerationResponse>;
   };
 };
 
 export type CreateImageProviderOptions = {
-  forceMock?: boolean;
   apiKey?: string;
   model?: string;
+  baseUrl?: string;
   imageStore?: LocalAssetStore;
   clientFactory?: (apiKey: string) => ImageApiClient | Promise<ImageApiClient>;
 };
 
-class MockImageProvider implements ImageProvider {
-  async generateImage(input: ImageProviderInput): Promise<ImageProviderResult> {
-    return createMockResult(input);
-  }
-
-  async editImage(input: ImageProviderInput): Promise<ImageProviderResult> {
-    return createMockResult(input);
-  }
-}
+export const DEFAULT_IMAGE_MODEL = "gpt-image-1";
 
 class OpenAIImageProvider implements ImageProvider {
   constructor(
     private readonly apiKey: string,
     private readonly model: string,
+    private readonly baseUrl?: string,
     private readonly imageStore?: LocalAssetStore,
     private readonly clientFactory?: (apiKey: string) => ImageApiClient | Promise<ImageApiClient>
   ) {}
 
   async generateImage(input: ImageProviderInput): Promise<ImageProviderResult> {
+    if (!this.apiKey) {
+      throw new Error("未配置 OPENAI_API_KEY,系统需要联网使用图像模型。");
+    }
+
     try {
       const client = await this.createClient();
-      const response = await client.images.generate({
-        model: this.model,
-        prompt: input.prompt,
-        size: "1024x1024"
-      });
+      const size = input.size ?? "1024x1024";
+      const response = input.sourceImages?.length
+        ? await client.images.edit({
+            model: this.model,
+            prompt: input.prompt,
+            size,
+            images: input.sourceImages,
+            mask: input.maskImage
+          })
+        : await client.images.generate({
+            model: this.model,
+            prompt: input.prompt,
+            size
+          });
       const output = response.data?.[0];
       const url = await this.resolveOutputUrl(input.taskId, output);
 
       if (!url) {
-        return createMockResult(input);
+        throw new Error("OpenAI response contained no image data.");
       }
 
       return {
@@ -90,8 +117,10 @@ class OpenAIImageProvider implements ImageProvider {
         isFallback: false,
         generatedAt: new Date().toISOString()
       };
-    } catch {
-      return createMockResult(input);
+    } catch (error) {
+      const failureReason = error instanceof Error ? error.message : String(error);
+      console.error(`[image-provider] OpenAI call failed for ${input.taskId}: ${failureReason}`);
+      throw error instanceof Error ? error : new Error(failureReason);
     }
   }
 
@@ -104,8 +133,7 @@ class OpenAIImageProvider implements ImageProvider {
       return this.clientFactory(this.apiKey);
     }
 
-    const { default: OpenAI } = await import("openai");
-    return new OpenAI({ apiKey: this.apiKey }) as unknown as ImageApiClient;
+    return createFetchImageApiClient(this.apiKey, this.baseUrl);
   }
 
   private async resolveOutputUrl(
@@ -139,27 +167,162 @@ class OpenAIImageProvider implements ImageProvider {
 }
 
 export function createImageProvider(options: CreateImageProviderOptions): ImageProvider {
-  const apiKey = options.apiKey?.trim();
-
-  if (options.forceMock || !apiKey) {
-    return new MockImageProvider();
-  }
+  const apiKey = options.apiKey?.trim() ?? "";
 
   return new OpenAIImageProvider(
     apiKey,
-    options.model ?? "gpt-image-2",
+    options.model ?? DEFAULT_IMAGE_MODEL,
+    options.baseUrl,
     options.imageStore,
     options.clientFactory
   );
 }
 
-function createMockResult(input: ImageProviderInput): ImageProviderResult {
+export function createFetchImageApiClient(apiKey: string, baseUrl?: string): ImageApiClient {
+  const apiRoot = normalizeApiRoot(baseUrl ?? process.env.OPENAI_BASE_URL);
+  const dispatcher = createProxyDispatcher();
+
+  async function parseResponse(response: Response): Promise<ImageGenerationResponse> {
+    const text = await response.text();
+
+    if (!response.ok) {
+      throw new Error(`OpenAI API ${response.status}: ${text.slice(0, 400)}`);
+    }
+
+    return JSON.parse(text) as ImageGenerationResponse;
+  }
+
   return {
-    url: `/mock/generated/${input.taskId}.png`,
-    model: "mock-image-provider",
-    prompt: input.prompt,
-    sourceAssetIds: input.sourceAssetIds,
-    isFallback: true,
-    generatedAt: "2026-07-07T00:00:00.000Z"
+    images: {
+      async generate(input) {
+        const response = await fetchOpenAi(`${apiRoot}/images/generations`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            model: input.model,
+            prompt: input.prompt,
+            size: input.size
+          })
+        }, dispatcher);
+        return parseResponse(response);
+      },
+
+      async edit(input) {
+        const multipart = createImageEditMultipartBody(input);
+        const response = await fetchOpenAi(`${apiRoot}/images/edits`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+            "Content-Type": multipart.contentType
+          },
+          body: multipart.body
+        }, dispatcher);
+        return parseResponse(response);
+      }
+    }
   };
+}
+
+function createImageEditMultipartBody(input: ImageEditRequest): {
+  body: Buffer;
+  contentType: string;
+} {
+  const boundary = `----midea-openai-${randomUUID()}`;
+  const chunks: Buffer[] = [];
+
+  appendMultipartText(chunks, boundary, "model", input.model);
+  appendMultipartText(chunks, boundary, "prompt", input.prompt);
+  appendMultipartText(chunks, boundary, "size", input.size);
+  for (const image of input.images) {
+    appendMultipartFile(chunks, boundary, "image[]", image);
+  }
+  if (input.mask) {
+    appendMultipartFile(chunks, boundary, "mask", input.mask);
+  }
+  chunks.push(Buffer.from(`--${boundary}--\r\n`, "utf8"));
+
+  return {
+    body: Buffer.concat(chunks),
+    contentType: `multipart/form-data; boundary=${boundary}`
+  };
+}
+
+function appendMultipartText(
+  chunks: Buffer[],
+  boundary: string,
+  name: string,
+  value: string
+): void {
+  chunks.push(
+    Buffer.from(
+      `--${boundary}\r\nContent-Disposition: form-data; name="${escapeMultipartValue(name)}"\r\n\r\n${value}\r\n`,
+      "utf8"
+    )
+  );
+}
+
+function appendMultipartFile(
+  chunks: Buffer[],
+  boundary: string,
+  name: string,
+  image: SourceImage
+): void {
+  chunks.push(
+    Buffer.from(
+      [
+        `--${boundary}`,
+        `Content-Disposition: form-data; name="${escapeMultipartValue(name)}"; filename="${escapeMultipartValue(image.filename)}"`,
+        `Content-Type: ${image.contentType}`,
+        "",
+        ""
+      ].join("\r\n"),
+      "utf8"
+    )
+  );
+  chunks.push(Buffer.from(image.bytes));
+  chunks.push(Buffer.from("\r\n", "utf8"));
+}
+
+function escapeMultipartValue(value: string): string {
+  return value.replace(/\\/g, "\\\\").replace(/"/g, "\\\"");
+}
+export function normalizeApiRoot(baseUrl: string | undefined): string {
+  const trimmed = baseUrl?.trim();
+  return (trimmed || "https://api.openai.com/v1").replace(/\/+$/, "");
+}
+
+export function createProxyDispatcher(configuredProxyUrl?: string): ProxyAgent | undefined {
+  const proxyUrl = normalizeProxyUrl(
+    configuredProxyUrl ??
+      process.env.OPENAI_PROXY_URL ??
+      process.env.HTTPS_PROXY ??
+      process.env.HTTP_PROXY ??
+      process.env.ALL_PROXY
+  );
+
+  return proxyUrl ? new ProxyAgent({ uri: proxyUrl }) : undefined;
+}
+
+function normalizeProxyUrl(proxyUrl: string | undefined): string | undefined {
+  const trimmed = proxyUrl?.trim();
+  if (!trimmed || trimmed.toLowerCase().startsWith("socks")) {
+    return undefined;
+  }
+  return trimmed;
+}
+
+export async function fetchOpenAi(
+  url: string,
+  init: RequestInit,
+  dispatcher: ProxyAgent | undefined
+): Promise<Response> {
+  if (!dispatcher) {
+    return fetch(url, init);
+  }
+
+  const undiciInit = { ...init, dispatcher } as unknown as Parameters<typeof undiciFetch>[1];
+  return (await undiciFetch(url, undiciInit)) as unknown as Response;
 }

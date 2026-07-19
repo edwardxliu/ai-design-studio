@@ -1,0 +1,398 @@
+.runner {
+  display: grid;
+  gap: 16px;
+}
+
+.controlBand,
+.sourceSection,
+.progressPanel,
+.error,
+.emptyState,
+.results {
+  border: 1px solid #d9e0e7;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.controlBand {
+  display: grid;
+  grid-template-columns: minmax(320px, 1fr) minmax(560px, 1.25fr);
+  gap: 20px;
+  align-items: end;
+  padding: 18px;
+}
+
+.taskCopy {
+  display: grid;
+  gap: 7px;
+  color: #17202a;
+  line-height: 1.55;
+}
+
+.taskCopy span {
+  color: #5f6c7b;
+  font-size: 14px;
+}
+
+.controls {
+  display: grid;
+  grid-template-columns: minmax(150px, 1fr) minmax(180px, 1fr) minmax(190px, auto);
+  gap: 12px;
+  align-items: end;
+}
+
+.field {
+  min-width: 0;
+  color: #34404c;
+  font-size: 13px;
+}
+
+.field select {
+  width: 100%;
+  min-width: 0;
+  height: 42px;
+  border: 1px solid #aeb8c3;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #17202a;
+  padding: 0 10px;
+}
+
+.generateButton,
+.uploadButton,
+.deleteButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 42px;
+  border-radius: 6px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.generateButton {
+  border: 1px solid #057ca2;
+  background: #057ca2;
+  color: #ffffff;
+  padding: 0 14px;
+  white-space: nowrap;
+}
+
+.generateButton:disabled,
+.deleteButton:disabled,
+.uploadButton:has(input:disabled) {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.sourceSection,
+.results {
+  padding: 18px;
+}
+
+.sectionHeader,
+.resultHeader,
+.progressPanel > div:first-child {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.sectionHeader {
+  margin-bottom: 14px;
+}
+
+.sectionHeader h2,
+.resultHeader h2 {
+  margin: 0;
+  color: #17202a;
+  font-size: 18px;
+}
+
+.sectionHeader p {
+  margin: 5px 0 0;
+  color: #5f6c7b;
+  font-size: 13px;
+}
+
+.sectionHeader > strong {
+  color: #057ca2;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.sourceLayout {
+  display: grid;
+  grid-template-columns: minmax(360px, 1.08fr) minmax(320px, 0.92fr);
+  min-height: 380px;
+  overflow: hidden;
+  border: 1px solid #cbd4dd;
+  border-radius: 8px;
+  background: #f8fafb;
+}
+
+.previewStage {
+  display: grid;
+  place-items: center;
+  min-width: 0;
+  min-height: 380px;
+  overflow: hidden;
+  border-right: 1px solid #e1e6eb;
+  background: #eef1f4;
+}
+
+.previewStage img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-height: 560px;
+  object-fit: contain;
+}
+
+.placeholder {
+  display: grid;
+  place-items: center;
+  gap: 8px;
+  color: #77828e;
+  text-align: center;
+}
+
+.placeholder span {
+  font-size: 12px;
+}
+
+.sourceInfo {
+  display: grid;
+  align-content: start;
+  gap: 14px;
+  padding: 20px;
+  background: #ffffff;
+}
+
+.sourceInfo > div:not(.sourceActions) {
+  display: grid;
+  gap: 5px;
+  border-bottom: 1px solid #e5e9ed;
+  padding-bottom: 14px;
+}
+
+.sourceInfo span,
+.sourceInfo small {
+  color: #687481;
+  font-size: 12px;
+}
+
+.sourceInfo strong {
+  color: #17202a;
+}
+
+.sourceInfo p {
+  margin: 0;
+  color: #5f6c7b;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.sourceInfo small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sourceActions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.uploadButton {
+  position: relative;
+  min-width: 132px;
+  border: 1px solid #057ca2;
+  background: #057ca2;
+  color: #ffffff;
+  padding: 0 14px;
+}
+
+.uploadButton input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  opacity: 0;
+}
+
+.deleteButton {
+  border: 1px solid #cfd7df;
+  background: #ffffff;
+  color: #922c2c;
+  padding: 0 13px;
+}
+
+.message {
+  margin: 12px 0 0;
+  color: #3f5668;
+  font-size: 13px;
+}
+
+.progressPanel {
+  display: grid;
+  gap: 10px;
+  padding: 14px 18px;
+}
+
+.progressPanel strong {
+  color: #057ca2;
+}
+
+.progressPanel span,
+.resultHeader span {
+  color: #687481;
+  font-size: 12px;
+}
+
+.progressTrack {
+  height: 8px;
+  overflow: hidden;
+  border-radius: 4px;
+  background: #e5e8ec;
+}
+
+.progressTrack div {
+  height: 100%;
+  background: #057ca2;
+  transition: width 0.3s;
+}
+
+.error {
+  padding: 14px 18px;
+  background: #fdecec;
+  color: #8f1f1f;
+}
+
+.results {
+  display: grid;
+  gap: 12px;
+}
+
+.resultGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.outputCard {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid #d9e0e7;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.outputPreview {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  background: #f3f5f6;
+}
+
+.outputPreview img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.outputMeta {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  padding: 11px 12px;
+}
+
+.outputMeta > div,
+.outputMeta a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.outputMeta > span {
+  color: #5d6975;
+  font-size: 11px;
+}
+
+.outputMeta a {
+  grid-column: 1 / -1;
+  width: fit-content;
+  color: #057ca2;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.emptyState {
+  padding: 18px;
+  color: #3f4b56;
+}
+
+.emptyState a {
+  color: #057ca2;
+  font-weight: 700;
+}
+
+.spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (max-width: 1160px) {
+  .controlBand,
+  .controls,
+  .sourceLayout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .previewStage {
+    border-right: 0;
+    border-bottom: 1px solid #e1e6eb;
+  }
+}
+
+@media (max-width: 760px) {
+  .resultGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .sectionHeader {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 520px) {
+  .controlBand,
+  .sourceSection,
+  .progressPanel,
+  .error,
+  .results {
+    padding: 14px;
+  }
+
+  .sourceActions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .uploadButton,
+  .deleteButton {
+    width: 100%;
+  }
+}
