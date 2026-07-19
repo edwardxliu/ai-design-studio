@@ -1,4 +1,4 @@
-﻿# Midea AI Content Demo
+# Midea AI Content Demo
 
 Local Next.js demo for a product-marketing AI assistant workflow:
 
@@ -11,12 +11,19 @@ Local Next.js demo for a product-marketing AI assistant workflow:
 
 ## Local Setup
 
-```powershell
-$env:Path='C:\Users\edward\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin;' + $env:Path
-pnpm install
-pnpm build
-pnpm start -- --hostname 127.0.0.1 --port 3000
+Node.js `>=18.18.0` is supported. Node `22.19.0` and pnpm `11.7.0` are pinned for consistent Windows/macOS installs.
+
+```bash
+nvm install
+nvm use
+corepack enable
+corepack prepare pnpm@11.7.0 --activate
+rm -rf node_modules .next
+pnpm install --frozen-lockfile
+pnpm dev
 ```
+
+On Windows PowerShell, use the same Node and pnpm versions, then run `pnpm install --frozen-lockfile` and `pnpm dev`.
 
 Open `http://127.0.0.1:3000`.
 
