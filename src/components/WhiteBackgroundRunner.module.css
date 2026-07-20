@@ -26,12 +26,12 @@
 .taskCopy {
   display: grid;
   gap: 7px;
-  color: #17202a;
+  color: var(--text);
   line-height: 1.55;
 }
 
 .taskCopy span {
-  color: #5f6c7b;
+  color: var(--muted);
   font-size: 14px;
 }
 
@@ -44,7 +44,7 @@
 
 .field {
   min-width: 0;
-  color: #34404c;
+  color: var(--text);
   font-size: 13px;
 }
 
@@ -55,7 +55,7 @@
   border: 1px solid #aeb8c3;
   border-radius: 6px;
   background: var(--studio-glass-control, #ffffff);
-  color: #17202a;
+  color: var(--text);
   padding: 0 10px;
 }
 
@@ -72,8 +72,8 @@
 .generateButton {
   gap: 8px;
   min-height: 42px;
-  border: 1px solid #057ca2;
-  background: #057ca2;
+  border: 1px solid var(--accent-strong);
+  background: var(--accent-strong);
   color: #ffffff;
   font-weight: 800;
   padding: 0 14px;
@@ -109,18 +109,18 @@
 .sectionHeader h2,
 .resultHeader h2 {
   margin: 0;
-  color: #17202a;
+  color: var(--text);
   font-size: 18px;
 }
 
 .sectionHeader p {
   margin: 5px 0 0;
-  color: #5f6c7b;
+  color: var(--muted);
   font-size: 13px;
 }
 
 .sectionHeader > strong {
-  color: #057ca2;
+  color: var(--accent-strong);
   font-size: 13px;
   white-space: nowrap;
 }
@@ -156,12 +156,12 @@
 }
 
 .slotHeader strong {
-  color: #17202a;
+  color: var(--text);
 }
 
 .slotHeader span,
 .slotFooter > span {
-  color: #687481;
+  color: var(--muted-soft);
   font-size: 12px;
 }
 
@@ -195,7 +195,7 @@
   display: grid;
   place-items: center;
   gap: 8px;
-  color: #77828e;
+  color: var(--muted-soft);
   font-size: 13px;
 }
 
@@ -216,9 +216,9 @@
   flex: 0 0 auto;
   gap: 7px;
   min-height: 34px;
-  border: 1px solid #057ca2;
+  border: 1px solid var(--accent-strong);
   background: var(--studio-glass-control, #ffffff);
-  color: #057ca2;
+  color: var(--accent-strong);
   font-size: 13px;
   font-weight: 800;
   padding: 0 10px;
@@ -234,7 +234,7 @@
 
 .message {
   margin: 12px 0 0;
-  color: #3f5668;
+  color: var(--muted);
   font-size: 13px;
 }
 
@@ -245,11 +245,11 @@
 }
 
 .progressPanel strong {
-  color: #057ca2;
+  color: var(--accent-strong);
 }
 
 .progressPanel span {
-  color: #687481;
+  color: var(--muted-soft);
   font-size: 12px;
 }
 
@@ -262,7 +262,7 @@
 
 .progressTrack div {
   height: 100%;
-  background: #057ca2;
+  background: var(--accent-strong);
   transition: width 0.3s;
 }
 
@@ -284,7 +284,7 @@
 }
 
 .resultHeader span {
-  color: #687481;
+  color: var(--muted-soft);
   font-size: 12px;
   font-weight: 700;
 }
@@ -336,25 +336,25 @@
 }
 
 .outputMeta > span {
-  color: #5d6975;
+  color: var(--muted-soft);
   font-size: 11px;
 }
 
 .outputMeta a {
   grid-column: 1 / -1;
   width: fit-content;
-  color: #057ca2;
+  color: var(--accent-strong);
   font-size: 12px;
   font-weight: 700;
 }
 
 .emptyState {
   padding: 18px;
-  color: #3f4b56;
+  color: var(--muted);
 }
 
 .emptyState a {
-  color: #057ca2;
+  color: var(--accent-strong);
   font-weight: 700;
 }
 

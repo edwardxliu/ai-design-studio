@@ -188,7 +188,7 @@ export function AssetLibrary() {
               </button>
             ) : null}
           </div>
-          <span style={{ color: "#5f6c7b" }}>或</span>
+          <span style={{ color: "var(--muted)" }}>或</span>
           <div style={{ alignItems: "end", display: "grid", gap: 8, gridTemplateColumns: "1fr 1fr auto" }}>
             <label style={fieldStyle}>
               新产品名称
@@ -210,7 +210,7 @@ export function AssetLibrary() {
             </button>
           </div>
         </div>
-        <p style={{ color: "#5f6c7b", margin: "10px 0 0" }}>
+        <p style={{ color: "var(--muted)", margin: "10px 0 0" }}>
           创建产品并上传素材,即可获得全部生成能力(不限品类)。
         </p>
       </div>
@@ -266,7 +266,7 @@ export function AssetLibrary() {
             上传入库
           </button>
         </div>
-        <p style={{ color: "#5f6c7b", margin: "10px 0 0" }}>{uploadCategory.description}</p>
+        <p style={{ color: "var(--muted)", margin: "10px 0 0" }}>{uploadCategory.description}</p>
         {status ? <p style={{ color: "#12805c", margin: "8px 0 0" }}>{status}</p> : null}
         {error ? <p style={{ color: "#8f1f1f", margin: "8px 0 0" }}>{error}</p> : null}
       </div>
@@ -278,12 +278,12 @@ export function AssetLibrary() {
             <div data-testid={`material-group-${category.key}`} key={category.key} style={panelStyle}>
               <div style={{ alignItems: "baseline", display: "flex", gap: 8, justifyContent: "space-between" }}>
                 <h3 style={{ fontSize: 15, margin: 0 }}>{category.label}</h3>
-                <span style={{ color: "#5f6c7b", fontSize: 12 }}>{categoryAssets.length} 项</span>
+                <span style={{ color: "var(--muted)", fontSize: 12 }}>{categoryAssets.length} 项</span>
               </div>
-              <p style={{ color: "#5f6c7b", fontSize: 12, margin: "6px 0 12px" }}>{category.description}</p>
+              <p style={{ color: "var(--muted)", fontSize: 12, margin: "6px 0 12px" }}>{category.description}</p>
               <div style={{ display: "grid", gap: 8 }}>
                 {categoryAssets.length === 0 ? (
-                  <span style={{ color: "#9aa7b4", fontSize: 13 }}>暂无素材,可在上方上传。</span>
+                  <span style={{ color: "var(--muted-soft)", fontSize: 13 }}>暂无素材,可在上方上传。</span>
                 ) : null}
                 {categoryAssets.map((asset) => (
                   <div
@@ -305,7 +305,7 @@ export function AssetLibrary() {
                       <div style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                         {asset.filename}
                       </div>
-                      <div style={{ color: "#9aa7b4", fontSize: 12 }}>{asset.type}</div>
+                      <div style={{ color: "var(--muted-soft)", fontSize: 12 }}>{asset.type}</div>
                     </div>
                     <button
                       aria-label={`删除 ${asset.filename}`}
@@ -336,8 +336,8 @@ const panelStyle = {
 const fieldStyle = { display: "grid", gap: 6 } as const;
 
 const primaryButtonStyle = {
-  background: "#057ca2",
-  border: "1px solid #057ca2",
+  background: "var(--accent-strong)",
+  border: "1px solid var(--accent-strong)",
   borderRadius: 8,
   color: "#ffffff",
   cursor: "pointer",

@@ -16,9 +16,9 @@ export function MetricCard({
         padding: 18
       }}
     >
-      <div style={{ color: "#5f6c7b", fontSize: 13 }}>{label}</div>
+      <div style={{ color: "var(--muted)", fontSize: 13 }}>{label}</div>
       <strong style={{ display: "block", fontSize: 28, margin: "8px 0" }}>{value}</strong>
-      <p style={{ color: "#5f6c7b", margin: 0 }}>{detail}</p>
+      <p style={{ color: "var(--muted)", margin: 0 }}>{detail}</p>
     </article>
   );
 }

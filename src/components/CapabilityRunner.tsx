@@ -94,7 +94,7 @@ export function CapabilityRunner({ taskId }: { taskId: CompetitionTaskId }) {
     return (
       <section style={panelStyle}>
         <p style={{ margin: 0 }}>
-          还没有产品。请先到 <a href="/assets" style={{ color: "#057ca2" }}>素材库</a>{" "}
+          还没有产品。请先到 <a href="/assets" style={{ color: "var(--accent-strong)" }}>素材库</a>{" "}
           创建产品并上传素材,再回到本页生成。
         </p>
       </section>
@@ -108,7 +108,7 @@ export function CapabilityRunner({ taskId }: { taskId: CompetitionTaskId }) {
       <section style={{ ...panelStyle, alignItems: "center", display: "flex", gap: 16, justifyContent: "space-between" }}>
         <div>
           <p style={{ color: "#17202a", margin: "0 0 6px" }}>{task.requirement}</p>
-          <p style={{ color: "#5f6c7b", margin: 0 }}>{task.summary}</p>
+          <p style={{ color: "var(--muted)", margin: 0 }}>{task.summary}</p>
         </div>
         <div style={{ display: "grid", gap: 8, minWidth: 280 }}>
           <label style={{ display: "grid", gap: 6, fontWeight: 700 }}>
@@ -127,7 +127,7 @@ export function CapabilityRunner({ taskId }: { taskId: CompetitionTaskId }) {
             value={imageModel}
           />
           {selectedProduct ? (
-            <span style={{ color: "#5f6c7b", fontSize: 12 }}>
+            <span style={{ color: "var(--muted)", fontSize: 12 }}>
               素材 {selectedProduct.assets.length} 项 · 卖点{" "}
               {selectedProduct.profile.detectedFeatures.length} 条
             </span>
@@ -152,13 +152,13 @@ export function CapabilityRunner({ taskId }: { taskId: CompetitionTaskId }) {
 
       {run.state === "running" ? (
         <section aria-label="生成进度" style={panelStyle}>
-          <div style={{ color: "#057ca2", fontSize: 13, fontWeight: 700, marginBottom: 6 }}>
+          <div style={{ color: "var(--accent-strong)", fontSize: 13, fontWeight: 700, marginBottom: 6 }}>
             并行生成中 {run.completed}/{total}
           </div>
           <div style={{ background: "#e5e8ec", borderRadius: 999, height: 8, overflow: "hidden" }}>
             <div
               style={{
-                background: "#057ca2",
+                background: "var(--accent-strong)",
                 borderRadius: 999,
                 height: "100%",
                 transition: "width 0.3s",
@@ -213,7 +213,7 @@ function OutputCard({ output }: { output: CompetitionOutputArtifact }) {
           <strong>{output.spec.label}</strong>
           <span style={modelPillStyle}>{output.provenance.model}</span>
         </div>
-        <p style={{ color: "#5f6c7b", margin: "0 0 8px" }}>
+        <p style={{ color: "var(--muted)", margin: "0 0 8px" }}>
           {output.label.productName} / {output.label.country} / {output.label.language}
         </p>
         <a href={output.url} style={linkStyle} target="_blank">
@@ -234,8 +234,8 @@ const panelStyle = {
 
 const primaryButtonStyle = {
   alignItems: "center",
-  background: "#057ca2",
-  border: "1px solid #057ca2",
+  background: "var(--accent-strong)",
+  border: "1px solid var(--accent-strong)",
   borderRadius: 8,
   color: "#ffffff",
   cursor: "pointer",
@@ -257,7 +257,7 @@ const modelPillStyle = {
 
 const linkStyle = {
   alignItems: "center",
-  color: "#057ca2",
+  color: "var(--accent-strong)",
   display: "inline-flex",
   gap: 6,
   overflowWrap: "anywhere" as const

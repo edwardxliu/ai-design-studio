@@ -17,7 +17,7 @@
 }
 
 .eyebrow {
-  color: #007ea5;
+  color: var(--accent-strong);
   font-size: 12px;
   font-weight: 800;
   letter-spacing: 0;
@@ -32,7 +32,7 @@
 }
 
 .status {
-  color: #687585;
+  color: var(--muted-soft);
   font-size: 13px;
   font-weight: 700;
   padding-top: 4px;
@@ -59,7 +59,7 @@
 }
 
 .field {
-  color: #3f4b59;
+  color: var(--muted);
   display: grid;
   font-size: 12px;
   font-weight: 700;
@@ -73,7 +73,7 @@
   background: var(--studio-glass-control, #ffffff);
   border: 1px solid #aeb8c3;
   border-radius: 4px;
-  color: #111827;
+  color: var(--text);
   font: inherit;
   font-size: 14px;
   letter-spacing: 0;
@@ -91,7 +91,7 @@
 .field input:focus,
 .field select:focus,
 .field textarea:focus {
-  border-color: #0089b2;
+  border-color: var(--accent-strong);
   box-shadow: 0 0 0 2px rgba(0, 137, 178, 0.14);
   outline: none;
 }
@@ -101,7 +101,7 @@
   background: var(--studio-glass-control, #ffffff);
   border: 1px solid #aeb8c3;
   border-radius: 4px;
-  color: #182230;
+  color: var(--text);
   display: flex;
   font-size: 14px;
   font-weight: 800;
@@ -111,7 +111,7 @@
 }
 
 .productType svg {
-  color: #0089b2;
+  color: var(--accent-strong);
   flex: 0 0 auto;
 }
 
@@ -135,7 +135,7 @@
 }
 
 .canvasHeader strong {
-  color: #182230;
+  color: var(--text);
   font-size: 14px;
 }
 
@@ -146,7 +146,7 @@
 }
 
 .canvasHeader span {
-  color: #687585;
+  color: var(--muted-soft);
   font-size: 12px;
 }
 
@@ -178,13 +178,13 @@
 }
 
 .zoomControls input {
-  accent-color: #0089b2;
+  accent-color: var(--accent-strong);
   margin: 0;
   width: 112px;
 }
 
 .zoomControls output {
-  color: #52606f;
+  color: var(--muted-soft);
   font-size: 12px;
   font-variant-numeric: tabular-nums;
   text-align: center;
@@ -215,7 +215,7 @@
 
 .legend {
   align-items: center;
-  color: #687585;
+  color: var(--muted-soft);
   display: flex;
   flex-wrap: wrap;
   font-size: 12px;
@@ -248,7 +248,7 @@
 
 .selectedSwatch {
   background: #ffffff;
-  border: 2px solid #0089b2;
+  border: 2px solid var(--accent-strong);
 }
 
 .inspector {
@@ -264,7 +264,7 @@
 }
 
 .inspectorHeader p {
-  color: #007ea5;
+  color: var(--accent-strong);
   font-size: 11px;
   font-weight: 800;
   letter-spacing: 0;
@@ -295,9 +295,9 @@
 .iconButton {
   align-items: center;
   background: var(--studio-glass-control, #ffffff);
-  border: 1px solid #0089b2;
+  border: 1px solid var(--accent-strong);
   border-radius: 4px;
-  color: #00799e;
+  color: var(--accent-strong);
   cursor: pointer;
   display: inline-flex;
   height: 38px;
@@ -321,8 +321,8 @@
 
 .generateButton {
   align-items: center;
-  background: #0089b2;
-  border: 1px solid #0089b2;
+  background: var(--accent-strong);
+  border: 1px solid var(--accent-strong);
   border-radius: 4px;
   color: #ffffff;
   cursor: pointer;
@@ -336,7 +336,7 @@
 }
 
 .generateButton:hover:not(:disabled) {
-  background: #006f91;
+  background: var(--accent-deep);
 }
 
 .generateButton:disabled,
@@ -346,7 +346,7 @@
 }
 
 .stage {
-  color: #00799e;
+  color: var(--accent-strong);
   font-size: 12px;
   font-weight: 800;
   line-height: 1.4;
@@ -401,7 +401,7 @@
 }
 
 .resultLabel {
-  color: #687585;
+  color: var(--muted-soft);
   font-size: 12px;
   font-weight: 700;
   margin: 0 0 7px;
@@ -421,7 +421,7 @@
 }
 
 .links {
-  color: #52606f;
+  color: var(--muted-soft);
   font-size: 12px;
   line-height: 1.6;
   margin: 9px 0 0;
@@ -429,7 +429,7 @@
 }
 
 .links a {
-  color: #00799e;
+  color: var(--accent-strong);
 }
 
 .hiddenInput {

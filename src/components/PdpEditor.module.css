@@ -23,7 +23,7 @@
 
 .eyebrow {
   margin: 0;
-  color: #057ca2;
+  color: var(--accent-strong);
   font-size: 11px;
   font-weight: 800;
 }
@@ -36,7 +36,7 @@
   justify-content: center;
   border: 1px solid #d9e0e7;
   border-radius: 999px;
-  color: #5f6c7b;
+  color: var(--muted);
   font-size: 12px;
   font-weight: 700;
 }
@@ -72,7 +72,7 @@
   border: 1px solid #cfd7df;
   border-radius: 6px;
   background: var(--studio-glass-control, #ffffff);
-  color: #17202a;
+  color: var(--text);
   padding: 0 30px 0 10px;
 }
 
@@ -106,7 +106,7 @@
   border: 1px solid #cfd7df;
   border-radius: 6px;
   background: var(--studio-glass-control, #ffffff);
-  color: #17202a;
+  color: var(--text);
   cursor: pointer;
   font-weight: 700;
 }
@@ -124,8 +124,8 @@
 
 .iconButton:hover,
 .commandButton:hover {
-  border-color: #00a6d6;
-  color: #057ca2;
+  border-color: var(--accent);
+  color: var(--accent-strong);
 }
 
 .iconButton:focus-visible,
@@ -136,7 +136,7 @@
 .inspector input:focus-visible,
 .inspector textarea:focus-visible,
 .inspector select:focus-visible {
-  outline: 2px solid #00a6d6;
+  outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 
@@ -149,8 +149,8 @@
 }
 
 .primaryButton {
-  border-color: #057ca2;
-  background: #057ca2;
+  border-color: var(--accent-strong);
+  background: var(--accent-strong);
   color: #ffffff;
 }
 
@@ -166,7 +166,7 @@
 
 .zoomValue {
   width: 48px;
-  color: #5f6c7b;
+  color: var(--muted);
   font-size: 12px;
   font-variant-numeric: tabular-nums;
   text-align: center;
@@ -215,7 +215,7 @@
 }
 
 .inspectorLabel {
-  color: #5f6c7b;
+  color: var(--muted);
   font-size: 11px;
   font-weight: 800;
 }
@@ -240,7 +240,7 @@
   border: 1px solid #bfe7f2;
   border-radius: 999px;
   background: var(--studio-glass-info, rgba(230, 248, 252, 0.46));
-  color: #057ca2;
+  color: var(--accent-strong);
   padding: 4px 8px;
   font-size: 11px;
   font-weight: 800;
@@ -254,7 +254,7 @@
 .field {
   display: grid;
   gap: 6px;
-  color: #5f6c7b;
+  color: var(--muted);
   font-size: 12px;
   font-weight: 700;
 }
@@ -266,7 +266,7 @@
   border: 1px solid #cfd7df;
   border-radius: 6px;
   background: var(--studio-glass-control, #ffffff);
-  color: #17202a;
+  color: var(--text);
   padding: 9px 10px;
   font-weight: 400;
 }
@@ -308,7 +308,7 @@
   display: grid;
   height: 100%;
   place-items: center;
-  color: #7d8a98;
+  color: var(--muted-soft);
   font-size: 12px;
   font-weight: 700;
 }
@@ -327,7 +327,7 @@
 
 .inspectorSummary p {
   margin: 0;
-  color: #5f6c7b;
+  color: var(--muted);
   font-size: 12px;
   line-height: 1.5;
 }
@@ -360,7 +360,7 @@
 }
 
 .resultBar a {
-  color: #057ca2;
+  color: var(--accent-strong);
   font-weight: 800;
   text-decoration: underline;
 }

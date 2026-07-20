@@ -33,7 +33,7 @@ export default async function CostsPage() {
   return (
     <AppShell>
       <h1 style={{ fontSize: 30, marginBottom: 8 }}>资源消耗说明 / Resource Traceability</h1>
-      <p style={{ color: "#5f6c7b", marginBottom: 18, maxWidth: 860 }}>
+      <p style={{ color: "var(--muted)", marginBottom: 18, maxWidth: 860 }}>
         每次生成都会记录任务环节、模型、调用模式、国家、语言、源素材和预计消耗单位;
         支持按任务 / 国家 / 语言 / 模式查看,并可作为后续台账与对账基础。
       </p>
@@ -50,14 +50,14 @@ export default async function CostsPage() {
 
       <section style={{ background: "var(--studio-glass-card, #ffffff)", border: "1px solid #d9e0e7", borderRadius: 8, marginBottom: 18, padding: 18 }}>
         <h2 style={{ fontSize: 18, margin: "0 0 6px" }}>如何减少重复调用</h2>
-        <p style={{ color: "#5f6c7b", margin: "0 0 12px" }}>
+        <p style={{ color: "var(--muted)", margin: "0 0 12px" }}>
           消耗水平主要受图像模型调用次数、输出分辨率与重试次数影响;以下机制把重复调用压到最低:
         </p>
         <div style={{ display: "grid", gap: 12, gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))" }}>
           {reductionMechanisms.map((item) => (
             <article key={item.title} style={{ background: "var(--studio-glass-subtle, #f7f8fa)", border: "1px solid #e5e8ec", borderRadius: 8, padding: 12 }}>
               <strong style={{ display: "block", marginBottom: 6 }}>{item.title}</strong>
-              <span style={{ color: "#5f6c7b" }}>{item.detail}</span>
+              <span style={{ color: "var(--muted)" }}>{item.detail}</span>
             </article>
           ))}
         </div>
@@ -81,10 +81,10 @@ export default async function CostsPage() {
               <td style={cellStyle}>{row.country}</td>
               <td style={cellStyle}>{row.language}</td>
               <td style={cellStyle}>{row.estimatedUnits}</td>
-              <td style={{ ...cellStyle, color: "#5f6c7b" }}>
+              <td style={{ ...cellStyle, color: "var(--muted)" }}>
                 {row.sourceAssetIds?.join(", ") ?? "demo baseline"}
               </td>
-              <td style={{ ...cellStyle, color: "#5f6c7b" }}>
+              <td style={{ ...cellStyle, color: "var(--muted)" }}>
                 {row.createdAt ? row.createdAt.replace("T", " ").slice(0, 19) : "—"}
               </td>
             </tr>
@@ -98,12 +98,12 @@ export default async function CostsPage() {
 function AggregateCard({ title, rows }: { title: string; rows: CostAggregateRow[] }) {
   return (
     <article style={{ background: "var(--studio-glass-card, #ffffff)", border: "1px solid #d9e0e7", borderRadius: 8, padding: 16 }}>
-      <strong style={{ color: "#057ca2", display: "block", fontSize: 13, marginBottom: 10 }}>{title}</strong>
+      <strong style={{ color: "var(--accent-strong)", display: "block", fontSize: 13, marginBottom: 10 }}>{title}</strong>
       <div style={{ display: "grid", gap: 6 }}>
         {rows.map((row) => (
           <div key={row.key} style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
             <span style={{ color: "#17202a" }}>{row.key}</span>
-            <span style={{ color: "#5f6c7b", whiteSpace: "nowrap" }}>
+            <span style={{ color: "var(--muted)", whiteSpace: "nowrap" }}>
               {row.records} 次 / {row.units} 单位
             </span>
           </div>

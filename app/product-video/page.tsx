@@ -13,7 +13,7 @@ export default async function ProductVideoPage() {
       <header style={{ marginBottom: 18 }}>
         <p className="eyebrow">Hero Product Film</p>
         <h1 style={{ fontSize: 30, margin: "4px 0 8px" }}>产品视频</h1>
-        <p style={{ color: "#5f6c7b", margin: 0 }}>
+        <p style={{ color: "var(--muted)", margin: 0 }}>
           豆包 Seedance 1.5 Pro · 12 秒 · 16:9 · 720p
         </p>
       </header>

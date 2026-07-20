@@ -130,7 +130,7 @@ export function ProductProfilePanel() {
             ))}
           </select>
         </label>
-        <span style={{ color: "#5f6c7b" }}>
+        <span style={{ color: "var(--muted)" }}>
           {product ? `品类:${product.category ?? "未填写"} · 素材 ${product.assets.length} 项` : ""}
         </span>
         <button onClick={recognize} style={secondaryButtonStyle} type="button">
@@ -145,7 +145,7 @@ export function ProductProfilePanel() {
       {error ? <p style={{ color: "#8f1f1f", margin: "0 0 10px" }}>{error}</p> : null}
 
       <div style={{ display: "grid", gap: 8 }}>
-        <div style={{ color: "#5f6c7b", display: "grid", fontSize: 12, fontWeight: 700, gap: 10, gridTemplateColumns: "2fr 1.5fr 2.5fr 2fr auto", padding: "0 4px" }}>
+        <div style={{ color: "var(--muted)", display: "grid", fontSize: 12, fontWeight: 700, gap: 10, gridTemplateColumns: "2fr 1.5fr 2.5fr 2fr auto", padding: "0 4px" }}>
           <span>卖点标题</span>
           <span>短标签(黑条)</span>
           <span>卖点说明(灰条)</span>
@@ -196,7 +196,7 @@ export function ProductProfilePanel() {
         </button>
       </div>
 
-      <p style={{ color: "#5f6c7b", fontSize: 13, marginTop: 14 }}>
+      <p style={{ color: "var(--muted)", fontSize: 13, marginTop: 14 }}>
         识别规则:读取素材库中该产品最新上传的「产品信息」文档。<strong>PDF(格式不限)由大模型直接解析提取卖点</strong>;
         txt/json 支持 JSON 数组或每行「标题|短标签|说明|技术佐证」格式。识别结果可手工修正,
         保存后驱动 PDP 段落与生成提示词。
@@ -206,8 +206,8 @@ export function ProductProfilePanel() {
 }
 
 const primaryButtonStyle = {
-  background: "#057ca2",
-  border: "1px solid #057ca2",
+  background: "var(--accent-strong)",
+  border: "1px solid var(--accent-strong)",
   borderRadius: 8,
   color: "#ffffff",
   cursor: "pointer",
@@ -218,7 +218,7 @@ const primaryButtonStyle = {
 const secondaryButtonStyle = {
   ...primaryButtonStyle,
   background: "var(--studio-glass-card, #ffffff)",
-  color: "#057ca2"
+  color: "var(--accent-strong)"
 } as const;
 
 const dangerButtonStyle = {

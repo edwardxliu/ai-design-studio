@@ -22,7 +22,7 @@
 .modelField {
   display: grid;
   gap: 7px;
-  color: #34404c;
+  color: var(--text);
   font-size: 13px;
   font-weight: 700;
 }
@@ -33,7 +33,7 @@
   border: 1px solid #aeb8c3;
   border-radius: 6px;
   background: var(--studio-glass-control, #ffffff);
-  color: #17202a;
+  color: var(--text);
   padding: 0 10px;
 }
 
@@ -41,9 +41,9 @@
   display: flex;
   align-items: center;
   min-height: 42px;
-  border-left: 4px solid #057ca2;
+  border-left: 4px solid var(--accent-strong);
   background: var(--studio-glass-control, #ffffff);
-  color: #17202a;
+  color: var(--text);
   padding: 0 12px;
 }
 
@@ -66,7 +66,7 @@
   justify-content: space-between;
   gap: 8px;
   margin-bottom: 12px;
-  color: #17202a;
+  color: var(--text);
 }
 
 .paneHeader {
@@ -111,13 +111,13 @@
 }
 
 .specList dt {
-  color: #6d7782;
+  color: var(--muted-soft);
   font-size: 11px;
 }
 
 .specList dd {
   margin: 4px 0 0;
-  color: #17202a;
+  color: var(--text);
   font-size: 14px;
   font-weight: 800;
 }
@@ -159,9 +159,9 @@
   gap: 8px;
   min-width: 190px;
   min-height: 44px;
-  border: 1px solid #057ca2;
+  border: 1px solid var(--accent-strong);
   border-radius: 6px;
-  background: #057ca2;
+  background: var(--accent-strong);
   color: #ffffff;
   font-weight: 800;
   cursor: pointer;
@@ -178,7 +178,7 @@
 }
 
 .taskId {
-  color: #5f6c7b;
+  color: var(--muted);
   font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
   font-size: 12px;
 }
@@ -224,7 +224,7 @@
 
 .result a {
   width: fit-content;
-  color: #53c9eb;
+  color: #c5d4bb;
   font-weight: 700;
 }
 

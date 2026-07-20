@@ -152,7 +152,7 @@ export function LocalizePanel() {
     <section style={{ display: "grid", gap: 16 }}>
       <div style={panelStyle}>
         <h2 style={{ fontSize: 16, margin: "0 0 8px" }}>系统语言设置</h2>
-        <p style={{ color: "#5f6c7b", margin: "0 0 12px" }}>
+        <p style={{ color: "var(--muted)", margin: "0 0 12px" }}>
           你只需要用自己的语言设计;各功能页生成的输出会按这里设置的目标市场进行标注。
         </p>
         <div style={{ alignItems: "end", display: "flex", flexWrap: "wrap", gap: 12 }}>
@@ -187,7 +187,7 @@ export function LocalizePanel() {
 
       <div style={panelStyle}>
         <h2 style={{ fontSize: 16, margin: "0 0 8px" }}>批量转换图像文字语言</h2>
-        <p style={{ color: "#5f6c7b", margin: "0 0 12px" }}>
+        <p style={{ color: "var(--muted)", margin: "0 0 12px" }}>
           勾选已生成的图片,选择目标市场后批量转换:系统保持产品与构图不变,
           把图中的所有文字(包括你输入的文案)翻译成目标语言——你不需要会写目标语言。
         </p>
@@ -226,7 +226,7 @@ export function LocalizePanel() {
         </div>
 
         {outputs.length === 0 ? (
-          <p style={{ color: "#9aa7b4", margin: 0 }}>
+          <p style={{ color: "var(--muted-soft)", margin: 0 }}>
             还没有生成记录。先在各功能页生成一些内容。
           </p>
         ) : null}
@@ -238,7 +238,7 @@ export function LocalizePanel() {
                 key={output.url}
                 style={{
                   background: "var(--studio-glass-card, #ffffff)",
-                  border: checked ? "2px solid #057ca2" : "1px solid #e5e8ec",
+                  border: checked ? "2px solid var(--accent-strong)" : "1px solid #e5e8ec",
                   borderRadius: 8,
                   cursor: "pointer",
                   display: "grid",
@@ -258,7 +258,7 @@ export function LocalizePanel() {
                   src={output.url}
                   style={{ background: "var(--studio-glass-preview, #f6f7f9)", height: 110, objectFit: "contain", width: "100%" }}
                 />
-                <span style={{ color: "#5f6c7b", fontSize: 11, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                <span style={{ color: "var(--muted)", fontSize: 11, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                   {output.taskId}
                 </span>
               </label>
@@ -275,7 +275,7 @@ export function LocalizePanel() {
           <div style={{ display: "grid", gap: 14 }}>
             {items.map((item) => (
               <div key={item.sourceUrl} style={{ borderTop: "1px solid #eef1f4", paddingTop: 10 }}>
-                <p style={{ color: "#5f6c7b", fontSize: 12, margin: "0 0 6px" }}>
+                <p style={{ color: "var(--muted)", fontSize: 12, margin: "0 0 6px" }}>
                   {item.sourceUrl}
                   {" — "}
                   {item.state === "running"
@@ -313,8 +313,8 @@ const panelStyle = {
 const fieldStyle = { display: "grid", gap: 6 } as const;
 
 const primaryButtonStyle = {
-  background: "#057ca2",
-  border: "1px solid #057ca2",
+  background: "var(--accent-strong)",
+  border: "1px solid var(--accent-strong)",
   borderRadius: 8,
   color: "#ffffff",
   cursor: "pointer",

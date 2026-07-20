@@ -1,13 +1,18 @@
-﻿:root {
+:root {
   color-scheme: light;
   --background: #f6f7f9;
   --surface: #ffffff;
   --surface-subtle: #eef2f6;
-  --text: #17202a;
-  --muted: #5f6c7b;
+  --text: #1c2924;
+  --muted: #445149;
+  --muted-soft: #59665f;
   --line: #d9e0e7;
-  --accent: #00a6d6;
-  --accent-strong: #057ca2;
+  --accent: #819671;
+  --accent-strong: #4d6754;
+  --accent-deep: #354a3c;
+  --accent-warm: #a98e5d;
+  --accent-soft: rgba(129, 150, 113, 0.24);
+  --accent-border: rgba(77, 103, 84, 0.58);
   --success: #12805c;
   --warning: #b36b00;
   --font-ui:
@@ -101,9 +106,9 @@ h2 {
 
 .status-pill {
   flex: 0 0 auto;
-  border: 1px solid #bfe7f2;
+  border: 1px solid rgba(77, 103, 84, 0.38);
   border-radius: 999px;
-  background: #e6f8fc;
+  background: rgba(129, 150, 113, 0.18);
   color: var(--accent-strong);
   padding: 8px 12px;
   font-size: 13px;
@@ -184,7 +189,7 @@ h2 {
 .feature-link:hover,
 .feature-link:focus-visible {
   border-color: var(--accent);
-  outline: 2px solid #bfe7f2;
+  outline: 2px solid rgba(169, 142, 93, 0.34);
   outline-offset: 2px;
 }
 
@@ -235,7 +240,7 @@ h2 {
 
 .app-shell-path {
   margin-top: 24px;
-  color: #9aa7b4;
+  color: var(--muted-soft);
   font-size: 12px;
   line-height: 1.6;
 }

@@ -27,13 +27,13 @@
 }
 
 .controlCopy span {
-  color: #057ca2;
+  color: var(--accent-strong);
   font-size: 11px;
   font-weight: 800;
 }
 
 .controlCopy strong {
-  color: #17202a;
+  color: var(--text);
   font-size: 19px;
 }
 
@@ -50,7 +50,7 @@
   width: 100%;
   border: 1px solid #bbc6d0;
   background: var(--studio-glass-control, #ffffff);
-  color: #17202a;
+  color: var(--text);
 }
 
 .modelField select,
@@ -73,17 +73,17 @@
 
 .primaryButton {
   min-height: 40px;
-  border: 1px solid #057ca2;
-  background: #057ca2;
+  border: 1px solid var(--accent-strong);
+  background: var(--accent-strong);
   color: #ffffff;
   padding: 0 16px;
 }
 
 .secondaryButton {
   min-height: 38px;
-  border: 1px solid #057ca2;
+  border: 1px solid var(--accent-strong);
   background: var(--studio-glass-control, #ffffff);
-  color: #057ca2;
+  color: var(--accent-strong);
   padding: 0 13px;
 }
 
@@ -133,7 +133,7 @@
 }
 
 .step {
-  color: #057ca2;
+  color: var(--accent-strong);
   font-size: 12px;
   font-weight: 900;
 }
@@ -179,7 +179,7 @@
 }
 
 .uploadSlot header span {
-  color: #057ca2;
+  color: var(--accent-strong);
   font-size: 10px;
   font-weight: 900;
   text-transform: uppercase;
@@ -228,7 +228,7 @@
   display: grid;
   place-items: center;
   gap: 8px;
-  color: #74808b;
+  color: var(--muted-soft);
   font-size: 12px;
 }
 
@@ -239,7 +239,7 @@
 .uploadSlot footer > span {
   min-width: 0;
   overflow: hidden;
-  color: #64717c;
+  color: var(--muted-soft);
   font-size: 12px;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -249,9 +249,9 @@
   position: relative;
   flex: 0 0 auto;
   min-height: 32px;
-  border: 1px solid #057ca2;
+  border: 1px solid var(--accent-strong);
   background: var(--studio-glass-control, #ffffff);
-  color: #057ca2;
+  color: var(--accent-strong);
   font-size: 12px;
   padding: 0 10px;
 }
@@ -284,7 +284,7 @@
 
 .promptField small,
 .titleField span {
-  color: #687481;
+  color: var(--muted-soft);
   font-size: 11px;
   font-weight: 600;
 }
@@ -298,7 +298,7 @@
 
 .titleField {
   align-content: start;
-  border-left: 3px solid #057ca2;
+  border-left: 3px solid var(--accent-strong);
   padding: 18px;
   background: var(--studio-glass-layer, #f4f6f7);
 }
@@ -310,7 +310,7 @@
 .message {
   margin: -6px 0 0;
   padding: 0 2px;
-  color: #3f5668;
+  color: var(--muted);
   font-size: 13px;
 }
 
@@ -322,7 +322,7 @@
 
 .progressBand > div:first-child {
   gap: 8px;
-  color: #057ca2;
+  color: var(--accent-strong);
 }
 
 .progressTrack {
@@ -334,7 +334,7 @@
 
 .progressTrack div {
   height: 100%;
-  background: #057ca2;
+  background: var(--accent-strong);
   transition: width 0.3s;
 }
 
@@ -346,7 +346,7 @@
 }
 
 .resultCount {
-  color: #687481;
+  color: var(--muted-soft);
   font-size: 12px;
   font-weight: 800;
 }
@@ -397,7 +397,7 @@
 }
 
 .outputPlaceholder span {
-  color: #8a949d;
+  color: var(--muted-soft);
   font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
   font-size: 10px;
   text-transform: uppercase;
@@ -417,19 +417,19 @@
 .outputMeta p {
   grid-column: 1 / -1;
   margin: 0;
-  color: #64717c;
+  color: var(--muted-soft);
   font-size: 11px;
   line-height: 1.45;
 }
 
 .outputMeta > span {
-  color: #5d6975;
+  color: var(--muted-soft);
   font-size: 10px;
 }
 
 .outputMeta a {
   gap: 5px;
-  color: #057ca2;
+  color: var(--accent-strong);
   font-size: 11px;
   font-weight: 800;
   text-decoration: none;
