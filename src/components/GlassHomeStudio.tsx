@@ -24,6 +24,7 @@ import {
   WandSparkles
 } from "lucide-react";
 import styles from "./GlassHomeStudio.module.css";
+import { GlassTuner, getGlassTunerStyle, useGlassTunerSettings } from "./GlassTuner";
 import { STUDIO_BACKGROUNDS } from "./studio-backgrounds";
 import { useStudioBackground } from "./useStudioBackground";
 
@@ -63,6 +64,11 @@ export function GlassHomeStudio() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const objectUrlRef = useRef<string | undefined>(undefined);
   const { backgroundUrl: presetBackgroundUrl, selectBackground } = useStudioBackground();
+  const {
+    resetSettings: resetGlassSettings,
+    setSettings: setGlassSettings,
+    settings: glassSettings
+  } = useGlassTunerSettings();
   const [customBackgroundUrl, setCustomBackgroundUrl] = useState<string>();
   const backgroundUrl = customBackgroundUrl ?? presetBackgroundUrl;
   const hasCustomBackground = Boolean(customBackgroundUrl);
@@ -106,6 +112,7 @@ export function GlassHomeStudio() {
   };
 
   const stageStyle = {
+    ...getGlassTunerStyle(glassSettings),
     "--home-background": 'url("' + backgroundUrl + '")'
   } as CSSProperties;
 
@@ -200,6 +207,12 @@ export function GlassHomeStudio() {
                   <RefreshCcw size={18} />
                 </button>
               ) : null}
+              <GlassTuner
+                resetSettings={resetGlassSettings}
+                setSettings={setGlassSettings}
+                settings={glassSettings}
+                triggerClassName={styles.secondaryButton}
+              />
             </div>
           </header>
 

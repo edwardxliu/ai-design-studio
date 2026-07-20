@@ -1,0 +1,190 @@
+.root {
+  position: relative;
+  z-index: 20;
+}
+
+.panel {
+  width: min(360px, calc(100vw - 32px));
+  max-height: min(680px, calc(100dvh - 100px));
+  position: absolute;
+  top: 48px;
+  right: 0;
+  z-index: 30;
+  overflow-y: auto;
+  padding: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.82);
+  border-radius: 8px;
+  background: rgba(239, 243, 238, 0.88);
+  color: var(--text);
+  box-shadow: 0 22px 60px rgba(24, 35, 29, 0.28);
+  backdrop-filter: blur(30px) saturate(125%);
+  -webkit-backdrop-filter: blur(30px) saturate(125%);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(48, 66, 55, 0.18);
+}
+
+.header > div {
+  display: grid;
+  gap: 2px;
+}
+
+.header span {
+  color: var(--accent-warm);
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.header strong {
+  font-size: 16px;
+}
+
+.iconButton {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid rgba(48, 66, 55, 0.22);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.42);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.colorGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: 14px 0;
+}
+
+.colorControl {
+  display: grid;
+  gap: 7px;
+  padding: 10px;
+  border: 1px solid rgba(48, 66, 55, 0.16);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.34);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.colorValue {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.colorValue input {
+  width: 34px;
+  height: 30px;
+  padding: 2px;
+  border: 1px solid rgba(48, 66, 55, 0.2);
+  border-radius: 4px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.colorValue output {
+  color: var(--accent-deep);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.rangeList {
+  display: grid;
+  gap: 10px;
+}
+
+.rangeControl {
+  display: grid;
+  grid-template-columns: 88px minmax(100px, 1fr) 46px;
+  align-items: center;
+  gap: 8px;
+  color: var(--text);
+  font-size: 12px;
+}
+
+.rangeControl input {
+  width: 100%;
+  accent-color: var(--accent-strong);
+}
+
+.rangeControl output {
+  color: var(--accent-deep);
+  font-size: 11px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.values {
+  display: block;
+  margin-top: 14px;
+  padding: 10px;
+  border: 1px solid rgba(48, 66, 55, 0.16);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.42);
+  color: var(--accent-deep);
+  font-size: 10px;
+  line-height: 1.55;
+  white-space: normal;
+  word-break: break-word;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.actions button {
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 11px;
+  border: 1px solid rgba(48, 66, 55, 0.24);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.52);
+  color: var(--text);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.actions button:hover,
+.actions button:focus-visible,
+.iconButton:hover,
+.iconButton:focus-visible {
+  border-color: var(--accent-strong);
+  outline: 2px solid rgba(169, 142, 93, 0.3);
+  outline-offset: 2px;
+}
+
+.actions .copyButton {
+  border-color: rgba(77, 103, 84, 0.7);
+  background: var(--accent-strong);
+  color: #fff;
+}
+
+@media (max-width: 760px) {
+  .panel {
+    width: auto;
+    max-height: calc(100dvh - 24px);
+    position: fixed;
+    top: auto;
+    right: 12px;
+    bottom: 12px;
+    left: 12px;
+  }
+}

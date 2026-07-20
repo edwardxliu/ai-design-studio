@@ -210,6 +210,33 @@
   background: rgba(255, 255, 255, 0.28) !important;
 }
 
+.main :global(button[class*="secondaryButton"]),
+.main :global(a[class*="secondaryButton"]),
+.main :global(label[class*="uploadButton"]),
+.main :global(label[class*="inlineUpload"]) {
+  border-color: rgba(77, 103, 84, 0.52) !important;
+  background: rgba(129, 150, 113, 0.3) !important;
+  color: var(--accent-deep) !important;
+}
+
+.main :global(button[class*="secondaryButton"]:hover:not(:disabled)),
+.main :global(a[class*="secondaryButton"]:hover),
+.main :global(label[class*="uploadButton"]:hover),
+.main :global(label[class*="inlineUpload"]:hover) {
+  border-color: rgba(53, 74, 60, 0.72) !important;
+  background: rgba(129, 150, 113, 0.44) !important;
+  color: #26382d !important;
+}
+
+.main :global(label[class*="uploadButton"]:has(input:disabled)),
+.main :global(label[class*="inlineUpload"]:has(input:disabled)),
+.main :global(button[class*="secondaryButton"]:disabled) {
+  border-color: rgba(68, 81, 73, 0.28) !important;
+  background: rgba(255, 255, 255, 0.14) !important;
+  color: var(--muted) !important;
+  opacity: 0.72 !important;
+}
+
 .main :global(button[class*="generateButton"]),
 .main :global(button[class*="primaryButton"]) {
   border-color: var(--accent-border) !important;

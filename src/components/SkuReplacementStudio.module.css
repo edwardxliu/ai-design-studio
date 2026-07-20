@@ -40,7 +40,7 @@
 
 .controls {
   display: grid;
-  grid-template-columns: minmax(150px, 1fr) minmax(180px, 1fr) minmax(180px, auto);
+  grid-template-columns: minmax(180px, 1fr) minmax(180px, auto);
   gap: 12px;
   align-items: end;
 }

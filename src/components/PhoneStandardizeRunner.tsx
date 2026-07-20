@@ -42,7 +42,7 @@ export function PhoneStandardizeRunner() {
   const task = getCompetitionTaskSpec(TASK_ID);
   const [products, setProducts] = useState<ProductWithProfile[]>([]);
   const [productsLoaded, setProductsLoaded] = useState(false);
-  const [productId, setProductId] = useState("");
+
   const [imageModel, setImageModel] = useState<ImageModelChoice>(DEFAULT_IMAGE_MODEL_CHOICE);
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState("");
@@ -58,9 +58,6 @@ export function PhoneStandardizeRunner() {
         }
         setProducts(payload.products);
         setProductsLoaded(true);
-        if (payload.products[0]) {
-          setProductId((current) => current || payload.products[0].id);
-        }
       })
       .catch(() => setProductsLoaded(true));
 
@@ -69,7 +66,7 @@ export function PhoneStandardizeRunner() {
     };
   }, []);
 
-  const selectedProduct = products.find((product) => product.id === productId);
+  const selectedProduct = products[0];
   const sourceAsset = useMemo(
     () => selectedProduct ? findLatestPhoneShot(selectedProduct) : undefined,
     [selectedProduct]
@@ -227,24 +224,6 @@ export function PhoneStandardizeRunner() {
           <span>{task.summary}</span>
         </div>
         <div className={styles.controls}>
-          <label className={styles.field}>
-            目标产品
-            <select
-              disabled={run.state === "running" || uploading}
-              onChange={(event) => {
-                setProductId(event.target.value);
-                setRun(initialRunState);
-                setMessage("");
-              }}
-              value={productId}
-            >
-              {products.map((product) => (
-                <option key={product.id} value={product.id}>
-                  {product.displayName ?? product.id}
-                </option>
-              ))}
-            </select>
-          </label>
           <ImageModelSelector
             className={styles.field}
             disabled={run.state === "running"}

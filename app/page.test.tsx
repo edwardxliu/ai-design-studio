@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import HomePage from "./page";
 
@@ -56,5 +56,29 @@ describe("HomePage", () => {
     fireEvent.click(screen.getByRole("button", { name: "恢复默认底图" }));
     expect(revokeObjectURL).toHaveBeenCalledWith("blob:custom-home-background");
     expect(screen.queryByRole("button", { name: "恢复默认底图" })).not.toBeInTheDocument();
+  });
+  it("tunes and persists homepage glass parameters", async () => {
+    const { unmount } = render(<HomePage />);
+
+    fireEvent.click(screen.getByRole("button", { name: "\u73bb\u7483\u53c2\u6570" }));
+    fireEvent.change(screen.getByLabelText("\u4e3b\u7a97\u900f\u660e\u5ea6"), {
+      target: { value: "0.32" }
+    });
+
+    expect(screen.getByRole("main").style.getPropertyValue("--home-frame-opacity")).toBe("0.32");
+    expect(screen.getByText(/frameOpacity=0\.32/)).toBeInTheDocument();
+
+    await waitFor(() => {
+      const stored = JSON.parse(
+        window.localStorage.getItem("midea-home-glass-tuner") ?? "{}"
+      ) as { frameOpacity?: number };
+      expect(stored.frameOpacity).toBe(0.32);
+    });
+
+    unmount();
+    render(<HomePage />);
+    await waitFor(() => {
+      expect(screen.getByRole("main").style.getPropertyValue("--home-frame-opacity")).toBe("0.32");
+    });
   });
 });

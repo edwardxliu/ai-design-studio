@@ -1,5 +1,13 @@
 .stage {
   --home-background: url("/home/studio-background-neutral.webp");
+  --home-frame-rgb: 240, 245, 247;
+  --home-surface-rgb: 255, 255, 255;
+  --home-frame-opacity: 0.18;
+  --home-surface-opacity: 0.18;
+  --home-control-opacity: 0.24;
+  --home-glass-blur: 24px;
+  --home-glass-saturation: 128%;
+  --home-overlay-opacity: 0.14;
   min-height: 100dvh;
   display: grid;
   place-items: center;
@@ -26,7 +34,7 @@
   position: absolute;
   inset: 0;
   z-index: -1;
-  background: rgba(10, 24, 34, 0.14);
+  background: rgba(10, 24, 34, var(--home-overlay-opacity));
   pointer-events: none;
 }
 
@@ -39,10 +47,10 @@
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.72);
   border-radius: 8px;
-  background: rgba(240, 245, 247, 0.18);
+  background: rgba(var(--home-frame-rgb), var(--home-frame-opacity));
   box-shadow: 0 28px 80px rgba(11, 31, 43, 0.24);
-  backdrop-filter: blur(24px) saturate(128%);
-  -webkit-backdrop-filter: blur(24px) saturate(128%);
+  backdrop-filter: blur(var(--home-glass-blur)) saturate(var(--home-glass-saturation));
+  -webkit-backdrop-filter: blur(var(--home-glass-blur)) saturate(var(--home-glass-saturation));
 }
 
 .sidebar {
@@ -101,14 +109,14 @@
 .navLink:hover,
 .navLink:focus-visible {
   border-color: rgba(255, 255, 255, 0.6);
-  background: rgba(255, 255, 255, 0.24);
+  background: rgba(var(--home-surface-rgb), var(--home-control-opacity));
   color: var(--accent-deep);
   outline: none;
 }
 
 .navLinkActive {
   border-color: rgba(255, 255, 255, 0.72);
-  background: rgba(255, 255, 255, 0.34);
+  background: rgba(var(--home-surface-rgb), calc(var(--home-control-opacity) + 0.1));
   color: var(--accent-deep);
   box-shadow: inset 0 0 0 1px rgba(77, 103, 84, 0.08);
 }
@@ -197,9 +205,9 @@
   padding: 4px;
   border: 1px solid rgba(255, 255, 255, 0.68);
   border-radius: 6px;
-  background: rgba(255, 255, 255, 0.18);
-  backdrop-filter: blur(14px) saturate(118%);
-  -webkit-backdrop-filter: blur(14px) saturate(118%);
+  background: rgba(var(--home-surface-rgb), var(--home-surface-opacity));
+  backdrop-filter: blur(var(--home-glass-blur)) saturate(var(--home-glass-saturation));
+  -webkit-backdrop-filter: blur(var(--home-glass-blur)) saturate(var(--home-glass-saturation));
 }
 
 .backgroundPreset {
@@ -209,7 +217,7 @@
   flex: 0 0 auto;
   border: 1px solid rgba(255, 255, 255, 0.76);
   border-radius: 4px;
-  background-color: rgba(255, 255, 255, 0.18);
+  background-color: rgba(var(--home-surface-rgb), var(--home-surface-opacity));
   background-image: var(--preset-background);
   background-position: center;
   background-size: cover;
@@ -250,11 +258,11 @@
   gap: 8px;
   border: 1px solid rgba(255, 255, 255, 0.82);
   border-radius: 6px;
-  background: rgba(255, 255, 255, 0.24);
+  background: rgba(var(--home-surface-rgb), var(--home-control-opacity));
   color: var(--text);
   cursor: pointer;
   box-shadow: 0 8px 24px rgba(17, 46, 62, 0.08);
-  backdrop-filter: blur(14px);
+  backdrop-filter: blur(var(--home-glass-blur));
 }
 
 .secondaryButton {
@@ -273,7 +281,7 @@
 .iconButton:hover,
 .iconButton:focus-visible {
   border-color: rgba(77, 103, 84, 0.62);
-  background: rgba(255, 255, 255, 0.78);
+  background: rgba(var(--home-surface-rgb), calc(var(--home-control-opacity) + 0.18));
   color: var(--accent-strong);
   outline: 2px solid rgba(169, 142, 93, 0.3);
   outline-offset: 2px;
@@ -374,7 +382,7 @@
   margin-bottom: 24px;
   border: 1px solid rgba(255, 255, 255, 0.3);
   border-radius: 6px;
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(var(--home-surface-rgb), var(--home-surface-opacity));
   color: #c9d7c0;
 }
 
@@ -427,7 +435,7 @@
   min-height: 0;
   position: relative;
   overflow: hidden;
-  background: rgba(255, 255, 255, 0.14);
+  background: rgba(var(--home-surface-rgb), var(--home-surface-opacity));
 }
 
 .sceneFeature img {
@@ -449,9 +457,9 @@
   padding: 11px 13px;
   border: 1px solid rgba(255, 255, 255, 0.7);
   border-radius: 6px;
-  background: rgba(247, 250, 251, 0.38);
+  background: rgba(var(--home-frame-rgb), calc(var(--home-surface-opacity) + 0.2));
   color: var(--text);
-  backdrop-filter: blur(16px);
+  backdrop-filter: blur(var(--home-glass-blur));
 }
 
 .sceneOverlay svg {
@@ -486,9 +494,9 @@
   align-items: center;
   gap: 12px;
   padding: 14px 16px;
-  background: rgba(255, 255, 255, 0.18);
+  background: rgba(var(--home-surface-rgb), var(--home-surface-opacity));
   color: var(--text);
-  backdrop-filter: blur(12px);
+  backdrop-filter: blur(var(--home-glass-blur));
 }
 
 .deliveryFeature > svg:first-child {
@@ -509,9 +517,9 @@
   gap: 12px;
   position: relative;
   padding: 18px;
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(var(--home-surface-rgb), var(--home-surface-opacity));
   color: var(--text);
-  backdrop-filter: blur(12px);
+  backdrop-filter: blur(var(--home-glass-blur));
 }
 
 .quickTool > svg:not(.quickArrow) {
