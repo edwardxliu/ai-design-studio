@@ -218,7 +218,7 @@ export function createFetchImageApiClient(apiKey: string, baseUrl?: string): Ima
             Authorization: `Bearer ${apiKey}`,
             "Content-Type": multipart.contentType
           },
-          body: multipart.body
+          body: multipart.body as unknown as BodyInit
         }, dispatcher);
         return parseResponse(response);
       }
@@ -319,10 +319,70 @@ export async function fetchOpenAi(
   init: RequestInit,
   dispatcher: ProxyAgent | undefined
 ): Promise<Response> {
-  if (!dispatcher) {
-    return fetch(url, init);
+  try {
+    if (!dispatcher) {
+      return await fetch(url, init);
+    }
+
+    const undiciInit = { ...init, dispatcher } as unknown as Parameters<typeof undiciFetch>[1];
+    return (await undiciFetch(url, undiciInit)) as unknown as Response;
+  } catch (error) {
+    const connectionMode = dispatcher ? "configured HTTP proxy" : "direct connection";
+    throw new Error(
+      `Network request to ${getRequestHost(url)} failed via ${connectionMode}: ${describeNetworkError(error)}`,
+      { cause: error }
+    );
+  }
+}
+
+export function describeNetworkError(error: unknown): string {
+  const messages: string[] = [];
+  const visited = new Set<unknown>();
+  let current: unknown = error;
+
+  while (current && !visited.has(current)) {
+    visited.add(current);
+    const detail = current as {
+      message?: unknown;
+      code?: unknown;
+      errno?: unknown;
+      syscall?: unknown;
+      address?: unknown;
+      port?: unknown;
+      cause?: unknown;
+    };
+
+    if (typeof detail.message === "string" && detail.message.trim()) {
+      messages.push(detail.message.trim());
+    }
+
+    const connectionDetails = [
+      ["code", detail.code],
+      ["errno", detail.errno],
+      ["syscall", detail.syscall],
+      ["address", detail.address],
+      ["port", detail.port]
+    ]
+      .filter((entry): entry is [string, string | number] =>
+        typeof entry[1] === "string" || typeof entry[1] === "number"
+      )
+      .map(([key, value]) => `${key}=${value}`)
+      .join(", ");
+
+    if (connectionDetails) {
+      messages.push(connectionDetails);
+    }
+
+    current = detail.cause;
   }
 
-  const undiciInit = { ...init, dispatcher } as unknown as Parameters<typeof undiciFetch>[1];
-  return (await undiciFetch(url, undiciInit)) as unknown as Response;
+  return [...new Set(messages)].join("; ") || String(error);
+}
+
+function getRequestHost(url: string): string {
+  try {
+    return new URL(url).host;
+  } catch {
+    return url;
+  }
 }

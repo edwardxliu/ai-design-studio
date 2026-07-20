@@ -1,58 +1,83 @@
-import type { ReactNode } from "react";
+"use client";
 
-const navItems = [
-  { href: "/", label: "工作台" },
-  { href: "/assets", label: "素材库" },
-  { href: "/products", label: "产品档案" },
-  { href: "/white-background", label: "白底多角度" },
-  { href: "/phone-standardize", label: "手机图标准化" },
-  { href: "/sku-variants", label: "SKU 替换" },
-  { href: "/style-transfer", label: "风格迁移" },
-  { href: "/icon-design", label: "Icon Design" },
-  { href: "/motion", label: "视频方向" },
-  { href: "/product-video", label: "产品视频" },
-  { href: "/pop", label: "POP 设计" },
-  { href: "/pdp", label: "PDP 构建" },
-  { href: "/localize", label: "本地化" },
-  { href: "/costs", label: "资源消耗" }
+import type { CSSProperties, ComponentType, ReactNode } from "react";
+import {
+  Box,
+  Boxes,
+  CircleDollarSign,
+  Film,
+  House,
+  Languages,
+  LayoutTemplate,
+  PackageSearch,
+  PanelTop,
+  ScanLine,
+  Sparkles,
+  SwatchBook,
+  WandSparkles
+} from "lucide-react";
+import styles from "./AppShell.module.css";
+import { useStudioBackground } from "./useStudioBackground";
+
+type NavigationItem = {
+  href: string;
+  label: string;
+  icon: ComponentType<{ size?: number; strokeWidth?: number }>;
+};
+
+const navItems: NavigationItem[] = [
+  { href: "/", label: "工作台", icon: House },
+  { href: "/assets", label: "素材库", icon: Boxes },
+  { href: "/products", label: "产品档案", icon: PackageSearch },
+  { href: "/white-background", label: "白底多角度", icon: Box },
+  { href: "/phone-standardize", label: "手机图标准化", icon: ScanLine },
+  { href: "/sku-variants", label: "SKU 替换", icon: WandSparkles },
+  { href: "/style-transfer", label: "风格迁移", icon: SwatchBook },
+  { href: "/icon-design", label: "Icon Design", icon: Sparkles },
+  { href: "/product-video", label: "产品视频", icon: Film },
+  { href: "/pop", label: "POP 设计", icon: PanelTop },
+  { href: "/pdp", label: "PDP 构建", icon: LayoutTemplate },
+  { href: "/localize", label: "本地化", icon: Languages },
+  { href: "/costs", label: "资源消耗", icon: CircleDollarSign }
 ];
 
 export function AppShell({ children }: { children: ReactNode }) {
+  const { backgroundUrl } = useStudioBackground();
+  const stageStyle = {
+    "--studio-background": 'url("' + backgroundUrl + '")'
+  } as CSSProperties;
+
   return (
-    <div className="app-shell-layout">
-      <aside className="app-shell-sidebar">
-        <div className="app-shell-brand">
-          <div style={{ color: "#057ca2", fontSize: 12, fontWeight: 800 }}>
-            Midea Overseas
+    <main className={styles.stage} style={stageStyle}>
+      <div aria-hidden="true" className={styles.background} />
+
+      <section aria-label="Midea AI Content Studio 功能工作区" className={styles.workbench}>
+        <aside className={styles.sidebar}>
+          <div className={styles.brand}>
+            <span>Midea Overseas</span>
+            <strong>AI Content Studio</strong>
           </div>
-          <h1 style={{ margin: "6px 0 0", fontSize: 22, lineHeight: 1.15 }}>
-            AI Content Studio
-          </h1>
-        </div>
-        <nav aria-label="平台导航" className="app-shell-nav">
-          {navItems.map((item) => (
-            <a
-              href={item.href}
-              key={item.href}
-              style={{
-                border: "1px solid #d9e0e7",
-                borderRadius: 8,
-                color: "#17202a",
-                display: "block",
-                fontWeight: 700,
-                padding: "10px 12px",
-                textDecoration: "none"
-              }}
-            >
-              {item.label}
-            </a>
-          ))}
-        </nav>
-        <p className="app-shell-path">
-          素材库 → 产品档案 → 生成与模板 → 本地化 → 资源台账
-        </p>
-      </aside>
-      <main className="app-shell-main">{children}</main>
-    </div>
+
+          <nav aria-label="平台导航" className={styles.navigation}>
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              return (
+                <a className={styles.navLink} href={item.href} key={item.href}>
+                  <Icon size={17} strokeWidth={1.8} />
+                  <span>{item.label}</span>
+                </a>
+              );
+            })}
+          </nav>
+
+          <div className={styles.sidebarFooter}>
+            <span className={styles.onlineDot} />
+            在线生成模式
+          </div>
+        </aside>
+
+        <section className={styles.main}>{children}</section>
+      </section>
+    </main>
   );
 }

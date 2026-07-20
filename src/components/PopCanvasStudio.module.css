@@ -1,5 +1,7 @@
 .studio {
-  background: #ffffff;
+  background: var(--studio-glass-surface, #ffffff);
+  backdrop-filter: blur(14px) saturate(116%);
+  -webkit-backdrop-filter: blur(14px) saturate(116%);
   border-bottom: 1px solid #d8dee5;
   border-top: 1px solid #d8dee5;
   margin-top: 18px;
@@ -47,7 +49,7 @@
 
 .toolbar {
   align-items: end;
-  background: #f5f7f9;
+  background: var(--studio-glass-layer, #f5f7f9);
   border-bottom: 1px solid #d8dee5;
   border-top: 1px solid #d8dee5;
   display: grid;
@@ -68,7 +70,7 @@
 .field input,
 .field select,
 .field textarea {
-  background: #ffffff;
+  background: var(--studio-glass-control, #ffffff);
   border: 1px solid #aeb8c3;
   border-radius: 4px;
   color: #111827;
@@ -96,7 +98,7 @@
 
 .productType {
   align-items: center;
-  background: #ffffff;
+  background: var(--studio-glass-control, #ffffff);
   border: 1px solid #aeb8c3;
   border-radius: 4px;
   color: #182230;
@@ -158,7 +160,7 @@
 
 .zoomControls button {
   align-items: center;
-  background: #ffffff;
+  background: var(--studio-glass-control, #ffffff);
   border: 1px solid #aeb8c3;
   border-radius: 4px;
   color: #30404f;
@@ -189,15 +191,16 @@
 }
 
 .canvasViewport {
-  background: #eef1f4;
+  background: var(--studio-glass-preview, rgba(238, 241, 244, 0.2));
   border: 1px solid #cbd3dc;
   max-width: 100%;
   overflow: auto;
 }
 
 .canvas {
-  background: #f5f7f9;
+  background: var(--studio-glass-preview, rgba(245, 247, 249, 0.2));
   cursor: pointer;
+  opacity: 0.88;
   display: block;
   flex: 0 0 auto;
   height: auto;
@@ -291,7 +294,7 @@
 
 .iconButton {
   align-items: center;
-  background: #ffffff;
+  background: var(--studio-glass-control, #ffffff);
   border: 1px solid #0089b2;
   border-radius: 4px;
   color: #00799e;
@@ -304,7 +307,7 @@
 }
 
 .iconButton:hover {
-  background: #e9f6fa;
+  background: var(--studio-glass-info, rgba(233, 246, 250, 0.46));
 }
 
 .actions {
@@ -350,7 +353,7 @@
 }
 
 .error {
-  background: #fdecec;
+  background: var(--studio-glass-error, rgba(253, 236, 236, 0.52));
   border-left: 3px solid #bd3434;
   color: #8f1f1f;
   font-size: 13px;
@@ -376,7 +379,7 @@
 }
 
 .resultMode {
-  background: #e7f5ef;
+  background: var(--studio-glass-success, rgba(231, 245, 239, 0.5));
   border: 1px solid #b9dfcf;
   border-radius: 4px;
   color: #117a59;
@@ -406,13 +409,14 @@
 
 .flatPreview svg,
 .scenePreview img {
-  background: #f5f7f9;
+  background: var(--studio-glass-preview, rgba(245, 247, 249, 0.2));
   border: 1px solid #cbd3dc;
   display: block;
   height: auto;
   max-height: 540px;
   max-width: 100%;
   object-fit: contain;
+  opacity: 0.88;
   width: 100%;
 }
 

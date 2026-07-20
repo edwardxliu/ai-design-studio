@@ -10,7 +10,7 @@ export function MetricCard({
   return (
     <article
       style={{
-        background: "#ffffff",
+        background: "var(--studio-glass-card, #ffffff)",
         border: "1px solid #d9e0e7",
         borderRadius: 8,
         padding: 18

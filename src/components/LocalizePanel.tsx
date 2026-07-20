@@ -237,7 +237,7 @@ export function LocalizePanel() {
               <label
                 key={output.url}
                 style={{
-                  background: "#ffffff",
+                  background: "var(--studio-glass-card, #ffffff)",
                   border: checked ? "2px solid #057ca2" : "1px solid #e5e8ec",
                   borderRadius: 8,
                   cursor: "pointer",
@@ -256,7 +256,7 @@ export function LocalizePanel() {
                 <img
                   alt={output.filename}
                   src={output.url}
-                  style={{ background: "#f6f7f9", height: 110, objectFit: "contain", width: "100%" }}
+                  style={{ background: "var(--studio-glass-preview, #f6f7f9)", height: 110, objectFit: "contain", width: "100%" }}
                 />
                 <span style={{ color: "#5f6c7b", fontSize: 11, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                   {output.taskId}
@@ -304,7 +304,7 @@ export function LocalizePanel() {
 }
 
 const panelStyle = {
-  background: "#ffffff",
+  background: "var(--studio-glass-card, #ffffff)",
   border: "1px solid #d9e0e7",
   borderRadius: 8,
   padding: 16
@@ -323,7 +323,7 @@ const primaryButtonStyle = {
 } as const;
 
 const secondaryButtonStyle = {
-  background: "#ffffff",
+  background: "var(--studio-glass-card, #ffffff)",
   border: "1px solid #aeb8c3",
   borderRadius: 8,
   color: "#26313d",

@@ -1,0 +1,337 @@
+.stage {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  padding: 20px;
+  background: #d9dee1;
+}
+
+.background {
+  position: absolute;
+  inset: -12px;
+  z-index: -2;
+  background-image: var(
+    --studio-background,
+    url("/home/studio-background-neutral.webp")
+  );
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+.stage::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: rgba(10, 24, 34, 0.14);
+  pointer-events: none;
+}
+
+.workbench {
+  --background: transparent;
+  --surface: rgba(247, 250, 251, 0.28);
+  --surface-subtle: rgba(238, 242, 246, 0.18);
+  --line: rgba(255, 255, 255, 0.58);
+  --studio-glass-surface: rgba(247, 250, 251, 0.28);
+  --studio-glass-card: rgba(255, 255, 255, 0.18);
+  --studio-glass-layer: rgba(246, 249, 250, 0.22);
+  --studio-glass-control: rgba(255, 255, 255, 0.18);
+  --studio-glass-preview: rgba(240, 244, 246, 0.06);
+  --studio-glass-subtle: rgba(241, 245, 247, 0.12);
+  --studio-glass-dark: rgba(5, 8, 10, 0.42);
+  --studio-glass-error: rgba(253, 236, 236, 0.34);
+  --studio-glass-success: rgba(232, 247, 241, 0.32);
+  --studio-glass-info: rgba(230, 248, 252, 0.28);
+  width: min(1720px, calc(100vw - 40px));
+  height: auto;
+  max-width: 1720px;
+  display: grid;
+  grid-template-columns: 246px minmax(0, 1fr);
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.76);
+  border-radius: 8px;
+  background: rgba(240, 245, 247, 0.12);
+  box-shadow: 0 30px 90px rgba(11, 31, 43, 0.26);
+  backdrop-filter: blur(26px) saturate(128%);
+  -webkit-backdrop-filter: blur(26px) saturate(128%);
+}
+
+.sidebar {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 28px 20px 20px;
+  border-right: 1px solid rgba(255, 255, 255, 0.5);
+  background: transparent;
+  color: #132531;
+}
+
+.brand {
+  display: grid;
+  gap: 5px;
+  margin: 0 10px 26px;
+}
+
+.brand span {
+  color: #007eae;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.brand strong {
+  font-size: 21px;
+  line-height: 1.2;
+}
+
+.navigation {
+  min-height: 0;
+  display: grid;
+  gap: 3px;
+  overflow-y: auto;
+  padding-right: 4px;
+  scrollbar-color: rgba(19, 37, 49, 0.2) transparent;
+  scrollbar-width: thin;
+}
+
+.navLink {
+  min-height: 38px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: rgba(19, 37, 49, 0.78);
+  font-size: 13px;
+  font-weight: 600;
+  transition: background 150ms ease, border-color 150ms ease, color 150ms ease;
+}
+
+.navLink:hover,
+.navLink:focus-visible {
+  border-color: rgba(255, 255, 255, 0.72);
+  background: rgba(255, 255, 255, 0.28);
+  color: #0b2738;
+  outline: none;
+}
+
+.sidebarFooter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 18px 10px 0;
+  color: rgba(19, 37, 49, 0.68);
+  font-size: 11px;
+}
+
+.onlineDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #67d8a7;
+  box-shadow: 0 0 0 4px rgba(103, 216, 167, 0.14);
+}
+
+.main {
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  padding: 28px 32px 36px;
+  color: #132531;
+  scrollbar-color: rgba(0, 40, 76, 0.28) transparent;
+  scrollbar-width: thin;
+}
+
+.main > h1,
+.main > header h1 {
+  color: #132531;
+}
+
+.main :global(input:not([type="range"]):not([type="checkbox"]):not([type="radio"]):not([type="file"])),
+.main :global(select),
+.main :global(textarea) {
+  border-color: rgba(255, 255, 255, 0.62) !important;
+  background: var(--studio-glass-control) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.48),
+    0 8px 22px rgba(16, 42, 56, 0.05);
+  backdrop-filter: blur(18px) saturate(124%);
+  -webkit-backdrop-filter: blur(18px) saturate(124%);
+}
+
+.main :global(button),
+.main :global(a[class*="Button"]),
+.main :global(label[class*="Button"]) {
+  border-color: rgba(255, 255, 255, 0.64) !important;
+  background: rgba(255, 255, 255, 0.16) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.42),
+    0 8px 22px rgba(16, 42, 56, 0.06);
+  backdrop-filter: blur(18px) saturate(126%);
+  -webkit-backdrop-filter: blur(18px) saturate(126%);
+}
+
+.main :global(button:hover:not(:disabled)),
+.main :global(a[class*="Button"]:hover),
+.main :global(label[class*="Button"]:hover) {
+  background: rgba(255, 255, 255, 0.28) !important;
+}
+
+.main :global(button[class*="generateButton"]),
+.main :global(button[class*="primaryButton"]) {
+  border-color: rgba(0, 126, 174, 0.62) !important;
+  background: rgba(0, 126, 174, 0.46) !important;
+  color: #ffffff;
+}
+
+.main :global(button[class*="generateButton"]:hover:not(:disabled)),
+.main :global(button[class*="primaryButton"]:hover:not(:disabled)) {
+  background: rgba(0, 111, 145, 0.58) !important;
+}
+
+.main :global(button[aria-pressed="true"]),
+.main :global(button[class*="Active"]) {
+  border-color: rgba(0, 126, 174, 0.58) !important;
+  background: rgba(0, 146, 216, 0.24) !important;
+}
+
+.main :global(canvas) {
+  background: rgba(255, 255, 255, 0.04) !important;
+  opacity: 0.68 !important;
+  backdrop-filter: blur(10px) saturate(112%);
+  -webkit-backdrop-filter: blur(10px) saturate(112%);
+}
+
+@supports (appearance: base-select) {
+  .main :global(select),
+  .main :global(select::picker(select)) {
+    appearance: base-select;
+  }
+
+  .main :global(select::picker(select)) {
+    border: 1px solid rgba(255, 255, 255, 0.66);
+    border-radius: 6px;
+    background: rgba(224, 231, 234, 0.34);
+    box-shadow: 0 18px 42px rgba(13, 37, 50, 0.2);
+    backdrop-filter: blur(24px) saturate(132%);
+    -webkit-backdrop-filter: blur(24px) saturate(132%);
+  }
+
+  .main :global(select option) {
+    border-radius: 4px;
+    background: transparent;
+    padding: 8px 11px;
+  }
+
+  .main :global(select option:hover),
+  .main :global(select option:focus-visible) {
+    background: rgba(255, 255, 255, 0.28);
+  }
+
+  .main :global(select option:checked) {
+    background: rgba(0, 126, 174, 0.28);
+    color: #0b3144;
+  }
+}
+
+.main :global(.hero-panel),
+.main :global(.workflow-panel),
+.main :global(.metric-card) {
+  border-color: rgba(255, 255, 255, 0.68);
+  background: var(--studio-glass-surface);
+  box-shadow: 0 14px 38px rgba(22, 46, 58, 0.08);
+  backdrop-filter: blur(14px) saturate(118%);
+  -webkit-backdrop-filter: blur(14px) saturate(118%);
+}
+
+@media (min-width: 901px) and (min-aspect-ratio: 16 / 9) {
+  .workbench {
+    width: auto;
+    height: min(968px, calc(100dvh - 40px));
+  }
+}
+
+@media (max-width: 1180px) and (min-width: 901px) {
+  .workbench {
+    grid-template-columns: 218px minmax(0, 1fr);
+  }
+
+  .sidebar {
+    padding-inline: 15px;
+  }
+
+  .main {
+    padding: 24px;
+  }
+}
+
+@media (max-width: 900px) {
+  .stage {
+    display: block;
+    padding: 0;
+  }
+
+  .background {
+    inset: 0;
+  }
+
+  .workbench {
+    width: 100vw;
+    height: 100dvh;
+    max-width: none;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+    aspect-ratio: auto;
+    border: 0;
+    border-radius: 0;
+  }
+
+  .sidebar {
+    display: block;
+    padding: 14px 14px 10px;
+    border-right: 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.5);
+  }
+
+  .brand {
+    margin: 0 4px 11px;
+  }
+
+  .brand strong {
+    font-size: 17px;
+  }
+
+  .navigation {
+    display: flex;
+    gap: 5px;
+    overflow-x: auto;
+    padding: 0 0 4px;
+  }
+
+  .navLink {
+    flex: 0 0 auto;
+    min-height: 35px;
+    padding: 7px 9px;
+    font-size: 11px;
+  }
+
+  .sidebarFooter {
+    display: none;
+  }
+
+  .main {
+    padding: 22px 16px 28px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .navLink {
+    transition: none;
+  }
+}

@@ -11,7 +11,9 @@
 .results {
   border: 1px solid #d9e0e7;
   border-radius: 8px;
-  background: #ffffff;
+  background: var(--studio-glass-surface, #ffffff);
+  backdrop-filter: blur(14px) saturate(116%);
+  -webkit-backdrop-filter: blur(14px) saturate(116%);
 }
 
 .controlBand {
@@ -53,7 +55,7 @@
   height: 42px;
   border: 1px solid #aeb8c3;
   border-radius: 6px;
-  background: #ffffff;
+  background: var(--studio-glass-control, #ffffff);
   color: #17202a;
   padding: 0 10px;
 }
@@ -130,7 +132,7 @@
   overflow: hidden;
   border: 1px solid #cbd4dd;
   border-radius: 8px;
-  background: #f8fafb;
+  background: var(--studio-glass-layer, #f8fafb);
 }
 
 .previewStage {
@@ -140,10 +142,11 @@
   min-height: 380px;
   overflow: hidden;
   border-right: 1px solid #e1e6eb;
-  background: #eef1f4;
+  background: var(--studio-glass-preview, rgba(238, 241, 244, 0.2));
 }
 
 .previewStage img {
+  opacity: 0.88;
   display: block;
   width: 100%;
   height: 100%;
@@ -168,7 +171,7 @@
   align-content: start;
   gap: 14px;
   padding: 20px;
-  background: #ffffff;
+  background: var(--studio-glass-card, #ffffff);
 }
 
 .sourceInfo > div:not(.sourceActions) {
@@ -226,7 +229,7 @@
 
 .deleteButton {
   border: 1px solid #cfd7df;
-  background: #ffffff;
+  background: var(--studio-glass-control, #ffffff);
   color: #922c2c;
   padding: 0 13px;
 }
@@ -257,7 +260,7 @@
   height: 8px;
   overflow: hidden;
   border-radius: 4px;
-  background: #e5e8ec;
+  background: var(--studio-glass-subtle, rgba(229, 232, 236, 0.28));
 }
 
 .progressTrack div {
@@ -268,7 +271,7 @@
 
 .error {
   padding: 14px 18px;
-  background: #fdecec;
+  background: var(--studio-glass-error, rgba(253, 236, 236, 0.52));
   color: #8f1f1f;
 }
 
@@ -288,7 +291,7 @@
   overflow: hidden;
   border: 1px solid #d9e0e7;
   border-radius: 8px;
-  background: #ffffff;
+  background: var(--studio-glass-card, #ffffff);
 }
 
 .outputPreview {
@@ -297,10 +300,11 @@
   width: 100%;
   aspect-ratio: 1 / 1;
   overflow: hidden;
-  background: #f3f5f6;
+  background: var(--studio-glass-preview, #f3f5f6);
 }
 
 .outputPreview img {
+  opacity: 0.88;
   display: block;
   width: 100%;
   height: 100%;

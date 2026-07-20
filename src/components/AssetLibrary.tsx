@@ -296,7 +296,7 @@ export function AssetLibrary() {
                       <img
                         alt={asset.filename}
                         src={asset.url}
-                        style={{ background: "#f7f8fa", height: 44, objectFit: "contain", width: 44 }}
+                        style={{ background: "var(--studio-glass-preview, #f7f8fa)", height: 44, objectFit: "contain", width: 44 }}
                       />
                     ) : (
                       <span style={{ fontSize: 22 }}>📄</span>
@@ -327,7 +327,7 @@ export function AssetLibrary() {
 }
 
 const panelStyle = {
-  background: "#ffffff",
+  background: "var(--studio-glass-card, #ffffff)",
   border: "1px solid #d9e0e7",
   borderRadius: 8,
   padding: 16
@@ -346,7 +346,7 @@ const primaryButtonStyle = {
 } as const;
 
 const dangerButtonStyle = {
-  background: "#ffffff",
+  background: "var(--studio-glass-card, #ffffff)",
   border: "1px solid #e0b4b4",
   borderRadius: 8,
   color: "#8f1f1f",

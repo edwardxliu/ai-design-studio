@@ -10,7 +10,9 @@
 .emptyState {
   border: 1px solid #d9e0e7;
   border-radius: 8px;
-  background: #ffffff;
+  background: var(--studio-glass-surface, #ffffff);
+  backdrop-filter: blur(14px) saturate(116%);
+  -webkit-backdrop-filter: blur(14px) saturate(116%);
 }
 
 .controlBand {
@@ -52,7 +54,7 @@
   height: 42px;
   border: 1px solid #aeb8c3;
   border-radius: 6px;
-  background: #ffffff;
+  background: var(--studio-glass-control, #ffffff);
   color: #17202a;
   padding: 0 10px;
 }
@@ -134,7 +136,7 @@
   overflow: hidden;
   border: 1px solid #cbd4dd;
   border-radius: 8px;
-  background: #f8fafb;
+  background: var(--studio-glass-layer, #f8fafb);
 }
 
 .slotHeader,
@@ -145,7 +147,7 @@
 
 .slotHeader {
   border-bottom: 1px solid #e1e6eb;
-  background: #ffffff;
+  background: var(--studio-glass-card, #ffffff);
 }
 
 .slotHeader > div {
@@ -168,7 +170,7 @@
   height: 34px;
   flex: 0 0 34px;
   border: 1px solid #d5dce3;
-  background: #ffffff;
+  background: var(--studio-glass-control, #ffffff);
   color: #9b2c2c;
 }
 
@@ -178,10 +180,11 @@
   width: 100%;
   aspect-ratio: 16 / 10;
   overflow: hidden;
-  background: #eef1f4;
+  background: var(--studio-glass-preview, rgba(238, 241, 244, 0.2));
 }
 
 .previewStage img {
+  opacity: 0.88;
   width: 100%;
   height: 100%;
   display: block;
@@ -198,7 +201,7 @@
 
 .slotFooter {
   border-top: 1px solid #e1e6eb;
-  background: #ffffff;
+  background: var(--studio-glass-card, #ffffff);
 }
 
 .slotFooter > span {
@@ -214,7 +217,7 @@
   gap: 7px;
   min-height: 34px;
   border: 1px solid #057ca2;
-  background: #ffffff;
+  background: var(--studio-glass-control, #ffffff);
   color: #057ca2;
   font-size: 13px;
   font-weight: 800;
@@ -254,7 +257,7 @@
   height: 8px;
   overflow: hidden;
   border-radius: 4px;
-  background: #e5e8ec;
+  background: var(--studio-glass-subtle, rgba(229, 232, 236, 0.28));
 }
 
 .progressTrack div {
@@ -265,7 +268,7 @@
 
 .error {
   padding: 14px 18px;
-  background: #fdecec;
+  background: var(--studio-glass-error, rgba(253, 236, 236, 0.52));
   color: #8f1f1f;
 }
 
@@ -297,7 +300,7 @@
   overflow: hidden;
   border: 1px solid #d9e0e7;
   border-radius: 8px;
-  background: #ffffff;
+  background: var(--studio-glass-card, #ffffff);
 }
 
 .outputPreview {
@@ -306,10 +309,11 @@
   width: 100%;
   aspect-ratio: 1 / 1;
   overflow: hidden;
-  background: #f3f5f6;
+  background: var(--studio-glass-preview, rgba(243, 245, 246, 0.2));
 }
 
 .outputPreview img {
+  opacity: 0.88;
   width: 100%;
   height: 100%;
   display: block;

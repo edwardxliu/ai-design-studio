@@ -20,7 +20,6 @@ describe("AppShell", () => {
       "SKU 替换",
       "风格迁移",
       "Icon Design",
-      "视频方向",
       "产品视频",
       "POP 设计",
       "PDP 构建",

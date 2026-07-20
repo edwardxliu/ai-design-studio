@@ -1,7 +1,9 @@
 .studio {
   border: 1px solid #d9e0e7;
   border-radius: 8px;
-  background: #ffffff;
+  background: var(--studio-glass-surface, #ffffff);
+  backdrop-filter: blur(14px) saturate(116%);
+  -webkit-backdrop-filter: blur(14px) saturate(116%);
   overflow: hidden;
 }
 
@@ -12,7 +14,7 @@
   align-items: end;
   padding: 16px;
   border-bottom: 1px solid #e5e9ed;
-  background: #f7f9fa;
+  background: var(--studio-glass-layer, #f7f9fa);
 }
 
 .field,
@@ -30,7 +32,7 @@
   height: 42px;
   border: 1px solid #aeb8c3;
   border-radius: 6px;
-  background: #ffffff;
+  background: var(--studio-glass-control, #ffffff);
   color: #17202a;
   padding: 0 10px;
 }
@@ -40,7 +42,7 @@
   align-items: center;
   min-height: 42px;
   border-left: 4px solid #057ca2;
-  background: #ffffff;
+  background: var(--studio-glass-control, #ffffff);
   color: #17202a;
   padding: 0 12px;
 }
@@ -79,13 +81,16 @@
   overflow: hidden;
   border: 1px solid #242a31;
   border-radius: 6px;
-  background: #050607;
+  background: var(--studio-glass-dark, rgba(5, 8, 10, 0.58));
+  backdrop-filter: blur(10px) saturate(108%);
+  -webkit-backdrop-filter: blur(10px) saturate(108%);
 }
 
 .referenceImage {
   width: 100%;
   height: 100%;
   object-fit: contain;
+  opacity: 0.88;
 }
 
 .emptyLink {
@@ -128,7 +133,7 @@
   resize: vertical;
   border: 1px solid #aeb8c3;
   border-radius: 6px;
-  background: #fbfcfd;
+  background: var(--studio-glass-control, #fbfcfd);
   color: #1c2630;
   font: inherit;
   font-weight: 400;
@@ -144,7 +149,7 @@
   min-height: 72px;
   padding: 14px 18px;
   border-top: 1px solid #e5e9ed;
-  background: #f7f9fa;
+  background: var(--studio-glass-layer, #f7f9fa);
 }
 
 .generateButton {
@@ -193,8 +198,10 @@
   gap: 12px;
   padding: 18px;
   border-top: 1px solid #d9e0e7;
-  background: #111418;
+  background: var(--studio-glass-dark, rgba(5, 8, 10, 0.58));
   color: #ffffff;
+  backdrop-filter: blur(12px) saturate(108%);
+  -webkit-backdrop-filter: blur(12px) saturate(108%);
 }
 
 .resultHeader {
@@ -211,7 +218,8 @@
   width: 100%;
   max-height: 72vh;
   aspect-ratio: 16 / 9;
-  background: #000000;
+  background: rgba(0, 0, 0, 0.48);
+  opacity: 0.9;
 }
 
 .result a {

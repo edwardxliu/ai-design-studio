@@ -137,10 +137,10 @@ export function normalizeArkApiRoot(value: string | undefined): string {
 
 export function toDoubaoSize(size: NonNullable<ImageProviderInput["size"]>): string {
   if (size === "1536x1024") {
-    return "2304x1536";
+    return "2400x1600";
   }
   if (size === "1024x1536") {
-    return "1536x2304";
+    return "1600x2400";
   }
   return "2048x2048";
 }

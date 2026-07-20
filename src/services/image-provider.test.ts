@@ -3,7 +3,7 @@ import { createServer } from "node:http";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createFetchImageApiClient, createImageProvider } from "./image-provider";
+import { createFetchImageApiClient, createImageProvider, fetchOpenAi } from "./image-provider";
 import { createLocalAssetStore } from "./local-asset-store";
 
 const tempRoots: string[] = [];
@@ -160,6 +160,26 @@ describe("createImageProvider", () => {
 
       expect(fetchMock.mock.calls[0][0]).toBe(
         "https://api.openai.com/v1/images/generations"
+      );
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+  it("reports nested network and proxy connection details", async () => {
+    const connectionError = Object.assign(new Error("connect ECONNREFUSED 127.0.0.1:10808"), {
+      code: "ECONNREFUSED",
+      syscall: "connect",
+      address: "127.0.0.1",
+      port: 10808
+    });
+    const fetchError = Object.assign(new TypeError("fetch failed"), { cause: connectionError });
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(fetchError));
+
+    try {
+      await expect(
+        fetchOpenAi("https://api.openai.com/v1/images/generations", {}, undefined)
+      ).rejects.toThrow(
+        /api\.openai\.com.*direct connection.*ECONNREFUSED.*127\.0\.0\.1.*10808/
       );
     } finally {
       vi.unstubAllGlobals();

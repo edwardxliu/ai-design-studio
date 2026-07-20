@@ -118,7 +118,7 @@ export function ProductProfilePanel() {
   const product = products.find((item) => item.id === productId);
 
   return (
-    <section style={{ background: "#ffffff", border: "1px solid #d9e0e7", borderRadius: 8, padding: 18 }}>
+    <section style={{ background: "var(--studio-glass-card, #ffffff)", border: "1px solid #d9e0e7", borderRadius: 8, padding: 18 }}>
       <div style={{ alignItems: "end", display: "grid", gap: 12, gridTemplateColumns: "minmax(240px, 320px) 1fr auto auto", marginBottom: 14 }}>
         <label style={{ display: "grid", gap: 6 }}>
           产品
@@ -217,12 +217,12 @@ const primaryButtonStyle = {
 
 const secondaryButtonStyle = {
   ...primaryButtonStyle,
-  background: "#ffffff",
+  background: "var(--studio-glass-card, #ffffff)",
   color: "#057ca2"
 } as const;
 
 const dangerButtonStyle = {
-  background: "#ffffff",
+  background: "var(--studio-glass-card, #ffffff)",
   border: "1px solid #e0b4b4",
   borderRadius: 8,
   color: "#8f1f1f",

@@ -1,26 +1,60 @@
-import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { fireEvent, render, screen, within } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import HomePage from "./page";
 
+afterEach(() => {
+  window.localStorage.clear();
+  vi.restoreAllMocks();
+});
+
 describe("HomePage", () => {
-  it("presents the platform pipeline in workflow order", () => {
+  it("keeps the main creation workflows directly accessible", () => {
     render(<HomePage />);
 
-    expect(screen.getByRole("link", { name: /素材库/ })).toHaveAttribute("href", "/assets");
-    expect(screen.getByRole("link", { name: /^02 · 产品档案/ })).toHaveAttribute("href", "/products");
-    expect(screen.getByRole("link", { name: /图像生成/ })).toHaveAttribute("href", "/white-background");
-    expect(screen.getByRole("link", { name: /Icon Design/ })).toHaveAttribute("href", "/icon-design");
-    expect(screen.getByRole("link", { name: /产品视频/ })).toHaveAttribute("href", "/product-video");
-    expect(screen.getByRole("link", { name: /POP 设计/ })).toHaveAttribute("href", "/pop");
-    expect(screen.getByRole("link", { name: /PDP 构建/ })).toHaveAttribute("href", "/pdp");
-    expect(screen.getByRole("link", { name: /本地化/ })).toHaveAttribute("href", "/localize");
-    expect(screen.getByRole("link", { name: /资源消耗/ })).toHaveAttribute("href", "/costs");
-    expect(document.body.textContent).not.toMatch(/任务[一二三]/);
+    expect(screen.getAllByRole("link", { name: /素材库/ })[0]).toHaveAttribute("href", "/assets");
+    expect(screen.getAllByRole("link", { name: /产品档案/ })[0]).toHaveAttribute("href", "/products");
+    expect(screen.getAllByRole("link", { name: /白底多角度/ })[0]).toHaveAttribute(
+      "href",
+      "/white-background"
+    );
+    expect(screen.getAllByRole("link", { name: /POP 设计/ })[0]).toHaveAttribute("href", "/pop");
+    expect(screen.getAllByRole("link", { name: /PDP 构建/ })[0]).toHaveAttribute("href", "/pdp");
+    expect(screen.getAllByRole("link", { name: /本地化/ })[0]).toHaveAttribute("href", "/localize");
   });
 
-  it("states the category-agnostic principle", () => {
+  it("offers three built-in backgrounds and remembers the selected preset", () => {
     render(<HomePage />);
 
-    expect(screen.getByText(/不限品类/)).toBeInTheDocument();
+    const presetGroup = screen.getByRole("group", { name: "\u9ed8\u8ba4\u5e95\u56fe" });
+    const presetButtons = within(presetGroup).getAllByRole("button");
+    expect(presetButtons).toHaveLength(3);
+    expect(presetButtons[0]).toHaveAttribute("aria-pressed", "true");
+
+    fireEvent.click(presetButtons[2]);
+
+    expect(presetButtons[2]).toHaveAttribute("aria-pressed", "true");
+    expect(window.localStorage.getItem("midea-studio-background")).toBe(
+      "/home/studio-background-blue.webp"
+    );
+  });
+
+  it("lets the user replace and restore the background image", () => {
+    const createObjectURL = vi.fn().mockReturnValue("blob:custom-home-background");
+    const revokeObjectURL = vi.fn();
+    Object.defineProperty(URL, "createObjectURL", { configurable: true, value: createObjectURL });
+    Object.defineProperty(URL, "revokeObjectURL", { configurable: true, value: revokeObjectURL });
+    render(<HomePage />);
+
+    const file = new File(["image"], "workspace.jpg", { type: "image/jpeg" });
+    fireEvent.change(screen.getByLabelText("选择首页背景图片"), {
+      target: { files: [file] }
+    });
+
+    expect(createObjectURL).toHaveBeenCalledWith(file);
+    expect(screen.getByRole("button", { name: "恢复默认底图" })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "恢复默认底图" }));
+    expect(revokeObjectURL).toHaveBeenCalledWith("blob:custom-home-background");
+    expect(screen.queryByRole("button", { name: "恢复默认底图" })).not.toBeInTheDocument();
   });
 });
