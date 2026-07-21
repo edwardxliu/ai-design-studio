@@ -17,7 +17,7 @@
 
 .controlBand {
   display: grid;
-  grid-template-columns: minmax(320px, 1fr) minmax(560px, 1.25fr);
+  grid-template-columns: minmax(250px, 0.82fr) minmax(0, 1.18fr);
   gap: 20px;
   align-items: end;
   padding: 18px;
@@ -37,7 +37,7 @@
 
 .controls {
   display: grid;
-  grid-template-columns: minmax(150px, 1fr) minmax(180px, 1fr) minmax(200px, auto);
+  grid-template-columns: minmax(112px, 0.9fr) minmax(132px, 1fr) minmax(0, 176px);
   gap: 12px;
   align-items: end;
 }
@@ -76,7 +76,9 @@
   background: var(--accent-strong);
   color: #ffffff;
   font-weight: 800;
-  padding: 0 14px;
+  width: 100%;
+  max-width: 100%;
+  padding: 0 10px;
   white-space: nowrap;
 }
 

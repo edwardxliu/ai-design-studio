@@ -58,11 +58,6 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       <section aria-label="Midea AI Content Studio 功能工作区" className={styles.workbench}>
         <aside className={styles.sidebar}>
-          <div aria-hidden="true" className={styles.sidebarLights}>
-            <span />
-            <span />
-          </div>
-
           <div className={styles.brand}>
             <span>Midea Overseas</span>
             <strong>AI Content Studio</strong>

@@ -286,3 +286,29 @@ h2 {
     padding: 18px;
   }
 }
+
+/* Keep every native select indicator centered inside its control. */
+select {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  box-sizing: border-box !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1.5 1.5 6 6l4.5-4.5' fill='none' stroke='%23354a3c' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") !important;
+  background-position-x: calc(100% - 11px) !important;
+  background-position-y: 50% !important;
+  background-repeat: no-repeat !important;
+  background-size: 12px 8px !important;
+  padding-right: 34px !important;
+  line-height: normal !important;
+}
+/* A restrained top highlight gives standalone controls the same glass depth as workspace buttons. */
+button,
+a[class*="Button"],
+label[class*="Button"] {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.88),
+    inset 0 9px 16px -15px rgba(255, 255, 255, 0.96),
+    inset 16px 0 28px -24px rgba(114, 188, 255, 0.68),
+    inset -16px 0 28px -24px rgba(255, 215, 183, 0.62),
+    inset 0 -2px 3px rgba(33, 54, 45, 0.15),
+    0 5px 12px rgba(18, 43, 54, 0.11) !important;
+}

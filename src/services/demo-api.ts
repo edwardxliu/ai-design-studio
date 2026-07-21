@@ -417,6 +417,8 @@ export type LocalizeImageInput = {
   country: string;
   language: string;
   size?: "1024x1024" | "1536x1024" | "1024x1536";
+  sourceWidth?: number;
+  sourceHeight?: number;
   imageModel?: ImageModelChoice;
   imageStore?: LocalAssetStore;
   costLedger?: CostLedger;
@@ -437,6 +439,9 @@ export async function localizeGeneratedImage(
     `Take the provided marketing image and replace ALL visible text with ${input.language}`,
     `translations appropriate for the ${input.country} market.`,
     "Keep the product appearance, layout, composition, colors, logo, and branding exactly the same.",
+    input.sourceWidth && input.sourceHeight
+      ? `Preserve the original ${input.sourceWidth}x${input.sourceHeight} canvas ratio and keep every text block and key object inside the safe area.`
+      : "Preserve the original canvas ratio and safe area.",
     "Only the text language changes; do not add or remove any graphic elements."
   ].join(" ");
 

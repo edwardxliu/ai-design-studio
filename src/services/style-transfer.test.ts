@@ -12,7 +12,11 @@ describe("style transfer references", () => {
         preset.references.map((reference) => `style-reference:${reference.id}`)
       );
       expect(references.every((reference) => reference.bytes.length > 0)).toBe(true);
-      expect(references.every((reference) => reference.contentType === "image/jpeg")).toBe(true);
+      expect(references.map((reference) => reference.contentType)).toEqual(
+        preset.references.map((reference) =>
+          reference.url.endsWith(".png") ? "image/png" : "image/jpeg"
+        )
+      );
     }
   });
 });

@@ -4,8 +4,7 @@ export const STYLE_TRANSFER_STYLE_IDS = [
   "premium-universal",
   "nordic-editorial",
   "nordic-home",
-  "japanese-dark",
-  "japanese-light"
+  "japanese-aesthetic"
 ] as const;
 
 export type StyleTransferStyleId = (typeof STYLE_TRANSFER_STYLE_IDS)[number];
@@ -54,7 +53,7 @@ export type StyleTransferVariantId = (typeof STYLE_TRANSFER_VARIANTS)[number]["i
 export const STYLE_TRANSFER_PRESETS: StyleTransferPreset[] = [
   {
     id: "latin-american",
-    label: "拉美温暖极简",
+    label: "拉美热带美学",
     sourceLabel: "拉美风格 PPT",
     summary: "热带现代主义、洞石、深胡桃木与低饱和暖色自然光。",
     keywords:
@@ -77,9 +76,9 @@ export const STYLE_TRANSFER_PRESETS: StyleTransferPreset[] = [
   },
   {
     id: "lab",
-    label: "建筑实验室",
+    label: "银色旗舰",
     sourceLabel: "Lab 风格 PPT",
-    summary: "纯白巨型空间、石墨灰体块、黑色金属与实验室般秩序。",
+    summary: "银灰旗舰空间、精准建筑线条、金属质感与克制的高端秩序。",
     keywords:
       "极简、高端、建筑感、现代、白色空间、纯白、浅灰、石墨灰、黑色金属、安静、理性、纯净、实验室与真实家居结合",
     matchTerms: [
@@ -96,11 +95,18 @@ export const STYLE_TRANSFER_PRESETS: StyleTransferPreset[] = [
       "A high-end minimal architectural appliance environment inside a vast luminous white space rather than a conventional room. Restrict the palette to pure white, light grey, graphite grey, black metal and only tiny warm natural-wood accents. Use sparse glassware or white ceramics, laboratory-level order and precision, large-area white diffused light, no direct sun and no yellow cast. Create realistic commercial architectural photography with a low-distortion 50mm perspective, deep focus, controlled stone, glass and metal reflections, large negative space and an atmosphere that combines an appliance design laboratory, gallery and believable home.",
     peoplePrompt:
       "When a person is included, use clean black, grey, white or beige clothing. The adult subject is quiet, focused and naturally interacting with the product, never posing or looking at the camera.",
-    references: makeReferences("lab", 3, "建筑实验室风格参考")
+    references: [
+      {
+        id: "lab-ref-1",
+        url: "/style-references/lab/ref-1.png",
+        alt: "银色旗舰风格参考 1"
+      },
+      ...makeReferences("lab", 3, "银色旗舰风格参考").slice(1)
+    ]
   },
   {
     id: "premium-universal",
-    label: "高端通用",
+    label: "国际化现代高端",
     sourceLabel: "高端通用风格 PPT",
     summary: "电影感建筑空间、午后侧逆光、木色暖棕与金属银。",
     keywords:
@@ -123,7 +129,7 @@ export const STYLE_TRANSFER_PRESETS: StyleTransferPreset[] = [
   },
   {
     id: "nordic-editorial",
-    label: "北欧时尚编辑",
+    label: "时尚杂志式家电",
     sourceLabel: "北欧风格 PPT",
     summary: "轻盈、柔和、诗意的时尚杂志式家电视觉。",
     keywords:
@@ -146,11 +152,11 @@ export const STYLE_TRANSFER_PRESETS: StyleTransferPreset[] = [
   },
   {
     id: "nordic-home",
-    label: "北欧丹麦住宅",
+    label: "北欧Hygge风格",
     sourceLabel: "北欧风格 PPT",
-    summary: "浅橡木、暖白、冬季漫反射与通透丹麦住宅。",
+    summary: "浅橡木、奶油暖白、冬季自然光与舒适松弛的 Hygge 氛围。",
     keywords:
-      "现代丹麦住宅、空间宽敞通透、建筑线条简洁、倾斜屋顶、暖色自然光、冬季雪景、暖白、奶油白、浅灰、浅橡木、室内设计杂志摄影",
+      "北欧Hygge风格、现代丹麦住宅、空间宽敞通透、建筑线条简洁、暖色自然光、冬季雪景、暖白、奶油白、浅灰、浅橡木、舒适松弛、室内设计杂志摄影",
     matchTerms: [
       "丹麦",
       "北欧住宅",
@@ -165,53 +171,32 @@ export const STYLE_TRANSFER_PRESETS: StyleTransferPreset[] = [
       "A spacious modern Danish residence with clean architectural lines, comfortable proportions and a pitched or triangular roof. Use small amounts of pale natural oak, warm-white matte surfaces, cream white and light grey with restrained black-metal accents. Winter daylight enters through large windows and snow creates soft even bounce light, while limited warm interior lighting keeps the atmosphere comfortable. Render realistic high-end residential architecture photography with genuine scale, spatial depth and magazine restraint; no showroom stiffness, clutter, HDR, obvious CG, exaggerated volumetric light or generic cheap Scandinavian decor.",
     peoplePrompt:
       "When a person is included, show a natural European adult in an off-white knit, light-grey sweater, linen shirt or another simple low-saturation outfit, interacting with the product in a candid close or medium-close moment without looking at the camera.",
-    references: makeReferences("nordic-home", 2, "北欧丹麦住宅风格参考")
+    references: makeReferences("nordic-home", 3, "北欧Hygge风格参考", "png")
   },
   {
-    id: "japanese-dark",
-    label: "日式暗场展厅",
+    id: "japanese-aesthetic",
+    label: "日式美学风格",
     sourceLabel: "日式风格 PPT",
-    summary: "纯黑无边空间、暖白障子墙与仪式感舞台构图。",
+    summary: "暖木、障子、榻榻米、庭院留白与安静克制的日式空间美学。",
     keywords:
-      "极简、克制、未来感、展厅化、高级品牌、艺术装置、建筑几何、日式、国际化、黑、白、暖木、灰、深色石材、仪式感",
+      "日式美学、极简、克制、禅意、暖木、障子、榻榻米、庭院、自然光、留白、侘寂、柔和米白、低饱和、安静、高级品牌空间",
     matchTerms: [
-      "日式暗",
-      "暗场",
-      "纯黑",
+      "日式",
+      "日式美学",
+      "禅意",
+      "暖木",
       "障子",
-      "仪式感",
-      "艺术装置",
-      "japanese dark",
-      "showroom"
+      "榻榻米",
+      "庭院",
+      "侘寂",
+      "japanese",
+      "wabi sabi"
     ],
     stylePrompt:
-      "A minimal restrained futuristic Japanese showroom or art-installation space, not an ordinary home kitchen. Inside a pure black infinite room, three large warm-white luminous wall planes evoke simple Japanese shoji sliding doors and form a clean ceremonial stage. Use strong architectural geometry, central depth, dark reflective stone flooring, black, white, warm wood, grey and dark stone. Keep props almost absent, lines ordered and negative space generous. The product is a clearly lit modern design object with realistic metal, glass, lacquer or stone material response.",
+      "A refined contemporary Japanese aesthetic interior with quiet architectural restraint. Use warm natural timber, shoji-inspired translucent screens, tatami or dark wood planes, pale plaster, soft beige stone and carefully framed courtyard greenery. Compose the space with disciplined geometry, generous negative space, low furniture and one sculptural warm light where appropriate. Natural daylight or restrained amber evening light should reveal genuine wood grain, paper, stone and metal textures. The atmosphere is meditative, intimate, international and premium, balancing traditional Japanese spatial principles with contemporary appliance design. Avoid themed decoration, clutter, excessive darkness, generic showroom styling or visual noise.",
     peoplePrompt:
-      "When a person is included, use an elegant Asian adult in simple fashion-forward black, beige or restrained red clothing. The gesture is natural and minimal; the person establishes scale without competing with the product.",
-    references: makeReferences("japanese-dark", 3, "日式暗场展厅风格参考")
-  },
-  {
-    id: "japanese-light",
-    label: "日式明亮展厅",
-    sourceLabel: "日式风格 PPT",
-    summary: "明亮无边空间、日式推拉木门、对称秩序与留白。",
-    keywords:
-      "极简、克制、未来感、展厅化、高级品牌、艺术装置、建筑几何、日式、明亮、白、黑、暖木、灰、深色石材、对称、留白",
-    matchTerms: [
-      "日式明",
-      "明亮日式",
-      "推拉木门",
-      "对称",
-      "留白",
-      "明亮展厅",
-      "japanese light",
-      "bright showroom"
-    ],
-    stylePrompt:
-      "A bright infinite Japanese-inspired showroom or art-installation space with strong architectural geometry and stage-like order. Three large wall planes evoke minimal Japanese sliding timber doors, creating a pure, quiet ceremonial environment. Use a frontal symmetric or near-symmetric composition, strong central depth, abundant white space, pale warm wood, white, black, grey and dark stone. The scene is bright but controlled, realistic and international, with almost no props. Present the product clearly as a modern design object integrated beside or into a restrained island or cabinet system.",
-    peoplePrompt:
-      "When a person is included, show an elegant Japanese or Asian adult wearing a simple Muji-like or Yohji-inspired black, beige or restrained red outfit, naturally leaning or interacting without looking at the camera.",
-    references: makeReferences("japanese-light", 4, "日式明亮展厅风格参考")
+      "When a person is included, show one elegant Asian adult in simple black, beige, cream or muted natural clothing. Keep the gesture quiet and candid, use the person only for scale, and never let the person compete with or obscure the product.",
+    references: makeReferences("japanese-aesthetic", 4, "日式美学风格参考", "png")
   }
 ];
 
@@ -288,11 +273,12 @@ export function buildStyleTransferPrompt(input: {
 function makeReferences(
   styleId: StyleTransferStyleId,
   count: number,
-  alt: string
+  alt: string,
+  extension: "jpg" | "png" = "jpg"
 ): StyleTransferReference[] {
   return Array.from({ length: count }, (_, index) => ({
     id: `${styleId}-ref-${index + 1}`,
-    url: `/style-references/${styleId}/ref-${index + 1}.jpg`,
+    url: `/style-references/${styleId}/ref-${index + 1}.${extension}`,
     alt: `${alt} ${index + 1}`
   }));
 }

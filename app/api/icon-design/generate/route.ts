@@ -12,28 +12,27 @@ import { createDemoAssetStore, generateDemoImage } from "@/src/services/demo-api
 import { createDefaultSystemSettingsStore } from "@/src/services/system-settings";
 
 const SUPPORTED_IMAGE_TYPES = new Set(["image/png", "image/jpeg", "image/webp"]);
+const BRAND_REFERENCE_TYPES = new Set<AssetType>([
+  "brand-guide",
+  "icon-vi-color",
+  "icon-vi-style"
+]);
+const MAX_BRAND_REFERENCES = 4;
 
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
   const variantId = body?.variantId;
-  const viColorAssetId = String(body?.viColorAssetId ?? "").trim();
-  const viStyleAssetId = String(body?.viStyleAssetId ?? "").trim();
   const sourceIconAssetId = String(body?.sourceIconAssetId ?? "").trim();
   const featureTitle = String(body?.featureTitle ?? "").trim();
-  const promptTemplate =
-    String(body?.promptTemplate ?? "").trim() || DEFAULT_ICON_VI_PROMPT_TEMPLATE;
   const imageModel = parseImageModelChoice(body?.imageModel);
 
   if (!isIconDesignVariantId(variantId)) {
     return NextResponse.json({ error: "Icon Design 输出规格不正确。" }, { status: 400 });
   }
-  if (!viColorAssetId || !viStyleAssetId || !sourceIconAssetId) {
-    return NextResponse.json(
-      { error: "品牌色彩 VI、Icon 设计 VI 和源 Icon 三张参考图缺一不可。" },
-      { status: 400 }
-    );
+  if (!sourceIconAssetId) {
+    return NextResponse.json({ error: "请上传待规范化 Icon。" }, { status: 400 });
   }
   if (!featureTitle) {
     return NextResponse.json({ error: "请填写卖点标题。" }, { status: 400 });
@@ -41,38 +40,41 @@ export async function POST(request: Request) {
 
   const imageStore = createDemoAssetStore();
   const assets = await imageStore.readAssetManifest();
-  const references = [
-    findTypedAsset(assets, viColorAssetId, "icon-vi-color"),
-    findTypedAsset(assets, viStyleAssetId, "icon-vi-style"),
-    findTypedAsset(assets, sourceIconAssetId, "icon-source")
-  ];
-  if (references.some((asset) => !asset)) {
+  const sourceIcon = assets.find(
+    (asset) => asset.id === sourceIconAssetId && asset.type === "icon-source"
+  );
+  if (!sourceIcon) {
     return NextResponse.json(
-      { error: "参考素材不存在、类型不正确或已被删除。" },
+      { error: "待规范化 Icon 不存在、类型不正确或已被删除。" },
       { status: 400 }
     );
   }
 
-  for (const asset of references as Asset[]) {
-    const file = await imageStore.readAssetBytes(asset.id);
-    if (!file || !SUPPORTED_IMAGE_TYPES.has(file.contentType)) {
-      return NextResponse.json(
-        { error: `${asset.filename} 不是受支持的 PNG、JPEG 或 WebP 图片。` },
-        { status: 400 }
-      );
-    }
+  const sourceFile = await imageStore.readAssetBytes(sourceIcon.id);
+  if (!sourceFile || !SUPPORTED_IMAGE_TYPES.has(sourceFile.contentType)) {
+    return NextResponse.json(
+      { error: `${sourceIcon.filename} 不是受支持的 PNG、JPEG 或 WebP 图片。` },
+      { status: 400 }
+    );
   }
+
+  const brandReferenceIds = await findBrandReferenceIds(assets, imageStore);
 
   try {
     const variant = getIconDesignVariant(variantId);
     const settings = await createDefaultSystemSettingsStore().read();
     const taskId = `icon-design-${variant.id}-${Date.now()}`;
-    const prompt = buildIconDesignPrompt({ template: promptTemplate, featureTitle, variantId });
+    const prompt = buildIconDesignPrompt({
+      template: DEFAULT_ICON_VI_PROMPT_TEMPLATE,
+      featureTitle,
+      variantId
+    });
+    const sourceAssetIds = [sourceIconAssetId, ...brandReferenceIds];
     const result = await generateDemoImage({
       taskId,
       taskLabel: `Icon Design / ${variant.label}`,
       prompt,
-      sourceAssetIds: [viColorAssetId, viStyleAssetId, sourceIconAssetId],
+      sourceAssetIds,
       country: settings.country,
       language: settings.language,
       imageModel,
@@ -103,6 +105,23 @@ export async function POST(request: Request) {
   }
 }
 
-function findTypedAsset(assets: Asset[], id: string, type: AssetType): Asset | undefined {
-  return assets.find((asset) => asset.id === id && asset.type === type);
+async function findBrandReferenceIds(
+  assets: Asset[],
+  imageStore: ReturnType<typeof createDemoAssetStore>
+): Promise<string[]> {
+  const ids: string[] = [];
+  for (const asset of [...assets].reverse()) {
+    if (!BRAND_REFERENCE_TYPES.has(asset.type)) {
+      continue;
+    }
+    const file = await imageStore.readAssetBytes(asset.id);
+    if (!file || !SUPPORTED_IMAGE_TYPES.has(file.contentType)) {
+      continue;
+    }
+    ids.push(asset.id);
+    if (ids.length === MAX_BRAND_REFERENCES) {
+      break;
+    }
+  }
+  return ids;
 }

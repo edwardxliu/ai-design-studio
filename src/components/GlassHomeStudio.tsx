@@ -158,12 +158,7 @@ export function GlassHomeStudio() {
       <div aria-hidden="true" className={styles.background} />
 
       <section aria-label="Midea AI Content Studio 工作台" className={styles.workbench}>
-        <aside className={styles.sidebar}>
-          <div aria-hidden="true" className={styles.sidebarLights}>
-            <span />
-            <span />
-          </div>
-          <div className={styles.brand}>
+        <aside className={styles.sidebar}>          <div className={styles.brand}>
             <span className={styles.brandOverline}>Midea Overseas</span>
             <strong>AI Content Studio</strong>
           </div>

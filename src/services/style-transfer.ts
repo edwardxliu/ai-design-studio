@@ -27,9 +27,20 @@ export async function loadStyleTransferReferences(
       return {
         sourceId: `style-reference:${reference.id}`,
         bytes: await readFile(filePath),
-        contentType: "image/jpeg",
+        contentType: getImageContentType(filePath),
         filename: path.basename(filePath)
       };
     })
   );
+}
+
+function getImageContentType(filePath: string): SourceImage["contentType"] {
+  switch (path.extname(filePath).toLowerCase()) {
+    case ".png":
+      return "image/png";
+    case ".webp":
+      return "image/webp";
+    default:
+      return "image/jpeg";
+  }
 }

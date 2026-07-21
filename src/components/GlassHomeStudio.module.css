@@ -893,3 +893,67 @@
     transition: none;
   }
 }
+
+/* Edge-only highlights replace all decorative light-flow animations. */
+@property --studio-edge-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+.sidebarLights {
+  display: none !important;
+}
+
+.featureBackdrop,
+.infoBackdrop {
+  animation: none !important;
+}
+
+.workbench {
+  position: relative;
+  isolation: isolate;
+}
+
+.workbench::before,
+.navLinkActive::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  border-radius: inherit;
+  padding: 1.5px;
+  background: conic-gradient(
+    from var(--studio-edge-angle),
+    transparent 0deg 274deg,
+    rgba(255, 255, 255, 0.16) 286deg,
+    rgba(218, 255, 242, 0.98) 312deg,
+    rgba(255, 255, 255, 0.48) 334deg,
+    transparent 350deg 360deg
+  );
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  filter: drop-shadow(0 0 5px rgba(218, 255, 242, 0.58));
+  animation: studio-edge-orbit 5.6s linear infinite;
+}
+
+.navLinkActive::after {
+  padding: 1px;
+  filter: drop-shadow(0 0 3px rgba(218, 255, 242, 0.72));
+  animation-duration: 3.8s;
+}
+
+@keyframes studio-edge-orbit {
+  to {
+    --studio-edge-angle: 360deg;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .workbench::before,
+  .navLinkActive::after {
+    animation: none;
+  }
+}

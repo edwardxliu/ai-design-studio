@@ -73,14 +73,15 @@ export const ICON_DESIGN_VARIANTS: IconDesignVariant[] = [
 ];
 
 export const DEFAULT_ICON_VI_PROMPT_TEMPLATE = [
-  "Use image 1 as the authoritative brand color guideline and image 2 as the authoritative product feature icon VI guideline. Use image 3 only as the semantic source symbol that must be redrawn; do not copy its original styling.",
-  "Create one premium appliance feature icon that strictly follows the supplied VI references.",
+  "Use image 1 only as the semantic source symbol that must be redrawn; do not copy its original styling.",
+  "Images 2 and later, when present, are authoritative brand guideline references loaded from the material library. Read their approved colors, line language, typography and spacing. If they conflict with the built-in rules below, the uploaded brand guideline takes precedence.",
+  "Create one premium appliance feature icon that follows the Midea VI system.",
   "Icon style: minimal geometric outline icon, uniform stroke, rounded line caps, rounded line joins, circular container, balanced composition, and premium industrial design character.",
   "Do not use gradients, shadows, perspective, photographic effects, decorative textures, extra symbols, or unapproved colors.",
-  "Brand colors: Midea Blue #0092D8, Midea Deep Blue #00284C, White #FFFFFF, Black #000000, and Mid Grey #808080. When the uploaded brand guideline differs, the uploaded guideline takes precedence.",
+  "Brand colors: Midea Blue #0092D8, Midea Deep Blue #00284C, White #FFFFFF, Black #000000, and Mid Grey #808080.",
   "Typography for layouts: Gotham Medium, or the closest metric-compatible sans serif only when Gotham Medium is unavailable.",
   "Feature title: {{FEATURE_TITLE}}.",
-  "Only the source symbol and feature title may change. Stroke weight, circular container, spacing, alignment, typography, and color application must remain consistent with the uploaded VI."
+  "Only the source symbol and feature title may change. Stroke weight, circular container, spacing, alignment, typography, and color application must remain consistent with the brand VI."
 ].join("\n");
 
 export function isIconDesignVariantId(value: unknown): value is IconDesignVariantId {
@@ -115,6 +116,6 @@ export function buildIconDesignPrompt(input: {
     resolvedTemplate,
     `OUTPUT VARIANT: ${variant.label}. ${variant.instruction}`,
     "Generate exactly one standalone finished artwork for this variant, not a contact sheet, comparison board, mockup, or collection of alternatives.",
-    "Preserve the semantic meaning and recognizable geometry of the source symbol from image 3 while fully replacing its visual style with the VI system. Keep all edges crisp and all text accurately spelled."
+    "Preserve the semantic meaning and recognizable geometry of the source symbol from image 1 while fully replacing its visual style with the VI system. Keep all edges crisp and all text accurately spelled."
   ].join("\n\n");
 }

@@ -46,7 +46,7 @@ describe("StyleTransferStudio", () => {
     const keywordInput = await screen.findByLabelText("场景 Keywords");
     await user.clear(keywordInput);
     await user.type(keywordInput, "石墨灰 黑色金属 建筑实验室");
-    expect(screen.getByText("当前匹配：建筑实验室")).toBeInTheDocument();
+    expect(screen.getByText("当前匹配：银色旗舰")).toBeInTheDocument();
 
     const selectors = screen.getAllByRole("combobox");
     await user.selectOptions(selectors[2], "doubao");
@@ -73,7 +73,7 @@ describe("StyleTransferStudio", () => {
     expect(within(results).getAllByRole("img", { name: /风格迁移输出/ })).toHaveLength(3);
   });
 
-  it("keeps the explicitly selected Japanese bright showroom active", async () => {
+  it("keeps the unified Japanese aesthetic preset active", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn(async () => new Response(JSON.stringify({ products: [demoProducts[0]] }), { status: 200 }))
@@ -81,14 +81,14 @@ describe("StyleTransferStudio", () => {
     const user = userEvent.setup();
     render(<StyleTransferStudio />);
 
-    const bright = await screen.findByRole("button", { name: /日式明亮展厅/ });
-    await user.click(bright);
+    const japanese = await screen.findByRole("button", { name: /日式美学风格/ });
+    await user.click(japanese);
 
-    expect(bright).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getByText("当前匹配：日式明亮展厅")).toBeInTheDocument();
-    const references = screen.getAllByRole("img", { name: /日式明亮/ });
-    expect(references.length).toBeGreaterThan(0);
-    expect(references.every((image) => image.getAttribute("src")?.includes("japanese-light"))).toBe(true);
+    expect(japanese).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByText("当前匹配：日式美学风格")).toBeInTheDocument();
+    const references = screen.getAllByRole("img", { name: /日式美学风格参考/ });
+    expect(references.length).toBeGreaterThanOrEqual(4);
+    expect(references.every((image) => image.getAttribute("src")?.includes("japanese-aesthetic"))).toBe(true);
   });
   it("routes an empty workspace to the asset library", async () => {
     vi.stubGlobal(

@@ -1,9 +1,20 @@
-import { join } from "node:path";
+import { writeFile } from "node:fs/promises";
+import { extname, join, resolve, sep } from "node:path";
 import { NextResponse } from "next/server";
 import { parseImageModelChoice } from "@/src/domain/generation-models";
 import { createDemoAssetStore, localizeGeneratedImage } from "@/src/services/demo-api";
 import { createDefaultCostLedger } from "@/src/services/cost-ledger";
+import {
+  chooseImageProviderSize,
+  readImageDimensions,
+  resizeImageToExactDimensions,
+  type PixelDimensions
+} from "@/src/services/image-dimensions";
+import { createProxyDispatcher, fetchOpenAi } from "@/src/services/image-provider";
+import type { LocalAssetStore } from "@/src/services/local-asset-store";
 import { readRuntimeFile } from "@/src/services/runtime-files";
+
+const GENERATED_ROOT = join(process.cwd(), "public", "generated");
 
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
@@ -14,8 +25,7 @@ export async function POST(request: Request) {
   }
 
   const segments = outputUrl.replace("/generated/", "").split("/");
-  const file = await readRuntimeFile(join(process.cwd(), "public", "generated"), segments);
-
+  const file = await readRuntimeFile(GENERATED_ROOT, segments);
   if (!file) {
     return NextResponse.json({ error: "所选图片不存在,可能已被清理。" }, { status: 400 });
   }
@@ -28,20 +38,52 @@ export async function POST(request: Request) {
     );
   }
 
-  const result = await localizeGeneratedImage({
-    taskId: `localize-${Date.now()}`,
-    sourceUrl: outputUrl,
-    imageBytes: suppliedImage?.bytes ?? file.bytes,
-    contentType: suppliedImage?.contentType ?? file.contentType,
-    country: String(body?.country ?? "Mexico"),
-    language: String(body?.language ?? "Spanish"),
-    size: parseSize(body?.size),
-    imageModel: parseImageModelChoice(body?.imageModel),
-    imageStore: createDemoAssetStore(),
-    costLedger: createDefaultCostLedger()
-  });
+  let dimensions: PixelDimensions;
+  try {
+    dimensions = await readImageDimensions(file.bytes);
+  } catch (error) {
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "无法读取原图尺寸。" },
+      { status: 400 }
+    );
+  }
 
-  return NextResponse.json(result);
+  const taskId = `localize-${Date.now()}`;
+  const imageStore = createDemoAssetStore();
+  try {
+    const result = await localizeGeneratedImage({
+      taskId,
+      sourceUrl: outputUrl,
+      imageBytes: suppliedImage?.bytes ?? file.bytes,
+      contentType: suppliedImage?.contentType ?? file.contentType,
+      country: String(body?.country ?? "Mexico"),
+      language: String(body?.language ?? "Spanish"),
+      size: chooseImageProviderSize(dimensions),
+      sourceWidth: dimensions.width,
+      sourceHeight: dimensions.height,
+      imageModel: parseImageModelChoice(body?.imageModel),
+      imageStore,
+      costLedger: createDefaultCostLedger()
+    });
+    const exactUrl = await conformOutputDimensions(
+      result.url,
+      dimensions,
+      taskId,
+      imageStore
+    );
+
+    return NextResponse.json({
+      ...result,
+      url: exactUrl,
+      width: dimensions.width,
+      height: dimensions.height
+    });
+  } catch (error) {
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "本地化图片生成失败。" },
+      { status: 502 }
+    );
+  }
 }
 
 function parseSuppliedImage(body: unknown): { bytes: Buffer; contentType: string } | undefined {
@@ -63,8 +105,66 @@ function parseSuppliedImage(body: unknown): { bytes: Buffer; contentType: string
   return { bytes, contentType };
 }
 
-function parseSize(value: unknown): "1024x1024" | "1536x1024" | "1024x1536" | undefined {
-  return value === "1024x1024" || value === "1536x1024" || value === "1024x1536"
-    ? value
-    : undefined;
+async function conformOutputDimensions(
+  outputUrl: string,
+  dimensions: PixelDimensions,
+  taskId: string,
+  imageStore: LocalAssetStore
+): Promise<string> {
+  const generatedBytes = await readGeneratedOutputBytes(outputUrl);
+  const resized = await resizeImageToExactDimensions(generatedBytes, dimensions);
+
+  if (outputUrl.startsWith("/generated/") && extname(outputUrl).toLowerCase() === ".png") {
+    const target = resolveGeneratedPath(outputUrl);
+    await writeFile(target, resized);
+    return outputUrl;
+  }
+
+  const saved = await imageStore.saveGeneratedImage({
+    taskId,
+    filename: "localized-original-size.png",
+    contentType: "image/png",
+    bytes: resized
+  });
+  return saved.url;
+}
+
+async function readGeneratedOutputBytes(outputUrl: string): Promise<Buffer> {
+  if (outputUrl.startsWith("/generated/")) {
+    const file = await readRuntimeFile(
+      GENERATED_ROOT,
+      outputUrl.replace("/generated/", "").split("/")
+    );
+    if (!file) {
+      throw new Error("无法读取本地化模型输出。" );
+    }
+    return file.bytes;
+  }
+
+  const dataMatch = outputUrl.match(/^data:image\/[a-z0-9.+-]+;base64,(.+)$/i);
+  if (dataMatch) {
+    return Buffer.from(dataMatch[1], "base64");
+  }
+
+  if (!/^https?:\/\//i.test(outputUrl)) {
+    throw new Error("本地化模型返回了不支持的图片地址。" );
+  }
+  const response = await fetchOpenAi(
+    outputUrl,
+    { method: "GET" },
+    createProxyDispatcher(process.env.ARK_PROXY_URL ?? process.env.OPENAI_PROXY_URL)
+  );
+  if (!response.ok) {
+    throw new Error(`本地化结果下载失败：HTTP ${response.status}`);
+  }
+  return Buffer.from(await response.arrayBuffer());
+}
+
+function resolveGeneratedPath(outputUrl: string): string {
+  const root = resolve(GENERATED_ROOT);
+  const target = resolve(root, ...outputUrl.replace("/generated/", "").split("/"));
+  if (target !== root && !target.startsWith(root + sep)) {
+    throw new Error("本地化输出路径不安全。" );
+  }
+  return target;
 }
