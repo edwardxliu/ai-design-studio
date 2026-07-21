@@ -6,13 +6,45 @@ import {
   type PdpCanvasLayout
 } from "./pdp-canvas-layout";
 
-const MIDEA_BLUE = "#005eb8";
-
 export type RenderPdpSvgOptions = {
   imageDataUris?: Record<string, string>;
   specification?: Array<[string, string]>;
   layout?: PdpCanvasLayout;
+  brandImageDataUri?: string;
 };
+
+export function buildVerticalPdpExportLayout(source: PdpCanvasLayout): PdpCanvasLayout {
+  const width = 920;
+  const padding = 44;
+  const gap = 24;
+  const contentWidth = width - padding * 2;
+  let y = 44;
+  const kindOrder: Record<PdpCanvasBlock["kind"], number> = {
+    brand: 0,
+    kv: 1,
+    "selling-point": 2,
+    features: 3,
+    specification: 4
+  };
+  const blocks = source.blocks
+    .slice()
+    .sort(
+      (left, right) =>
+        kindOrder[left.kind] - kindOrder[right.kind] ||
+        (left.priority ?? 0) - (right.priority ?? 0) ||
+        left.y - right.y ||
+        left.x - right.x
+    )
+    .map((block) => {
+      const scale = contentWidth / Math.max(1, block.width);
+      const height = Math.max(120, Math.round(block.height * scale));
+      const next = { ...block, x: padding, y, width: contentWidth, height };
+      y += height + gap;
+      return next;
+    });
+
+  return { width, height: y + 42, blocks };
+}
 
 export function renderPdpSvg(
   document: PdpDocument,
@@ -21,7 +53,7 @@ export function renderPdpSvg(
 ): string {
   const imageDataUris = options.imageDataUris ?? {};
   const specification = options.specification ?? [];
-  const layout =
+  const sourceLayout =
     options.layout ??
     buildDefaultPdpCanvasLayout(
       document.sections.map((section) => ({
@@ -30,20 +62,12 @@ export function renderPdpSvg(
         enabled: true
       }))
     );
+  const layout = buildVerticalPdpExportLayout(sourceLayout);
   const sectionById = new Map(
     document.sections.map((section) => [section.sellingPointId, section])
   );
 
-  const headers = uniqueColumnHeaders(layout.blocks)
-    .map(
-      (block) => `  <text x="${block.x}" y="${Math.max(18, block.y - 24)}" font-family="Arial, sans-serif" font-size="13" font-weight="700" fill="${
-        block.kind === "selling-point" ? "#087f8c" : "#5f6c7b"
-      }">${escapeXml(getPdpCanvasColumnLabel(block))}</text>
-  <rect x="${block.x}" y="${Math.max(25, block.y - 16)}" width="${block.width}" height="1" fill="#c8d1da"/>`
-    )
-    .join("\n");
-
-  const blocks = layout.blocks
+const blocks = layout.blocks
     .map((block) =>
       renderBlock(
         block,
@@ -51,7 +75,8 @@ export function renderPdpSvg(
         productName,
         sectionById,
         imageDataUris,
-        specification
+        specification,
+        options.brandImageDataUri
       )
     )
     .filter(Boolean)
@@ -70,7 +95,6 @@ export function renderPdpSvg(
   </defs>
   <rect width="${layout.width}" height="${layout.height}" fill="#f2f4f7"/>
   <rect width="${layout.width}" height="${layout.height}" fill="url(#pdp-grid)"/>
-${headers}
 ${blocks}
   <text x="40" y="${layout.height - 22}" font-family="Arial, sans-serif" font-size="12" fill="#5f6c7b">${escapeXml(label)}</text>
 </svg>`;
@@ -82,12 +106,13 @@ function renderBlock(
   productName: string,
   sectionById: Map<string, PdpSection>,
   imageDataUris: Record<string, string>,
-  specification: Array<[string, string]>
+  specification: Array<[string, string]>,
+  brandImageDataUri?: string
 ): string {
   let body = "";
 
   if (block.kind === "brand") {
-    body = brandBlock(block, document, productName);
+    body = brandBlock(block, document, brandImageDataUri);
   } else if (block.kind === "kv") {
     body = kvBlock(
       block,
@@ -121,35 +146,32 @@ ${body}
 function brandBlock(
   block: PdpCanvasBlock,
   document: PdpDocument,
-  productName: string
+  brandImageDataUri?: string
 ): string {
-  const brandHeight = Math.round(block.height * 0.58);
-  const tileGap = 8;
-  const tileWidth = (block.width - 28 - tileGap * 3) / 4;
-  const tileY = brandHeight + 76;
-  const productLines = wrapText(productName, Math.max(12, Math.floor(block.width / 12)), 2);
-  const titleLines = wrapText(
-    document.cover.title,
-    Math.max(10, Math.floor(block.width / 11)),
-    3
+  const imageHref = brandImageDataUri || "/pdp/midea-brand-no1.png";
+  const panelY = Math.round(block.height * 0.56);
+  const panelHeight = Math.round(block.height * 0.18);
+  const message = document.cover.subtitle || "Midea - World's No.1 Smart Home Appliances Brand.";
+  const messageLines = wrapText(
+    message,
+    Math.max(36, Math.floor(block.width / 10)),
+    4
   );
 
   return `    <rect width="${block.width}" height="${block.height}" fill="#ffffff" stroke="#cfd7df"/>
-    <rect width="${block.width}" height="${brandHeight}" fill="${MIDEA_BLUE}"/>
-    <text x="18" y="54" font-family="Arial, sans-serif" font-size="${Math.max(
-      24,
-      Math.round(block.width * 0.14)
-    )}" font-weight="800" fill="#ffffff">Midea</text>
-    <text x="18" y="78" font-family="Arial, sans-serif" font-size="13" fill="#d9efff">make yourself at home</text>
-${svgTextLines(titleLines, 18, 116, 20, 18, "#ffffff", 700)}
-    <rect x="14" y="${brandHeight + 14}" width="${block.width - 28}" height="42" fill="#ffffff" stroke="#9ebbd5"/>
-${svgTextLines(productLines, 24, brandHeight + 30, 15, 12, "#17202a", 600)}
-${Array.from({ length: 4 }, (_, index) => {
-  const x = 14 + index * (tileWidth + tileGap);
-  return `    <rect x="${x}" y="${tileY}" width="${tileWidth}" height="54" fill="${
-    index === 0 ? "#e6f8fc" : "#f4f6f8"
-  }" stroke="#b9c4ce"/>`;
-}).join("\n")}`;
+    <image href="${escapeXml(imageHref)}" width="${block.width}" height="${block.height}" preserveAspectRatio="xMidYMid meet"/>
+    <rect y="${panelY}" width="${block.width}" height="${panelHeight}" fill="#ffffff" fill-opacity="0.96"/>
+${svgTextLines(
+  messageLines,
+  24,
+  panelY + 16,
+  Math.max(17, Math.round(block.width / 44)),
+  Math.max(13, Math.round(block.width / 58)),
+  "#3f4549",
+  600,
+  "middle",
+  block.width / 2
+)}`;
 }
 
 function kvBlock(
@@ -251,7 +273,8 @@ ${icons}`;
 
 function specificationBlock(
   block: PdpCanvasBlock,
-  specification: Array<[string, string]>
+  specification: Array<[string, string]>,
+  brandImageDataUri?: string
 ): string {
   const headerHeight = 44;
   const rowHeight = Math.min(

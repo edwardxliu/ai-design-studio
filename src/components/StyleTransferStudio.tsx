@@ -71,6 +71,7 @@ export function StyleTransferStudio() {
   const [productAssetId, setProductAssetId] = useState("");
   const [selectedStyleId, setSelectedStyleId] = useState<StyleTransferStyleId>(defaultPreset.id);
   const [keywords, setKeywords] = useState(defaultPreset.keywords);
+  const [keywordsEdited, setKeywordsEdited] = useState(false);
   const [imageModel, setImageModel] = useState<ImageModelChoice>(DEFAULT_IMAGE_MODEL_CHOICE);
   const [run, setRun] = useState<RunState>(initialRunState);
 
@@ -102,8 +103,11 @@ export function StyleTransferStudio() {
   );
   const productAsset = productImages.find((asset) => asset.id === productAssetId);
   const activePreset = useMemo(
-    () => matchStyleTransferPreset(keywords, selectedStyleId),
-    [keywords, selectedStyleId]
+    () =>
+      keywordsEdited
+        ? matchStyleTransferPreset(keywords, selectedStyleId)
+        : STYLE_TRANSFER_PRESETS.find((preset) => preset.id === selectedStyleId) ?? defaultPreset,
+    [defaultPreset, keywords, keywordsEdited, selectedStyleId]
   );
 
   useEffect(() => {
@@ -115,6 +119,7 @@ export function StyleTransferStudio() {
   function choosePreset(preset: StyleTransferPreset) {
     setSelectedStyleId(preset.id);
     setKeywords(preset.keywords);
+    setKeywordsEdited(false);
     setRun(initialRunState);
   }
 
@@ -316,6 +321,7 @@ export function StyleTransferStudio() {
             maxLength={600}
             onChange={(event) => {
               setKeywords(event.target.value);
+              setKeywordsEdited(true);
               setRun(initialRunState);
             }}
             value={keywords}

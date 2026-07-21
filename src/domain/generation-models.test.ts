@@ -16,6 +16,6 @@ describe("generation model choices", () => {
   it("maps model identifiers to their provider", () => {
     expect(inferImageModelChoice("gpt-image-1")).toBe("openai");
     expect(inferImageModelChoice("doubao-seedream-5-0-lite-260128")).toBe("doubao");
-    expect(getImageModelOption("doubao").label).toContain("豆包");
+    expect(getImageModelOption("doubao").label).toBe("Seedream 5.0 Lite");
   });
 });

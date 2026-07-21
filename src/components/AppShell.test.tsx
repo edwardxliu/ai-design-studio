@@ -1,6 +1,10 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { AppShell } from "./AppShell";
+
+vi.mock("next/navigation", () => ({
+  usePathname: () => "/sku-variants"
+}));
 
 describe("AppShell", () => {
   it("renders every capability as its own sidebar entry", () => {
@@ -28,5 +32,10 @@ describe("AppShell", () => {
     ]);
     expect(screen.queryByText("图像工作室")).not.toBeInTheDocument();
     expect(screen.getByText("Workbench content")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "SKU 替换" })).toHaveAttribute(
+      "aria-current",
+      "page"
+    );
+    expect(screen.getByRole("link", { name: "工作台" })).not.toHaveAttribute("aria-current");
   });
 });

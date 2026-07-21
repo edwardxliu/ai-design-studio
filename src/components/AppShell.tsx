@@ -1,6 +1,7 @@
 "use client";
 
 import type { CSSProperties, ComponentType, ReactNode } from "react";
+import { usePathname } from "next/navigation";
 import {
   Box,
   Boxes,
@@ -17,6 +18,7 @@ import {
   WandSparkles
 } from "lucide-react";
 import styles from "./AppShell.module.css";
+import { getGlassTunerStyle, useGlassTunerSettings } from "./GlassTuner";
 import { useStudioBackground } from "./useStudioBackground";
 
 type NavigationItem = {
@@ -42,8 +44,11 @@ const navItems: NavigationItem[] = [
 ];
 
 export function AppShell({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
   const { backgroundUrl } = useStudioBackground();
+  const { settings: glassSettings } = useGlassTunerSettings();
   const stageStyle = {
+    ...getGlassTunerStyle(glassSettings),
     "--studio-background": 'url("' + backgroundUrl + '")'
   } as CSSProperties;
 
@@ -53,6 +58,11 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       <section aria-label="Midea AI Content Studio 功能工作区" className={styles.workbench}>
         <aside className={styles.sidebar}>
+          <div aria-hidden="true" className={styles.sidebarLights}>
+            <span />
+            <span />
+          </div>
+
           <div className={styles.brand}>
             <span>Midea Overseas</span>
             <strong>AI Content Studio</strong>
@@ -61,9 +71,19 @@ export function AppShell({ children }: { children: ReactNode }) {
           <nav aria-label="平台导航" className={styles.navigation}>
             {navItems.map((item) => {
               const Icon = item.icon;
+              const isActive =
+                item.href === "/"
+                  ? pathname === "/"
+                  : pathname === item.href || pathname.startsWith(item.href + "/");
+
               return (
-                <a className={styles.navLink} href={item.href} key={item.href}>
-                  <Icon size={17} strokeWidth={1.8} />
+                <a
+                  aria-current={isActive ? "page" : undefined}
+                  className={styles.navLink + (isActive ? " " + styles.navLinkActive : "")}
+                  href={item.href}
+                  key={item.href}
+                >
+                  <Icon size={15} strokeWidth={1.8} />
                   <span>{item.label}</span>
                 </a>
               );

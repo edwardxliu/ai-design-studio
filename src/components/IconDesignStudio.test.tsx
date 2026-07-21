@@ -102,8 +102,9 @@ describe("IconDesignStudio", () => {
     expect(await screen.findByText(/Icon 设计 VI已上传/)).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "AI 解析 VI 规则" }));
-    expect(await screen.findByDisplayValue(/Use image 1 colors/)).toBeInTheDocument();
+    expect(await screen.findByText(/VI 规范已解析并应用/)).toBeInTheDocument();
     expect(screen.getByText(/解析模型：gpt-4o-mini/)).toBeInTheDocument();
+    expect(screen.queryByLabelText("VI 提示词模板")).not.toBeInTheDocument();
 
     await user.upload(
       screen.getByLabelText("上传待规范化 Icon"),

@@ -1,3 +1,5 @@
+import { readFile } from "node:fs/promises";
+import path from "node:path";
 import { buildPopScenePrompt, getPopTemplate, renderPopFlatSvg } from "@/src/domain/pop";
 import { buildPdpDocument, getMissingPdpImageSlots, type PdpDocument } from "@/src/domain/pdp";
 import type { PdpCanvasLayout } from "@/src/domain/pdp-canvas-layout";
@@ -300,6 +302,7 @@ export type ExportDemoPdpInput = {
   sellingPoints?: SellingPoint[];
   sectionImages?: Record<string, string>;
   coverAssetId?: string;
+  brandMessage?: string;
   layout?: PdpCanvasLayout;
   imageStore?: LocalAssetStore;
   costLedger?: CostLedger;
@@ -336,7 +339,7 @@ export async function exportDemoPdp(input: ExportDemoPdpInput): Promise<ExportDe
     templateVersion,
     cover: {
       title: productName,
-      subtitle: product.profile.valueProposition,
+      subtitle: input.brandMessage || product.profile.valueProposition,
       imageAssetId: coverAssetId
     },
     sellingPoints,
@@ -362,10 +365,19 @@ export async function exportDemoPdp(input: ExportDemoPdpInput): Promise<ExportDe
     .filter((point) => point.enabled !== false)
     .map((point) => [point.shortLabel || point.title, point.technicalProof ?? point.benefit]);
 
+  let brandImageDataUri: string | undefined;
+  try {
+    const brandImage = await readFile(path.join(process.cwd(), "public", "pdp", "midea-brand-no1.png"));
+    brandImageDataUri = `data:image/png;base64,${brandImage.toString("base64")}`;
+  } catch {
+    brandImageDataUri = undefined;
+  }
+
   const svg = renderPdpSvg(document, productName, {
     imageDataUris,
     specification,
-    layout: input.layout
+    layout: input.layout,
+    brandImageDataUri
   });
 
   const saved = await input.imageStore?.saveGeneratedImage({

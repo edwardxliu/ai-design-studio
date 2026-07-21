@@ -73,6 +73,23 @@ describe("StyleTransferStudio", () => {
     expect(within(results).getAllByRole("img", { name: /风格迁移输出/ })).toHaveLength(3);
   });
 
+  it("keeps the explicitly selected Japanese bright showroom active", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response(JSON.stringify({ products: [demoProducts[0]] }), { status: 200 }))
+    );
+    const user = userEvent.setup();
+    render(<StyleTransferStudio />);
+
+    const bright = await screen.findByRole("button", { name: /日式明亮展厅/ });
+    await user.click(bright);
+
+    expect(bright).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByText("当前匹配：日式明亮展厅")).toBeInTheDocument();
+    const references = screen.getAllByRole("img", { name: /日式明亮/ });
+    expect(references.length).toBeGreaterThan(0);
+    expect(references.every((image) => image.getAttribute("src")?.includes("japanese-light"))).toBe(true);
+  });
   it("routes an empty workspace to the asset library", async () => {
     vi.stubGlobal(
       "fetch",

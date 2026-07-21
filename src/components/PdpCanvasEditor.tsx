@@ -22,6 +22,7 @@ import {
 } from "@/src/domain/pdp-canvas-layout";
 import type { Asset, ProductWithProfile, SellingPoint } from "@/src/domain/types";
 import { PdpCanvas } from "./PdpCanvas";
+import { ImageCropDialog } from "./ImageCropDialog";
 import styles from "./PdpEditor.module.css";
 
 type ExportResponse = {
@@ -34,7 +35,11 @@ type ExportResponse = {
 };
 
 type EditablePoint = SellingPoint & { custom?: boolean };
+type PendingCrop = { file: File; blockId: string; aspectRatio: number };
 type EditorStatus = "idle" | "uploading" | "exporting" | "done" | "failed";
+
+const DEFAULT_BRAND_MESSAGE =
+  "Midea - World's No.1 Smart Home Appliances Brand. Midea uplifts your life experience and creates more precious moments for you, making you feel right at home.";
 
 
 export function PdpCanvasEditor({ products }: { products: ProductWithProfile[] }) {
@@ -52,6 +57,9 @@ export function PdpCanvasEditor({ products }: { products: ProductWithProfile[] }
   const [coverAssetId, setCoverAssetId] = useState("");
   const [country, setCountry] = useState("Mexico");
   const [language, setLanguage] = useState("Spanish");
+  const [brandMessage, setBrandMessage] = useState(
+    initialProduct?.profile.valueProposition || DEFAULT_BRAND_MESSAGE
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -74,6 +82,7 @@ export function PdpCanvasEditor({ products }: { products: ProductWithProfile[] }
   const [error, setError] = useState("");
   const [result, setResult] = useState<ExportResponse | null>(null);
   const [uploadTargetBlockId, setUploadTargetBlockId] = useState("");
+  const [pendingCrop, setPendingCrop] = useState<PendingCrop | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const product = products.find((item) => item.id === productId) ?? initialProduct;
@@ -149,6 +158,7 @@ export function PdpCanvasEditor({ products }: { products: ProductWithProfile[] }
     );
     setSectionImages({});
     setCoverAssetId("");
+    setBrandMessage(nextProduct?.profile.valueProposition || DEFAULT_BRAND_MESSAGE);
     setResult(null);
     setError("");
     setStatus("idle");
@@ -255,11 +265,23 @@ export function PdpCanvasEditor({ products }: { products: ProductWithProfile[] }
     fileInputRef.current?.click();
   }
 
-  async function uploadImage(event: ChangeEvent<HTMLInputElement>) {
+  function uploadImage(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     const blockId = uploadTargetBlockId || selectedBlockId;
     event.target.value = "";
     if (!file || !product) {
+      return;
+    }
+    const block = layout.blocks.find((item) => item.id === blockId);
+    if (!block) {
+      return;
+    }
+    setPendingCrop({ file, blockId, aspectRatio: getPdpImageAspectRatio(block) });
+  }
+
+  async function uploadCroppedImage(file: File) {
+    const pending = pendingCrop;
+    if (!pending || !product) {
       return;
     }
 
@@ -283,14 +305,20 @@ export function PdpCanvasEditor({ products }: { products: ProductWithProfile[] }
         ...current.filter((asset) => asset.id !== uploaded.id),
         uploaded
       ]);
-      assignAssetToBlock(blockId, uploaded.id);
+      assignAssetToBlock(pending.blockId, uploaded.id);
       setStatus("idle");
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "图片上传失败");
       setStatus("failed");
     } finally {
+      setPendingCrop(null);
       setUploadTargetBlockId("");
     }
+  }
+
+  function cancelImageCrop() {
+    setPendingCrop(null);
+    setUploadTargetBlockId("");
   }
 
   async function exportPdp() {
@@ -322,6 +350,7 @@ export function PdpCanvasEditor({ products }: { products: ProductWithProfile[] }
           language,
           templateVersion: "pdp-canvas-v4",
           coverAssetId: effectiveCoverAssetId || undefined,
+          brandMessage,
           sectionImages,
           layout,
           sellingPoints: exportPoints.map((point) => ({
@@ -456,6 +485,7 @@ export function PdpCanvasEditor({ products }: { products: ProductWithProfile[] }
         <div className={styles.canvasPane}>
           <PdpCanvas
             brandName={product.brand ?? "Midea"}
+            brandMessage={brandMessage}
             country={country}
             imageUrlByBlockId={imageUrlByBlockId}
             language={language}
@@ -558,6 +588,19 @@ export function PdpCanvasEditor({ products }: { products: ProductWithProfile[] }
                   <p>{country} / {language}</p>
                 </div>
               </>
+            ) : selectedBlock?.kind === "brand" ? (
+              <label className={styles.field}>
+                品牌说明
+                <textarea
+                  aria-label="品牌说明"
+                  maxLength={420}
+                  onChange={(event) => {
+                    setBrandMessage(event.target.value);
+                    markDirty();
+                  }}
+                  value={brandMessage}
+                />
+              </label>
             ) : (
               <div className={styles.inspectorSummary}>
                 <strong>{blockTitle(selectedBlock, selectedPoint)}</strong>
@@ -575,6 +618,15 @@ export function PdpCanvasEditor({ products }: { products: ProductWithProfile[] }
         ref={fileInputRef}
         type="file"
       />
+      {pendingCrop ? (
+        <ImageCropDialog
+          aspectRatio={pendingCrop.aspectRatio}
+          file={pendingCrop.file}
+          onCancel={cancelImageCrop}
+          onConfirm={uploadCroppedImage}
+          title="裁切 PDP 配图"
+        />
+      ) : null}
 
       {error ? <div className={styles.errorBar}>{error}</div> : null}
       {result ? (
@@ -645,6 +697,18 @@ function AssetPreview({ asset }: { asset: Asset | undefined }) {
       )}
     </div>
   );
+}
+
+function getPdpImageAspectRatio(block: PdpCanvasBlock): number {
+  if (block.kind === "kv") {
+    return block.width / Math.max(1, block.height - 94);
+  }
+  if (block.kind === "selling-point") {
+    const titleHeight = Math.min(48, Math.max(30, Math.round(block.height * 0.18)));
+    const proofHeight = Math.min(42, Math.max(26, Math.round(block.height * 0.16)));
+    return block.width / Math.max(1, block.height - titleHeight - proofHeight);
+  }
+  return block.width / Math.max(1, block.height);
 }
 
 function toEditablePoints(product: ProductWithProfile | undefined): EditablePoint[] {

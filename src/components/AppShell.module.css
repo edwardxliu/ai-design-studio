@@ -409,3 +409,513 @@
     transition: none;
   }
 }
+/* Phase 15: shared compact glass shell */
+.workbench {
+  width: min(72vw, 1180px);
+  height: min(76dvh, 720px);
+  min-width: 980px;
+  min-height: 610px;
+  grid-template-columns: 190px minmax(0, 1fr);
+  aspect-ratio: auto;
+  background: rgba(var(--home-frame-rgb, 240, 245, 247), var(--home-frame-opacity, 0.18));
+  backdrop-filter: blur(var(--home-glass-blur, 24px))
+    saturate(var(--home-glass-saturation, 128%));
+  -webkit-backdrop-filter: blur(var(--home-glass-blur, 24px))
+    saturate(var(--home-glass-saturation, 128%));
+}
+
+.stage {
+  padding: 28px;
+}
+
+.background {
+  inset: -14px;
+}
+
+.stage::after {
+  background: rgba(10, 24, 34, var(--home-overlay-opacity, 0.14));
+}
+
+.sidebar {
+  min-height: 0;
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  padding: 24px 16px 16px;
+  background: rgba(
+    var(--home-surface-rgb, 255, 255, 255),
+    var(--home-surface-opacity, 0.18)
+  );
+}
+
+.sidebar > *:not(.sidebarLights) {
+  position: relative;
+  z-index: 2;
+}
+
+.sidebarLights {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.sidebarLights span {
+  width: 440px;
+  height: 132px;
+  position: absolute;
+  top: -190px;
+  left: -410px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(91, 219, 207, 0.12) 12%,
+    rgba(94, 224, 211, 0.72) 36%,
+    rgba(250, 205, 130, 0.66) 60%,
+    rgba(145, 213, 190, 0.24) 84%,
+    transparent 100%
+  );
+  box-shadow: 0 0 52px rgba(116, 226, 210, 0.62), 0 0 96px rgba(238, 198, 132, 0.42);
+  filter: blur(20px);
+  mix-blend-mode: screen;
+  transform: rotate(38deg);
+  animation: sidebar-light-flow 6.4s linear infinite;
+}
+
+.sidebarLights span:last-child {
+  animation-delay: -3.2s;
+}
+
+.brand {
+  gap: 4px;
+  margin: 0 8px 18px;
+}
+
+.brand span {
+  font-size: 9px;
+  font-weight: 400;
+}
+
+.brand strong {
+  font-size: 18px;
+  line-height: 1.18;
+}
+
+.navigation {
+  gap: 2px;
+  padding-right: 3px;
+}
+
+.navLink {
+  min-height: 31px;
+  gap: 8px;
+  padding: 6px 8px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.navLinkActive {
+  border-color: rgba(255, 255, 255, 0.72);
+  background: rgba(
+    var(--home-surface-rgb, 255, 255, 255),
+    calc(var(--home-control-opacity, 0.24) + 0.1)
+  );
+  color: var(--accent-deep);
+  box-shadow: inset 0 0 0 1px rgba(77, 103, 84, 0.08);
+}
+
+.navLinkActive::before {
+  content: "";
+  width: 3px;
+  height: 16px;
+  position: absolute;
+  left: -1px;
+  border-radius: 0 2px 2px 0;
+  background: var(--accent);
+}
+
+.sidebarFooter {
+  gap: 7px;
+  margin: 12px 8px 0;
+  font-size: 9px;
+}
+
+.onlineDot {
+  width: 6px;
+  height: 6px;
+}
+
+.main {
+  padding: 28px 30px 38px;
+  font-size: 11px;
+  line-height: 1.65;
+}
+
+.main :global(div),
+.main :global(section),
+.main :global(article),
+.main :global(header),
+.main :global(footer),
+.main :global(aside),
+.main :global(nav),
+.main :global(h1),
+.main :global(h2),
+.main :global(h3),
+.main :global(h4),
+.main :global(h5),
+.main :global(h6),
+.main :global(p),
+.main :global(span),
+.main :global(label),
+.main :global(strong),
+.main :global(a),
+.main :global(button),
+.main :global(input),
+.main :global(select),
+.main :global(textarea),
+.main :global(option),
+.main :global(li),
+.main :global(dt),
+.main :global(dd),
+.main :global(th),
+.main :global(td),
+.main :global(code) {
+  font-size: 11px !important;
+  letter-spacing: 0 !important;
+}
+
+.main :global(small) {
+  font-size: 9px !important;
+}
+
+.main :global(h1),
+.main :global(h2),
+.main :global(h3),
+.main :global(h4),
+.main :global(h5),
+.main :global(h6) {
+  line-height: 1.55 !important;
+}
+
+.main :global(p),
+.main :global(li),
+.main :global(dd),
+.main :global(td),
+.main :global(th) {
+  line-height: 1.75 !important;
+}
+
+.main :global([class*="grid"]),
+.main :global([class*="Grid"]),
+.main :global([class*="form"]),
+.main :global([class*="Form"]),
+.main :global([class*="fields"]),
+.main :global([class*="Fields"]),
+.main :global([class*="row"]),
+.main :global([class*="Row"]) {
+  column-gap: 16px !important;
+  row-gap: 18px !important;
+}
+
+.main :global(section + section),
+.main :global(article + article),
+.main :global(fieldset + fieldset) {
+  margin-top: 18px !important;
+}
+
+.main :global(fieldset) {
+  padding: 16px !important;
+}
+
+.main :global(input:not([type="range"]):not([type="checkbox"]):not([type="radio"]):not([type="file"])),
+.main :global(select),
+.main :global(textarea) {
+  font-size: 10px !important;
+  line-height: 1.5 !important;
+}
+
+.main :global(select) {
+  line-height: 42px !important;
+}
+
+.main :global(button),
+.main :global(a[class*="Button"]),
+.main :global(label[class*="Button"]) {
+  border-color: rgba(77, 103, 84, 0.52) !important;
+  background: rgba(129, 150, 113, 0.3) !important;
+  color: #26382d !important;
+  font-size: 10px !important;
+  line-height: 1.35 !important;
+}
+
+.main :global(button:hover:not(:disabled)),
+.main :global(a[class*="Button"]:hover),
+.main :global(label[class*="Button"]:hover) {
+  border-color: rgba(53, 74, 60, 0.72) !important;
+  background: rgba(129, 150, 113, 0.44) !important;
+  color: #1f3025 !important;
+}
+
+.main :global(button:disabled),
+.main :global(label[class*="Button"]:has(input:disabled)) {
+  border-color: rgba(68, 81, 73, 0.28) !important;
+  background: rgba(255, 255, 255, 0.14) !important;
+  color: var(--muted) !important;
+  opacity: 0.72 !important;
+}
+
+.main :global(button[class*="generateButton"]),
+.main :global(button[class*="primaryButton"]) {
+  border-color: var(--accent-border) !important;
+  background: rgba(77, 103, 84, 0.78) !important;
+  color: #f9fbfa !important;
+}
+
+.main :global(button[class*="generateButton"]:hover:not(:disabled)),
+.main :global(button[class*="primaryButton"]:hover:not(:disabled)) {
+  background: rgba(53, 74, 60, 0.9) !important;
+  color: #ffffff !important;
+}
+
+.main :global(button[class*="deleteButton"]),
+.main :global(button[class*="dangerButton"]),
+.main :global(a[class*="deleteButton"]),
+.main :global(a[class*="dangerButton"]) {
+  border-color: rgba(151, 63, 63, 0.46) !important;
+  background: rgba(190, 96, 96, 0.18) !important;
+  color: #7b2f2f !important;
+}
+
+.main :global(button[aria-pressed="true"]),
+.main :global(button[class*="Active"]) {
+  border-color: var(--accent-border) !important;
+  background: rgba(169, 142, 93, 0.3) !important;
+  color: #342b1f !important;
+}
+
+.main :global(label),
+.main :global(fieldset),
+.main :global([class*="control"]),
+.main :global([class*="Control"]) {
+  min-width: 0;
+}
+
+.main :global(select) {
+  display: block !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
+  padding-right: 30px !important;
+  text-align: left !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+.main :global([class*="sourceGrid"]),
+.main :global([class*="resultGrid"]),
+.main :global([class*="outputGrid"]),
+.main :global([class*="previewGrid"]) {
+  align-items: stretch !important;
+}
+
+.main :global([class*="sourceSlot"]),
+.main :global([class*="outputCard"]),
+.main :global([class*="resultCard"]),
+.main :global([class*="previewCard"]) {
+  height: 100% !important;
+  align-self: stretch !important;
+  box-sizing: border-box !important;
+}
+
+.main :global([class*="sourceSlot"]) {
+  display: grid !important;
+  grid-template-rows: auto minmax(0, 1fr) auto !important;
+}
+
+.main :global([class*="outputCard"]),
+.main :global([class*="resultCard"]),
+.main :global([class*="previewCard"]) {
+  display: grid !important;
+  grid-template-rows: minmax(0, 1fr) auto !important;
+}
+
+.main :global([class*="sourceGrid"] > *),
+.main :global([class*="resultGrid"] > *),
+.main :global([class*="outputGrid"] > *),
+.main :global([class*="previewGrid"] > *) {
+  margin-block: 0 !important;
+}
+.main :global([class*="previewStage"]),
+.main :global([class*="outputPreview"]),
+.main :global([class*="assetPreview"]),
+.main :global([class*="imageStage"]) {
+  width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+}
+
+.main :global([class*="previewStage"] img),
+.main :global([class*="outputPreview"] img),
+.main :global([class*="assetPreview"] img),
+.main :global([class*="imageStage"] img) {
+  display: block;
+}
+
+.main :global(button[class*="secondary"]),
+.main :global(button[class*="replace"]),
+.main :global(button[class*="upload"]),
+.main :global(button[class*="command"]),
+.main :global(label[class*="upload"]) {
+  background: rgba(174, 181, 168, 0.42) !important;
+  color: #22342a !important;
+  text-shadow: none !important;
+}
+
+@keyframes sidebar-light-flow {
+  0% {
+    opacity: 0;
+    transform: translate3d(-30px, -100px, 0) rotate(38deg);
+  }
+  12%,
+  82% {
+    opacity: 0.94;
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(560px, 880px, 0) rotate(38deg);
+  }
+}
+
+@media (max-width: 1240px) {
+  .workbench {
+    width: calc(100vw - 56px);
+    min-width: 0;
+  }
+}
+
+@media (max-width: 980px) {
+  .stage {
+    padding: 18px;
+  }
+
+  .workbench {
+    width: calc(100vw - 36px);
+    height: calc(100dvh - 36px);
+    min-height: 0;
+    grid-template-columns: 176px minmax(0, 1fr);
+  }
+
+  .main {
+    padding: 24px 24px 32px;
+  }
+}
+
+@media (max-width: 900px) {
+  .stage {
+    display: grid;
+    padding: 18px;
+  }
+
+  .workbench {
+    width: calc(100vw - 36px);
+    height: calc(100dvh - 36px);
+    grid-template-columns: 176px minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
+    border: 1px solid rgba(255, 255, 255, 0.78);
+    border-radius: 8px;
+  }
+
+  .sidebar {
+    display: flex;
+    padding: 24px 16px 16px;
+    border-right: 1px solid rgba(255, 255, 255, 0.48);
+    border-bottom: 0;
+  }
+
+  .navigation {
+    display: grid;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  .navLink {
+    flex: initial;
+    min-height: 31px;
+    padding: 6px 8px;
+    font-size: 11px;
+  }
+
+  .sidebarFooter {
+    display: flex;
+  }
+}
+
+@media (max-width: 760px) {
+  .stage {
+    display: block;
+    padding: 0;
+  }
+
+  .background {
+    inset: 0;
+  }
+
+  .workbench {
+    width: 100vw;
+    height: 100dvh;
+    min-width: 0;
+    min-height: 0;
+    grid-template-columns: 1fr;
+    grid-template-rows: auto minmax(0, 1fr);
+    border: 0;
+    border-radius: 0;
+  }
+
+  .sidebar {
+    display: block;
+    padding: 12px;
+    border-right: 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+  }
+
+  .brand {
+    margin: 0 3px 9px;
+  }
+
+  .brand strong {
+    font-size: 16px;
+  }
+
+  .navigation {
+    display: flex;
+    gap: 4px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 0 0 3px;
+  }
+
+  .navLink {
+    flex: 0 0 auto;
+    min-height: 33px;
+    padding: 6px 8px;
+    font-size: 10px;
+  }
+
+  .navLinkActive::before,
+  .sidebarFooter {
+    display: none;
+  }
+
+  .main {
+    padding: 20px 14px 28px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sidebarLights span {
+    animation: none;
+  }
+}

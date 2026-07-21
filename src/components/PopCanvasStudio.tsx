@@ -16,6 +16,7 @@ import {
   type ChangeEvent
 } from "react";
 import type { Asset, ProductWithProfile } from "@/src/domain/types";
+import { parseAspectRatio } from "@/src/domain/image-crop";
 import { DEFAULT_IMAGE_MODEL_CHOICE, type ImageModelChoice } from "@/src/domain/generation-models";
 import {
   allPopTemplates,
@@ -35,6 +36,7 @@ import {
   type PopVariantCanvasContent
 } from "./PopTemplateCanvas";
 import { ImageModelSelector } from "./ImageModelSelector";
+import { ImageCropDialog } from "./ImageCropDialog";
 import styles from "./PopCanvasStudio.module.css";
 
 type SceneResponse = {
@@ -68,6 +70,12 @@ type UploadTarget = {
   slotId: string;
 };
 
+type PendingCrop = {
+  file: File;
+  target: UploadTarget;
+  aspectRatio: number;
+};
+
 const MIN_CANVAS_ZOOM = 0.5;
 const MAX_CANVAS_ZOOM = 2;
 const CANVAS_ZOOM_STEP = 0.25;
@@ -99,6 +107,7 @@ export function PopCanvasStudio({ products }: { products: ProductWithProfile[] }
   const [stage, setStage] = useState("");
   const [error, setError] = useState("");
   const [result, setResult] = useState<SceneResponse | null>(null);
+  const [pendingCrop, setPendingCrop] = useState<PendingCrop | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uploadTargetRef = useRef<UploadTarget | null>(null);
@@ -137,15 +146,8 @@ export function PopCanvasStudio({ products }: { products: ProductWithProfile[] }
   }, []);
 
   const selectedImageIds = useMemo(
-    () =>
-      Array.from(
-        new Set(
-          Object.values(drafts).flatMap((draft) =>
-            Object.values(draft.imageAssetIds).filter(Boolean)
-          )
-        )
-      ),
-    [drafts]
+    () => Array.from(new Set(Object.values(selectedDraft.imageAssetIds).filter(Boolean))),
+    [selectedDraft.imageAssetIds]
   );
 
   useEffect(() => {
@@ -201,24 +203,18 @@ export function PopCanvasStudio({ products }: { products: ProductWithProfile[] }
     productAssetId || productPhotoOptions[0]?.id || "";
 
   const contentByTemplateId = useMemo(() => {
-    const entries = templateIds.map((templateId) => {
-      const draft =
-        drafts[templateId] ?? buildDefaultDraft(getPopTemplate(templateId));
-      const imageDataUris = Object.fromEntries(
-        Object.entries(draft.imageAssetIds)
-          .filter(([, assetId]) => assetId && dataUriCache[assetId])
-          .map(([slotId, assetId]) => [slotId, dataUriCache[assetId]])
-      );
-      return [
-        templateId,
-        {
-          textValues: draft.textValues,
-          imageDataUris
-        } satisfies PopVariantCanvasContent
-      ] as const;
-    });
-    return Object.fromEntries(entries);
-  }, [dataUriCache, drafts, templateIds]);
+    const imageDataUris = Object.fromEntries(
+      Object.entries(selectedDraft.imageAssetIds)
+        .filter(([, assetId]) => assetId && dataUriCache[assetId])
+        .map(([slotId, assetId]) => [slotId, dataUriCache[assetId]])
+    );
+    return {
+      [selectedTemplateId]: {
+        textValues: selectedDraft.textValues,
+        imageDataUris
+      } satisfies PopVariantCanvasContent
+    };
+  }, [dataUriCache, selectedDraft.imageAssetIds, selectedDraft.textValues, selectedTemplateId]);
 
   const flatSvg = useMemo(() => {
     const content = contentByTemplateId[selectedTemplateId] ?? {
@@ -312,11 +308,25 @@ export function PopCanvasStudio({ products }: { products: ProductWithProfile[] }
     fileInputRef.current?.click();
   }
 
-  async function uploadImage(event: ChangeEvent<HTMLInputElement>) {
+  function uploadImage(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     const target = uploadTargetRef.current;
     event.target.value = "";
     if (!file || !target || !product) {
+      return;
+    }
+
+    const template = getPopTemplate(target.templateId);
+    setPendingCrop({
+      file,
+      target,
+      aspectRatio: getPopCropAspectRatio(template, target.slotId)
+    });
+  }
+
+  async function uploadCroppedImage(file: File) {
+    const pending = pendingCrop;
+    if (!pending || !product) {
       return;
     }
 
@@ -329,10 +339,7 @@ export function PopCanvasStudio({ products }: { products: ProductWithProfile[] }
       form.set("type", "pop-input");
       form.append("files", file);
 
-      const response = await fetch("/api/upload", {
-        method: "POST",
-        body: form
-      });
+      const response = await fetch("/api/upload", { method: "POST", body: form });
       const payload = await response.json();
       if (!response.ok || payload.error || !payload.assets?.[0]) {
         throw new Error(payload.error ?? "图片上传失败");
@@ -340,14 +347,20 @@ export function PopCanvasStudio({ products }: { products: ProductWithProfile[] }
 
       const uploaded = payload.assets[0] as Asset;
       setAssets((current) => dedupeAssets([...current, uploaded]));
-      assignImage(target.templateId, target.slotId, uploaded.id);
+      assignImage(pending.target.templateId, pending.target.slotId, uploaded.id);
       setStatus("idle");
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "图片上传失败");
       setStatus("failed");
     } finally {
+      setPendingCrop(null);
       uploadTargetRef.current = null;
     }
+  }
+
+  function cancelImageCrop() {
+    setPendingCrop(null);
+    uploadTargetRef.current = null;
   }
 
   async function generateScene() {
@@ -717,6 +730,15 @@ export function PopCanvasStudio({ products }: { products: ProductWithProfile[] }
         ref={fileInputRef}
         type="file"
       />
+      {pendingCrop ? (
+        <ImageCropDialog
+          aspectRatio={pendingCrop.aspectRatio}
+          file={pendingCrop.file}
+          onCancel={cancelImageCrop}
+          onConfirm={uploadCroppedImage}
+          title={`裁切 ${getPopTemplate(pendingCrop.target.templateId).name} 图片`}
+        />
+      ) : null}
     </section>
   );
 }
@@ -742,6 +764,27 @@ function buildDefaultDraft(template: PopTemplate): PopTemplateDraft {
     ),
     imageAssetIds: {}
   };
+}
+
+function getPopCropAspectRatio(template: PopTemplate, slotId: string): number {
+  const imageSlotCount = template.slots.filter((slot) => slot.type === "image").length;
+  if (imageSlotCount > 1 || /Image\d+$/i.test(slotId)) {
+    return 1;
+  }
+  const overrides: Record<string, number> = {
+    "main-sticker-usp": 752 / 918,
+    "main-sticker-usp-footer": 752 / 918,
+    "inner-sticker-display": 1018 / 552,
+    "inner-sticker-display-left": 1.25,
+    "inner-sticker-display-right": 1.25,
+    "side-sticker": 470 / 168,
+    "oven-wobbler": 1,
+    "oven-body-round": 1,
+    "oven-body-strip": 4,
+    "oven-body-feature": 2,
+    "oven-top-sticker": 1.25
+  };
+  return overrides[template.id] ?? parseAspectRatio(template.aspectRatio, 1);
 }
 
 function dedupeAssets(assets: Asset[]): Asset[] {

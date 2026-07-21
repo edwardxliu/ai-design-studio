@@ -44,7 +44,7 @@ describe("ProductVideoStudio", () => {
     const user = userEvent.setup();
 
     render(<ProductVideoStudio pollIntervalMs={1} products={[demoProducts[0]]} />);
-    expect(screen.getByText("豆包 Seedance 1.5 Pro")).toBeInTheDocument();
+    expect(screen.getByText("Seedance 2.0 Fast")).toBeInTheDocument();
     expect((screen.getByLabelText("视频提示词") as HTMLTextAreaElement).value).toContain("Hero Product Film");
 
     await user.click(screen.getByRole("button", { name: "生成产品视频" }));

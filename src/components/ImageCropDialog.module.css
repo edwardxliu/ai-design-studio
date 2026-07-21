@@ -1,0 +1,157 @@
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(18, 28, 30, 0.34);
+  backdrop-filter: blur(12px) saturate(112%);
+}
+
+.dialog {
+  width: min(780px, calc(100vw - 48px));
+  max-height: calc(100dvh - 48px);
+  display: grid;
+  gap: 14px;
+  overflow: auto;
+  border: 1px solid rgba(255, 255, 255, 0.82);
+  border-radius: 8px;
+  background: rgba(220, 225, 222, 0.74);
+  box-shadow: 0 24px 70px rgba(14, 26, 28, 0.28);
+  padding: 18px;
+  color: #1d3027;
+  backdrop-filter: blur(30px) saturate(132%);
+}
+
+.header,
+.footer,
+.controls,
+.header > div,
+.footer > div {
+  display: flex;
+  align-items: center;
+}
+
+.header,
+.footer {
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.header > div {
+  align-items: flex-start;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.header span {
+  color: #506d5b;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.header h2 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.canvasStage {
+  min-height: 260px;
+  display: grid;
+  position: relative;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  border-radius: 6px;
+  background: rgba(225, 231, 230, 0.38);
+}
+
+.canvas {
+  display: block;
+  width: 100%;
+  max-height: 54vh;
+  object-fit: contain;
+  cursor: grab;
+  touch-action: none;
+}
+
+.canvas:active {
+  cursor: grabbing;
+}
+
+.cropGuide {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 4px;
+  background: rgba(29, 48, 39, 0.54);
+  padding: 6px 9px;
+  color: #fff;
+  backdrop-filter: blur(12px);
+}
+
+.controls {
+  gap: 10px;
+}
+
+.controls input {
+  min-width: 0;
+  flex: 1;
+}
+
+.controls output {
+  width: 42px;
+  color: #42584c;
+  text-align: right;
+}
+
+.iconButton,
+.secondaryButton,
+.primaryButton {
+  display: inline-flex;
+  min-height: 34px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid rgba(79, 102, 87, 0.48);
+  border-radius: 5px;
+  padding: 0 11px;
+  color: #23372c;
+}
+
+.iconButton {
+  width: 34px;
+  padding: 0;
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.secondaryButton {
+  background: rgba(255, 255, 255, 0.28);
+}
+
+.primaryButton {
+  background: rgba(72, 102, 82, 0.8);
+  color: #fff;
+}
+
+.footer {
+  border-top: 1px solid rgba(72, 93, 80, 0.18);
+  padding-top: 13px;
+  color: #4d6156;
+}
+
+.footer > div {
+  gap: 8px;
+}
+
+@media (max-width: 640px) {
+  .backdrop { padding: 10px; }
+  .dialog { width: calc(100vw - 20px); max-height: calc(100dvh - 20px); padding: 13px; }
+  .footer { align-items: stretch; flex-direction: column; }
+  .footer > div { justify-content: flex-end; }
+}

@@ -195,7 +195,7 @@ POP 定向验证通过：src/domain/pop.test.ts、pop-template-sets.test.ts、�
 
 ## 2026-07-16
 
-- 完成 OpenAI GPT Image / 豆包 Seedream 5.0 Lite 双模型选择与服务端透传。
+- 完成 OpenAI GPT Image / Seedream 5.0 Lite 双模型选择与服务端透传。
 - 完成即梦 Seedance 2.0 Fast 产品视频异步生成链路，成片成功后缓存到 `public/generated/`。
 - 方舟配置统一使用 `ARK_API_KEY`；图片与视频模型 ID 可分别通过环境变量覆盖。
 - 验证：`pnpm typecheck` 通过；`pnpm test` 30 个测试文件、139 项测试通过；`pnpm build` 通过；首页、`/product-video` 与 API 参数校验均通过 HTTP 冒烟测试。
@@ -206,7 +206,7 @@ POP 定向验证通过：src/domain/pop.test.ts、pop-template-sets.test.ts、�
 - 已核对方舟公开模型 ID `doubao-seedance-1-5-pro-251215` 与 2–12 秒时长约束。- 已确认现有 SKU 页面仅调用通用 `CapabilityRunner`；现有 `generateDemoImage` 可复用成本记录和供应商选择，但需增加 `maskAssetId`。
 - 已确认 OpenAI 编辑请求由手写 multipart 构建，适合增加原生 `mask` 文件字段；Seedream 请求可将蒙版追加到参考图数组。- 已将视频默认模型改为 `doubao-seedance-1-5-pro-251215`，展示名改为 Seedance 1.5 Pro，接口时长改为 12 秒。
 - 已新增 `sku-replacement` 提示词领域模块、像素连通智能选区/画笔蒙版算法和 `/api/sku-replacement`。
-- 已扩展图像供应商输入：OpenAI 使用 multipart `mask`，豆包把同一蒙版追加为参考图。- SKU 定向测试：10 个文件 / 36 项通过。
+- 已扩展图像供应商输入：OpenAI 使用 multipart `mask`，Seedream 将同一蒙版追加为参考图。- SKU 定向测试：10 个文件 / 36 项通过。
 - 全量测试：37 个文件 / 163 项通过；`pnpm typecheck` 通过。
 - `pnpm build` 通过，构建包含 `/sku-variants` 与 `/api/sku-replacement`。
 - 无浏览器 HTTP 冒烟通过：首页、SKU 页面、产品视频页均返回 200；缺部件图与缺蒙版分别返回预期 400。
@@ -219,14 +219,14 @@ POP 定向验证通过：src/domain/pop.test.ts、pop-template-sets.test.ts、�
 - 生产服务已重启，`http://127.0.0.1:3000/sku-variants` 返回 200。
 # 2026-07-17 Icon Design VI 模板应用
 
-- 已确认复用现有 OpenAI / 豆包多参考图生成链路和本地资产存储。
+- 已确认复用现有 OpenAI / Seedream 多参考图生成链路和本地资产存储。
 - 正在建立六类输出规则、VI 视觉解析服务和独立工作区。
 ## Icon Design VI 模板应用完成
 
 - 新增 `/icon-design` 独立工作区与侧边栏、首页入口。
 - 新增品牌色彩 VI、Icon 设计 VI、源 Icon 三类持久化素材槽。
 - 新增 OpenAI 视觉模型 VI 解析 API，输出保留 `{{FEATURE_TITLE}}` 的可编辑模板。
-- 新增 4 种颜色资产和 2 种图文版式的 OpenAI / 豆包批量生成 API。
+- 新增 4 种颜色资产和 2 种图文版式的 OpenAI / Seedream 批量生成 API。
 - 40 个测试文件、171 项测试通过；TypeScript 类型检查和 Next.js 生产构建通过。
 - HTTP 冒烟通过：`/icon-design` 返回 200，两个 API 在缺少必填素材时均返回预期 400。
 - 生产服务已在 `http://127.0.0.1:3000` 后台运行。
@@ -239,8 +239,33 @@ POP 定向验证通过：src/domain/pop.test.ts、pop-template-sets.test.ts、�
 
 - 从 3 份 PPT 中建立 7 套静态图像风格：拉美温暖极简、建筑实验室、高端通用、北欧时尚编辑、北欧丹麦住宅、日式暗场展厅、日式明亮展厅。
 - 正式提取 21 张 PPT 原始参考图；产品图固定为 Image 1，参考图固定为 Image 2+ 且只提供风格信息。
-- 新增 Keywords 自动匹配、预设选择、产品参考图选择和 OpenAI / 豆包模型选择。
+- 新增 Keywords 自动匹配、预设选择、产品参考图选择和 OpenAI / Seedream 模型选择。
 - 每次并发生成 3 张静态图片：产品主视觉、建筑空间、生活方式；提示词明确排除视频、分镜、拼图和参考图中的其他产品。
 - 定向测试 4 个文件 / 7 项通过；全量测试 44 个文件 / 181 项通过；`pnpm typecheck` 与 `pnpm build` 通过。
 - 无浏览器 HTTP 验证通过：`/style-transfer` 返回 200，API 缺少参数返回预期 400；未触发付费生图。
 - 开发服务运行于 `http://127.0.0.1:3000`。
+## 2026-07-21 首页紧凑玻璃工作台完成
+- 主工作台缩小为参考图比例，顶部改为 Gotham 英文问候并新增当天日期和顺德天气。
+- 中部改为三个等宽玻璃卡，前两张使用用户指定图片并增加缓慢流动动画。
+- 底部扩展为十个小型工具块，黑色滑点可控制横向位置；侧栏增加循环流动底光。
+- 新增 /api/weather 与 WMO 天气码映射，Node 实测 Open-Meteo 返回 200。
+- 验证：定向测试 2 文件 / 7 项通过；npm run typecheck 通过；npm run build 通过；首页和天气 API 均返回 HTTP 200。
+- 按用户既有要求未打开本地浏览器；生产预览在命令存续期间验证首页与天气 API 均为 HTTP 200，后台进程随后被 Codex 执行环境回收。
+## 2026-07-21 全站紧凑玻璃外壳完成
+- 首页与全部功能页已统一工作台和侧栏尺寸，功能页当前路由会按首页样式高亮。
+- 首页和子页侧栏均使用两条左上至右下循环流光；Midea Overseas 为同尺寸常规字重。
+- 共享外壳已统一浅灰按钮对比度、子页字号上限、行距和框间距。
+- 验证：定向测试 3 文件 / 8 项通过；全量测试 45 文件 / 189 项通过；npm run typecheck 通过；Node 24.13.0 下 next build 通过。
+- 按用户要求未打开本地浏览器。
+
+## 2026-07-21（阶段 16）
+- 已完成 8 项新增修改的代码定位：共享图框/下拉框、风格迁移预设状态、Icon Design、POP 全量重绘、PDP Canvas 与导出链路。
+- 当前正在实现共享图片裁切编辑器与各页面宽度/视觉修复。
+## 2026-07-21 全站视觉细节与 POP/PDP 图片工作流完成
+- 两条侧栏流光扩展为 440×132px 的高亮斜向光带；首页玻璃滑点与工具卡间距增大。
+- 全局统一图像卡内部轨道和下拉框溢出规则；风格迁移工作区已压缩且日式明亮展厅状态/参考图切换已修复。
+- Icon Design VI 图片缩为两张 92px 预览并隐藏提示词编辑区。
+- 新增 POP/PDP 共用图片裁切编辑器；POP 使用模板预览缓存实现选中方案局部更新。
+- PDP 使用指定 Midea Brand 图、可编辑品牌文案，并按单列纵向拼接导出长图。
+- 验证：TypeScript `--noEmit` 通过；完整 Vitest 46 文件 / 194 项通过；Next.js 15.5.20 生产构建通过。
+- 遵照用户要求，未打开或控制本地浏览器。

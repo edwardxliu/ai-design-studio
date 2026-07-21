@@ -113,6 +113,11 @@ beforeEach(() => {
   vi.spyOn(HTMLCanvasElement.prototype, "toDataURL").mockReturnValue(
     "data:image/png;base64,cG9w"
   );
+  vi.spyOn(HTMLCanvasElement.prototype, "toBlob").mockImplementation(
+    (callback) => {
+      callback(new Blob(["cropped"], { type: "image/png" }));
+    }
+  );
 });
 
 afterEach(() => {
@@ -210,6 +215,15 @@ describe("PopCanvasStudio", () => {
       fileInput,
       new File(["image"], "feature-upload.png", { type: "image/png" })
     );
+
+    expect(screen.getByLabelText("图片缩放")).toHaveAttribute("min", "0.25");
+    await user.click(screen.getByRole("button", { name: "缩小图片" }));
+    expect(screen.getByLabelText("图片缩放")).toHaveValue("0.9");
+    const applyCropButton = await screen.findByRole("button", {
+      name: "应用裁切"
+    });
+    await waitFor(() => expect(applyCropButton).toBeEnabled());
+    await user.click(applyCropButton);
 
     await waitFor(() => {
       expect(screen.getByLabelText("USP 主图")).toHaveValue(

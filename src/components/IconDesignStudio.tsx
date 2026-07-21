@@ -94,7 +94,7 @@ export function IconDesignStudio() {
   const [assetsLoaded, setAssetsLoaded] = useState(false);
   const [uploading, setUploading] = useState<UploadSlotId | null>(null);
   const [parsingVi, setParsingVi] = useState(false);
-  const [analysisModel, setAnalysisModel] = useState("");
+
   const [imageModel, setImageModel] = useState<ImageModelChoice>(DEFAULT_IMAGE_MODEL_CHOICE);
   const [featureTitle, setFeatureTitle] = useState("Twin Crispers");
   const [promptTemplate, setPromptTemplate] = useState(DEFAULT_ICON_VI_PROMPT_TEMPLATE);
@@ -158,7 +158,6 @@ export function IconDesignStudio() {
         await fetch(`/api/assets?id=${encodeURIComponent(previous.id)}`, { method: "DELETE" });
       }
       setAssets((current) => ({ ...current, [slot.id]: uploaded }));
-      setAnalysisModel("");
       setRun(initialRunState);
       setMessage(`${slot.label}已上传：${uploaded.filename}`);
     } catch (error) {
@@ -184,7 +183,6 @@ export function IconDesignStudio() {
         throw new Error(payload.error ?? "删除素材失败");
       }
       setAssets((current) => ({ ...current, [slot.id]: undefined }));
-      setAnalysisModel("");
       setRun(initialRunState);
       setMessage(`${slot.label}已移除`);
     } catch (error) {
@@ -214,9 +212,8 @@ export function IconDesignStudio() {
         throw new Error(payload.error ?? "VI 规范解析失败");
       }
       setPromptTemplate(payload.template);
-      setAnalysisModel(String(payload.model ?? ""));
       setRun(initialRunState);
-      setMessage("VI 规范已解析，提示词模板可以继续编辑。");
+      setMessage(`VI 规范已解析并应用${payload.model ? `（解析模型：${payload.model}）` : ""}。`);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "VI 规范解析失败");
     } finally {
@@ -337,22 +334,7 @@ export function IconDesignStudio() {
             />
           ))}
         </div>
-        <label className={styles.promptField}>
-          <span>
-            VI 提示词模板
-            {analysisModel ? <small>解析模型：{analysisModel}</small> : null}
-          </span>
-          <textarea
-            aria-label="VI 提示词模板"
-            disabled={isBusy}
-            onChange={(event) => {
-              setPromptTemplate(event.target.value);
-              setRun(initialRunState);
-            }}
-            spellCheck={false}
-            value={promptTemplate}
-          />
-        </label>
+
       </section>
 
       <section className={styles.section} aria-labelledby="content-heading">

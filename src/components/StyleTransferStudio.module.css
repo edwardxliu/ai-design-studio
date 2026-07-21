@@ -1,5 +1,8 @@
 .studio {
   display: grid;
+  min-width: 0;
+  width: 100%;
+  overflow-x: clip;
   gap: 16px;
 }
 
@@ -19,7 +22,7 @@
 
 .controlBand {
   display: grid;
-  grid-template-columns: minmax(280px, 0.8fr) minmax(680px, 1.6fr);
+  grid-template-columns: minmax(170px, 0.62fr) minmax(0, 1.9fr);
   gap: 20px;
   align-items: end;
   padding: 18px;
@@ -49,11 +52,17 @@
 
 .controls {
   display: grid;
-  grid-template-columns: minmax(130px, 0.8fr) minmax(180px, 1.2fr) minmax(170px, 0.9fr) auto;
+  grid-template-columns: minmax(78px, 0.62fr) minmax(120px, 1.18fr) minmax(112px, 0.82fr) minmax(138px, 0.86fr);
   gap: 10px;
   align-items: end;
 }
 
+.controlBand,
+.controls,
+.controls > * {
+  min-width: 0;
+  max-width: 100%;
+}
 .field {
   display: grid;
   min-width: 0;
@@ -64,9 +73,14 @@
 }
 
 .field select {
+  display: block;
   width: 100%;
   min-width: 0;
+  max-width: 100%;
   height: 42px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   border: 1px solid #aeb8c3;
   border-radius: 6px;
   background: var(--studio-glass-control, #ffffff);
@@ -84,7 +98,7 @@
   border: 1px solid var(--accent-strong);
   border-radius: 6px;
   background: var(--accent-strong);
-  padding: 0 16px;
+  padding: 0 10px;
   color: #ffffff;
   font: inherit;
   font-weight: 700;
@@ -146,7 +160,7 @@
 
 .presetGrid {
   display: grid;
-  grid-template-columns: repeat(7, minmax(120px, 1fr));
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 10px;
 }
 
@@ -205,7 +219,7 @@
 
 .workspace {
   display: grid;
-  grid-template-columns: minmax(260px, 0.72fr) minmax(340px, 1fr) minmax(360px, 1.1fr);
+  grid-template-columns: minmax(170px, 0.72fr) minmax(210px, 0.95fr) minmax(230px, 1.08fr);
   overflow: hidden;
 }
 

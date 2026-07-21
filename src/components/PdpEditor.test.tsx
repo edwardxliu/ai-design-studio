@@ -96,6 +96,11 @@ describe("PdpEditor canvas interaction", () => {
     const user = userEvent.setup();
     render(<PdpEditor products={demoProducts} />);
 
+    await user.selectOptions(screen.getByLabelText("当前图层"), "pdp-block-brand");
+    const brandMessage = screen.getByLabelText("品牌说明");
+    await user.clear(brandMessage);
+    await user.type(brandMessage, "Editable global brand statement");
+
     const canvas = screen.getByTestId("pdp-canvas");
     canvas.focus();
     await user.keyboard("{ArrowRight}");
@@ -109,6 +114,7 @@ describe("PdpEditor canvas interaction", () => {
     const payload = JSON.parse(String(request.body));
 
     expect(payload.templateVersion).toBe("pdp-canvas-v4");
+    expect(payload.brandMessage).toBe("Editable global brand statement");
     expect(payload.layout.blocks.some((block: { kind: string }) => block.kind === "brand")).toBe(true);
     expect(
       payload.layout.blocks.some(

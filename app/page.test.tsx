@@ -1,10 +1,15 @@
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import HomePage from "./page";
+
+beforeEach(() => {
+  vi.stubGlobal("fetch", vi.fn(() => new Promise(() => undefined)));
+});
 
 afterEach(() => {
   window.localStorage.clear();
   vi.restoreAllMocks();
+  vi.unstubAllGlobals();
 });
 
 describe("HomePage", () => {
@@ -20,6 +25,37 @@ describe("HomePage", () => {
     expect(screen.getAllByRole("link", { name: /POP 设计/ })[0]).toHaveAttribute("href", "/pop");
     expect(screen.getAllByRole("link", { name: /PDP 构建/ })[0]).toHaveAttribute("href", "/pdp");
     expect(screen.getAllByRole("link", { name: /本地化/ })[0]).toHaveAttribute("href", "/localize");
+  });
+
+  it("renders the compact dashboard content and horizontal tool rail", async () => {
+    vi.mocked(fetch).mockResolvedValueOnce({
+      json: async () => ({
+        condition: "Partly cloudy",
+        location: "Shunde",
+        temperature: 29.4,
+        weatherCode: 2
+      }),
+      ok: true
+    } as Response);
+    render(<HomePage />);
+
+    expect(
+      screen.getByRole("heading", { name: /Hi,\s*How Can I Help You\?/i })
+    ).toBeInTheDocument();
+    expect(screen.getByText(/Start with one product asset/i)).toBeInTheDocument();
+    expect(screen.getAllByRole("link", { name: /上传产品素材/ })).toHaveLength(1);
+    expect(screen.getAllByRole("link", { name: /场景与风格/ })).toHaveLength(1);
+    expect(screen.getAllByRole("link", { name: /全球市场交付/ })).toHaveLength(1);
+    expect(await screen.findByText("29°C")).toBeInTheDocument();
+    expect(screen.getByText(/Shunde · Partly cloudy/)).toBeInTheDocument();
+
+    const toolSection = screen.getByRole("heading", { name: "快捷创作" }).closest("section");
+    expect(toolSection).not.toBeNull();
+    expect(within(toolSection as HTMLElement).getAllByRole("link")).toHaveLength(10);
+
+    const slider = screen.getByRole("slider", { name: "快捷工具横向位置" });
+    fireEvent.change(slider, { target: { value: "100" } });
+    expect(slider).toHaveValue("100");
   });
 
   it("offers three built-in backgrounds and remembers the selected preset", () => {

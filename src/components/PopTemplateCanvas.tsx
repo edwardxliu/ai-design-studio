@@ -27,6 +27,11 @@ type PreviewEntry = {
   image: HTMLImageElement | null;
 };
 
+type CachedPreview = {
+  signature: string;
+  image: HTMLImageElement | null;
+};
+
 export function PopTemplateCanvas({
   templateSet,
   selectedTemplateId,
@@ -35,6 +40,7 @@ export function PopTemplateCanvas({
   zoom
 }: PopTemplateCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const previewCacheRef = useRef(new Map<string, CachedPreview>());
   const variants = useMemo(
     () => templateSet.groups.flatMap((group) => group.variants),
     [templateSet]
@@ -58,14 +64,35 @@ export function PopTemplateCanvas({
     context.imageSmoothingQuality = "high";
 
     let active = true;
-    drawBoard(context, templateSet, selectedTemplateId, []);
+    const cachedPreviews = () =>
+      variants.map((variant) => ({
+        variant,
+        image: previewCacheRef.current.get(variant.templateId)?.image ?? null
+      }));
+    drawBoard(context, templateSet, selectedTemplateId, cachedPreviews());
+
+    const pending = variants.flatMap((variant) => {
+      const suppliedContent = contentByTemplateId[variant.templateId];
+      const cached = previewCacheRef.current.get(variant.templateId);
+      if (!suppliedContent && cached) {
+        return [];
+      }
+      const content = suppliedContent ?? { textValues: {}, imageDataUris: {} };
+      const signature = JSON.stringify([content.textValues, content.imageDataUris]);
+      if (cached?.signature === signature) {
+        return [];
+      }
+      return [{ variant, content, signature }];
+    });
+
+    if (!pending.length) {
+      return () => {
+        active = false;
+      };
+    }
 
     Promise.all(
-      variants.map(async (variant): Promise<PreviewEntry> => {
-        const content = contentByTemplateId[variant.templateId] ?? {
-          textValues: {},
-          imageDataUris: {}
-        };
+      pending.map(async ({ variant, content, signature }) => {
         const svg = renderPopFlatSvg({
           templateId: variant.templateId,
           textValues: content.textValues,
@@ -73,13 +100,21 @@ export function PopTemplateCanvas({
         });
         return {
           variant,
+          signature,
           image: await loadSvgPreview(svg)
         };
       })
     ).then((previews) => {
-      if (active) {
-        drawBoard(context, templateSet, selectedTemplateId, previews);
+      if (!active) {
+        return;
       }
+      for (const preview of previews) {
+        previewCacheRef.current.set(preview.variant.templateId, {
+          signature: preview.signature,
+          image: preview.image
+        });
+      }
+      drawBoard(context, templateSet, selectedTemplateId, cachedPreviews());
     });
 
     return () => {

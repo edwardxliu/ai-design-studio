@@ -17,11 +17,14 @@ import {
 import type { SellingPoint } from "@/src/domain/types";
 import styles from "./PdpEditor.module.css";
 
+const PDP_BRAND_IMAGE_URL = "/pdp/midea-brand-no1.png";
+
 type PdpCanvasProps = {
   layout: PdpCanvasLayout;
   points: SellingPoint[];
   productName: string;
   brandName: string;
+  brandMessage: string;
   country: string;
   language: string;
   imageUrlByBlockId: Record<string, string | undefined>;
@@ -46,6 +49,7 @@ export function PdpCanvas({
   points,
   productName,
   brandName,
+  brandMessage,
   country,
   language,
   imageUrlByBlockId,
@@ -62,15 +66,17 @@ export function PdpCanvas({
   const [draggingBlockId, setDraggingBlockId] = useState("");
   const [imageRevision, setImageRevision] = useState(0);
 
-  const imageSourceKey = useMemo(
-    () =>
-      Object.entries(imageUrlByBlockId)
-        .filter((entry): entry is [string, string] => Boolean(entry[1]))
-        .sort(([left], [right]) => left.localeCompare(right))
-        .map(([blockId, url]) => `${blockId}:${url}`)
-        .join("|"),
-    [imageUrlByBlockId]
-  );
+  const imageSourceKey = useMemo(() => {
+    const entries: Array<[string, string | undefined]> = [
+      ["pdp-brand", PDP_BRAND_IMAGE_URL],
+      ...Object.entries(imageUrlByBlockId)
+    ];
+    return entries
+      .filter((entry): entry is [string, string] => Boolean(entry[1]))
+      .sort(([left], [right]) => left.localeCompare(right))
+      .map(([blockId, url]) => `${blockId}:${url}`)
+      .join("|");
+  }, [imageUrlByBlockId]);
 
   useEffect(() => {
     const urls = imageSourceKey
@@ -117,6 +123,7 @@ export function PdpCanvas({
       points,
       productName,
       brandName,
+      brandMessage,
       country,
       language,
       imageUrlByBlockId,
@@ -126,6 +133,7 @@ export function PdpCanvas({
     });
   }, [
     brandName,
+    brandMessage,
     country,
     draggingBlockId,
     imageRevision,
@@ -287,6 +295,7 @@ function drawPdpCanvas(context: CanvasRenderingContext2D, options: DrawOptions) 
     points,
     productName,
     brandName,
+    brandMessage,
     country,
     language,
     imageUrlByBlockId,
@@ -326,7 +335,7 @@ function drawPdpCanvas(context: CanvasRenderingContext2D, options: DrawOptions) 
     context.shadowOffsetY = selected ? 4 : 3;
 
     if (block.kind === "brand") {
-      drawBrandBlock(context, block, brandName, productName);
+      drawBrandBlock(context, block, imageCache.get(PDP_BRAND_IMAGE_URL), brandMessage);
     } else if (block.kind === "kv") {
       drawKvBlock(context, block, image, productName, country, language);
     } else if (block.kind === "selling-point") {
@@ -388,59 +397,45 @@ function drawGrid(context: CanvasRenderingContext2D, width: number, height: numb
 function drawBrandBlock(
   context: CanvasRenderingContext2D,
   block: PdpCanvasBlock,
-  brandName: string,
-  productName: string
+  image: HTMLImageElement | undefined,
+  brandMessage: string
 ) {
   drawBlockBase(context, block, "#ffffff");
-  const brandHeight = Math.round(block.height * 0.58);
-  context.fillStyle = "#005eb8";
-  context.fillRect(block.x, block.y, block.width, brandHeight);
-
-  context.fillStyle = "#ffffff";
-  context.font = `800 ${Math.max(24, block.width * 0.14)}px Segoe UI, Arial, sans-serif`;
-  context.fillText(brandName, block.x + 18, block.y + 54);
-  context.font = "13px Segoe UI, Arial, sans-serif";
-  context.fillStyle = "#d9efff";
-  context.fillText("make yourself at home", block.x + 18, block.y + 78);
-
-  drawWrappedText(
-    context,
-    productName,
-    block.x + 18,
-    block.y + 116,
-    block.width - 36,
-    20,
-    3,
-    "#ffffff",
-    "700 18px Segoe UI, Arial, sans-serif"
-  );
-
-  context.fillStyle = "#ffffff";
-  context.strokeStyle = "#9ebbd5";
-  context.lineWidth = 1;
-  context.fillRect(block.x + 14, block.y + brandHeight + 14, block.width - 28, 42);
-  context.strokeRect(block.x + 14, block.y + brandHeight + 14, block.width - 28, 42);
-  drawWrappedText(
-    context,
-    productName,
-    block.x + 24,
-    block.y + brandHeight + 29,
-    block.width - 48,
-    15,
-    2,
-    "#17202a",
-    "600 12px Segoe UI, Arial, sans-serif"
-  );
-
-  const tileGap = 8;
-  const tileWidth = (block.width - 28 - tileGap * 3) / 4;
-  const tileY = block.y + brandHeight + 76;
-  for (let index = 0; index < 4; index += 1) {
-    context.fillStyle = index === 0 ? "#e6f8fc" : "#f4f6f8";
-    context.strokeStyle = "#b9c4ce";
-    context.fillRect(block.x + 14 + index * (tileWidth + tileGap), tileY, tileWidth, 54);
-    context.strokeRect(block.x + 14 + index * (tileWidth + tileGap), tileY, tileWidth, 54);
+  if (image?.complete && image.naturalWidth > 0) {
+    const scale = Math.min(block.width / image.naturalWidth, block.height / image.naturalHeight);
+    const width = image.naturalWidth * scale;
+    const height = image.naturalHeight * scale;
+    context.drawImage(
+      image,
+      block.x + (block.width - width) / 2,
+      block.y + (block.height - height) / 2,
+      width,
+      height
+    );
+  } else {
+    context.fillStyle = "#eef3f5";
+    context.fillRect(block.x, block.y, block.width, block.height);
+    context.fillStyle = "#168ec2";
+    context.font = `800 ${Math.max(22, block.width * 0.13)}px Segoe UI, Arial, sans-serif`;
+    context.fillText("Midea No.1", block.x + 16, block.y + 54);
   }
+
+  const panelY = block.y + block.height * 0.56;
+  const panelHeight = block.height * 0.18;
+  context.fillStyle = "rgba(255, 255, 255, 0.96)";
+  context.fillRect(block.x, panelY, block.width, panelHeight);
+  drawWrappedText(
+    context,
+    brandMessage,
+    block.x + 12,
+    panelY + 10,
+    block.width - 24,
+    12,
+    4,
+    "#3f4549",
+    "600 9px Segoe UI, Arial, sans-serif",
+    "center"
+  );
 }
 
 function drawKvBlock(
