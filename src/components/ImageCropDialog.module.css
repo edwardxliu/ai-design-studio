@@ -17,10 +17,10 @@
   overflow: auto;
   border: 1px solid rgba(255, 255, 255, 0.82);
   border-radius: 8px;
-  background: rgba(220, 225, 222, 0.74);
+  background: rgba(220, 230, 242, 0.74);
   box-shadow: 0 24px 70px rgba(14, 26, 28, 0.28);
   padding: 18px;
-  color: #1d3027;
+  color: #001a42;
   backdrop-filter: blur(30px) saturate(132%);
 }
 
@@ -46,7 +46,7 @@
 }
 
 .header span {
-  color: #506d5b;
+  color: #38516f;
   font-size: 10px;
   font-weight: 800;
 }
@@ -64,7 +64,7 @@
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.72);
   border-radius: 6px;
-  background: rgba(225, 231, 230, 0.38);
+  background: rgba(225, 235, 247, 0.38);
 }
 
 .canvas {
@@ -89,7 +89,7 @@
   gap: 6px;
   border: 1px solid rgba(255, 255, 255, 0.6);
   border-radius: 4px;
-  background: rgba(29, 48, 39, 0.54);
+  background: rgba(0, 44, 121, 0.54);
   padding: 6px 9px;
   color: #fff;
   backdrop-filter: blur(12px);
@@ -106,7 +106,7 @@
 
 .controls output {
   width: 42px;
-  color: #42584c;
+  color: #38516f;
   text-align: right;
 }
 
@@ -118,10 +118,10 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
-  border: 1px solid rgba(79, 102, 87, 0.48);
+  border: 1px solid rgba(56, 81, 111, 0.48);
   border-radius: 5px;
   padding: 0 11px;
-  color: #23372c;
+  color: #0b1f3a;
 }
 
 .iconButton {
@@ -135,14 +135,14 @@
 }
 
 .primaryButton {
-  background: rgba(72, 102, 82, 0.8);
+  background: rgba(0, 73, 187, 0.8);
   color: #fff;
 }
 
 .footer {
-  border-top: 1px solid rgba(72, 93, 80, 0.18);
+  border-top: 1px solid rgba(56, 81, 111, 0.18);
   padding-top: 13px;
-  color: #4d6156;
+  color: #58718d;
 }
 
 .footer > div {

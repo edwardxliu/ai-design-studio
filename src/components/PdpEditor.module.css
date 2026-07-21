@@ -42,9 +42,9 @@
 }
 
 .statusActive {
-  border-color: #a9ded0;
-  background: var(--studio-glass-success, rgba(232, 247, 241, 0.5));
-  color: #12805c;
+  border-color: #9bc7ff;
+  background: var(--studio-glass-success, rgba(237, 245, 255, 0.5));
+  color: #0049bb;
 }
 
 .toolbar {
@@ -350,8 +350,8 @@
 }
 
 .resultBar {
-  background: var(--studio-glass-success, rgba(232, 247, 241, 0.5));
-  color: #245c49;
+  background: var(--studio-glass-success, rgba(237, 245, 255, 0.5));
+  color: #002c79;
 }
 
 .errorBar {

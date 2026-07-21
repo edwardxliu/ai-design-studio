@@ -667,6 +667,7 @@ export function PopCanvasStudio({ products }: { products: ProductWithProfile[] }
           <div className={styles.actions}>
             <button
               className={styles.generateButton}
+              data-generate-action="true"
               disabled={status === "generating" || status === "uploading"}
               onClick={generateScene}
               type="button"

@@ -40,7 +40,7 @@
 }
 
 .statusDone {
-  color: #117a59;
+  color: #0049bb;
 }
 
 .statusFailed {
@@ -379,10 +379,10 @@
 }
 
 .resultMode {
-  background: var(--studio-glass-success, rgba(231, 245, 239, 0.5));
-  border: 1px solid #b9dfcf;
+  background: var(--studio-glass-success, rgba(237, 245, 255, 0.5));
+  border: 1px solid #9bc7ff;
   border-radius: 4px;
-  color: #117a59;
+  color: #0049bb;
   font-size: 11px;
   font-weight: 800;
   padding: 3px 7px;

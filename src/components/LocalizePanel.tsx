@@ -181,7 +181,7 @@ export function LocalizePanel() {
           <button onClick={saveSettings} style={primaryButtonStyle} type="button">
             保存系统语言
           </button>
-          {settingsStatus ? <span style={{ color: "#12805c" }}>{settingsStatus}</span> : null}
+          {settingsStatus ? <span style={{ color: "#0049bb" }}>{settingsStatus}</span> : null}
         </div>
       </div>
 
@@ -219,7 +219,7 @@ export function LocalizePanel() {
           <button disabled={running || selectedUrls.size === 0} onClick={clearSelection} style={secondaryButtonStyle} type="button">
             清空
           </button>
-          <button disabled={running} onClick={convertBatch} style={primaryButtonStyle} type="button">
+          <button data-generate-action="true" disabled={running} onClick={convertBatch} style={primaryButtonStyle} type="button">
             {running ? `转换中 ${completed}/${items.length}…` : `批量转换所选(${selectedUrls.size})`}
           </button>
           {error ? <span style={{ color: "#8f1f1f" }}>{error}</span> : null}

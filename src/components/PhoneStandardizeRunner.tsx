@@ -232,6 +232,7 @@ export function PhoneStandardizeRunner() {
           />
           <button
             className={styles.generateButton}
+            data-generate-action="true"
             disabled={!selectedProduct || !sourceAsset || uploading || run.state === "running"}
             onClick={generate}
             type="button"
@@ -381,7 +382,7 @@ function OutputCard({ output }: { output: CompetitionOutputArtifact }) {
       </div>
       <div className={styles.outputMeta}>
         <div>
-          <CheckCircle2 aria-hidden color="#12805c" size={16} />
+          <CheckCircle2 aria-hidden color="#0049bb" size={16} />
           <strong>{angle?.label ?? output.spec.label}</strong>
         </div>
         <span>{output.provenance.model}</span>

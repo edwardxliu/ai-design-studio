@@ -266,6 +266,7 @@ export function SkuReplacementStudio() {
           />
           <button
             className={styles.generateButton}
+            data-generate-action="true"
             disabled={!canGenerate || generating || Boolean(uploadingType)}
             onClick={generate}
             type="button"
@@ -433,7 +434,7 @@ export function SkuReplacementStudio() {
               <img alt="SKU 局部替换结果" src={output.url} />
             </div>
             <div className={styles.resultMeta}>
-              <CheckCircle2 aria-hidden color="#12805c" size={20} />
+              <CheckCircle2 aria-hidden color="#0049bb" size={20} />
               <strong>AI 图像编辑完成</strong>
               <span>{new Date(output.generatedAt).toLocaleString()}</span>
               <a href={output.url} target="_blank">

@@ -244,6 +244,7 @@ export function StyleTransferStudio() {
           />
           <button
             className={styles.generateButton}
+            data-generate-action="true"
             disabled={!selectedProduct || !productAsset || run.state === "running"}
             onClick={generate}
             type="button"

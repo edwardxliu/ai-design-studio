@@ -141,7 +141,7 @@ export function ProductProfilePanel() {
         </button>
       </div>
 
-      {status ? <p style={{ color: "#12805c", margin: "0 0 10px" }}>{status}</p> : null}
+      {status ? <p style={{ color: "#0049bb", margin: "0 0 10px" }}>{status}</p> : null}
       {error ? <p style={{ color: "#8f1f1f", margin: "0 0 10px" }}>{error}</p> : null}
 
       <div style={{ display: "grid", gap: 8 }}>

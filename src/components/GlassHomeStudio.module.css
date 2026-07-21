@@ -89,13 +89,13 @@
   background: linear-gradient(
     90deg,
     transparent 0%,
-    rgba(91, 219, 207, 0.12) 12%,
-    rgba(94, 224, 211, 0.72) 36%,
+    rgba(79, 153, 255, 0.12) 12%,
+    rgba(15, 123, 225, 0.72) 36%,
     rgba(250, 205, 130, 0.66) 60%,
-    rgba(145, 213, 190, 0.24) 84%,
+    rgba(157, 222, 247, 0.24) 84%,
     transparent 100%
   );
-  box-shadow: 0 0 52px rgba(116, 226, 210, 0.62), 0 0 96px rgba(238, 198, 132, 0.42);
+  box-shadow: 0 0 52px rgba(79, 153, 255, 0.62), 0 0 96px rgba(238, 198, 132, 0.42);
   filter: blur(20px);
   mix-blend-mode: screen;
   transform: rotate(38deg);
@@ -161,7 +161,7 @@
   border-color: rgba(255, 255, 255, 0.72);
   background: rgba(var(--home-surface-rgb), calc(var(--home-control-opacity) + 0.1));
   color: var(--accent-deep);
-  box-shadow: inset 0 0 0 1px rgba(77, 103, 84, 0.08);
+  box-shadow: inset 0 0 0 1px rgba(0, 73, 187, 0.08);
 }
 
 .navLinkActive::before {
@@ -187,8 +187,8 @@
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #67d8a7;
-  box-shadow: 0 0 0 3px rgba(103, 216, 167, 0.14);
+  background: #4f99ff;
+  box-shadow: 0 0 0 3px rgba(79, 153, 255, 0.14);
 }
 
 .content {
@@ -346,14 +346,14 @@
 
 .backgroundPreset:hover,
 .backgroundPreset:focus-visible {
-  border-color: rgba(77, 103, 84, 0.76);
+  border-color: rgba(0, 73, 187, 0.76);
   opacity: 1;
   outline: none;
 }
 
 .backgroundPreset[aria-pressed="true"] {
   border-color: var(--accent-strong);
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.76), 0 0 0 3px rgba(77, 103, 84, 0.28);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.76), 0 0 0 3px rgba(0, 73, 187, 0.28);
   opacity: 1;
 }
 
@@ -399,7 +399,7 @@
 .secondaryButton:focus-visible,
 .iconButton:hover,
 .iconButton:focus-visible {
-  border-color: rgba(77, 103, 84, 0.62);
+  border-color: rgba(0, 73, 187, 0.62);
   background: rgba(var(--home-surface-rgb), calc(var(--home-control-opacity) + 0.18));
   color: var(--accent-strong);
   outline: 2px solid rgba(169, 142, 93, 0.3);
@@ -479,7 +479,7 @@
 
 .featureCard:hover,
 .featureCard:focus-visible {
-  border-color: rgba(77, 103, 84, 0.62);
+  border-color: rgba(0, 73, 187, 0.62);
   box-shadow: 0 16px 42px rgba(22, 46, 58, 0.16);
   transform: translateY(-2px);
   outline: none;
@@ -603,7 +603,7 @@
   appearance: none;
   border: 1px solid rgba(255, 255, 255, 0.66);
   border-radius: 50%;
-  background: rgba(24, 39, 35, 0.62);
+  background: rgba(0, 26, 66, 0.62);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22), 0 4px 14px rgba(0, 0, 0, 0.24);
   backdrop-filter: blur(10px) saturate(130%);
 }
@@ -620,7 +620,7 @@
   height: 22px;
   border: 1px solid rgba(255, 255, 255, 0.66);
   border-radius: 50%;
-  background: rgba(24, 39, 35, 0.62);
+  background: rgba(0, 26, 66, 0.62);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22), 0 4px 14px rgba(0, 0, 0, 0.24);
 }
 
@@ -894,7 +894,7 @@
   }
 }
 
-/* Edge-only highlights replace all decorative light-flow animations. */
+/* Tunable perimeter light for the workbench and current navigation item. */
 @property --studio-edge-angle {
   syntax: "<angle>";
   initial-value: 0deg;
@@ -913,36 +913,86 @@
 .workbench {
   position: relative;
   isolation: isolate;
+  border-width: var(--studio-border-width, 1px);
+  border-style: solid;
+  border-color: transparent;
 }
 
-.workbench::before,
+.workbench::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  border-radius: inherit;
+  padding: var(--studio-border-width, 1px);
+  background:
+    conic-gradient(
+      from var(--studio-edge-angle),
+      transparent 0deg var(--studio-edge-glow-start, 274deg),
+      rgba(var(--studio-edge-glow-rgb, 79, 153, 255), var(--studio-edge-glow-soft-opacity, 0.13)) var(--studio-edge-glow-leading, 291deg),
+      rgba(var(--studio-edge-glow-rgb, 79, 153, 255), var(--studio-edge-glow-opacity, 0.82)) var(--studio-edge-glow-peak, 317deg),
+      rgba(var(--studio-edge-glow-rgb, 79, 153, 255), var(--studio-edge-glow-mid-opacity, 0.43)) var(--studio-edge-glow-trailing, 344deg),
+      transparent 360deg
+    ),
+    linear-gradient(
+      var(--studio-border-gradient-angle, 120deg),
+      rgba(var(--studio-border-start-rgb, 79, 153, 255), var(--studio-border-opacity, 0.76)) 0%,
+      rgba(var(--studio-border-mid-rgb, 0, 73, 187), var(--studio-border-opacity, 0.76)) var(--studio-border-gradient-midpoint, 52%),
+      rgba(var(--studio-border-end-rgb, 0, 26, 66), var(--studio-border-opacity, 0.76)) 100%
+    );
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  filter: drop-shadow(
+    0 0 var(--studio-edge-glow-size, 7px)
+      rgba(var(--studio-edge-glow-rgb, 79, 153, 255), var(--studio-edge-glow-opacity, 0.82))
+  );
+  animation: studio-edge-orbit var(--studio-edge-glow-speed, 5.6s) linear infinite;
+}
+
+.navLink {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+
+.navLinkActive {
+  border-width: var(--studio-nav-border-width, 1px);
+  border-style: solid;
+  border-color: transparent;
+}
+
 .navLinkActive::after {
   content: "";
   position: absolute;
   inset: 0;
   z-index: 20;
   border-radius: inherit;
-  padding: 1.5px;
-  background: conic-gradient(
-    from var(--studio-edge-angle),
-    transparent 0deg 274deg,
-    rgba(255, 255, 255, 0.16) 286deg,
-    rgba(218, 255, 242, 0.98) 312deg,
-    rgba(255, 255, 255, 0.48) 334deg,
-    transparent 350deg 360deg
-  );
+  padding: var(--studio-nav-border-width, 1px);
+  background:
+    conic-gradient(
+      from var(--studio-edge-angle),
+      transparent 0deg var(--studio-nav-glow-start, 264deg),
+      rgba(var(--studio-nav-glow-rgb, 79, 153, 255), var(--studio-nav-glow-soft-opacity, 0.15)) var(--studio-nav-glow-leading, 283deg),
+      rgba(var(--studio-nav-glow-rgb, 79, 153, 255), var(--studio-nav-glow-opacity, 0.92)) var(--studio-nav-glow-peak, 312deg),
+      rgba(var(--studio-nav-glow-rgb, 79, 153, 255), var(--studio-nav-glow-mid-opacity, 0.48)) var(--studio-nav-glow-trailing, 343deg),
+      transparent 360deg
+    ),
+    linear-gradient(
+      var(--studio-nav-border-gradient-angle, 110deg),
+      rgba(var(--studio-nav-border-start-rgb, 79, 153, 255), var(--studio-nav-border-opacity, 0.72)) 0%,
+      rgba(var(--studio-nav-border-end-rgb, 0, 44, 121), var(--studio-nav-border-opacity, 0.72)) 100%
+    );
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
   pointer-events: none;
-  filter: drop-shadow(0 0 5px rgba(218, 255, 242, 0.58));
-  animation: studio-edge-orbit 5.6s linear infinite;
-}
-
-.navLinkActive::after {
-  padding: 1px;
-  filter: drop-shadow(0 0 3px rgba(218, 255, 242, 0.72));
-  animation-duration: 3.8s;
+  filter: drop-shadow(
+    0 0 var(--studio-nav-glow-size, 4px)
+      rgba(var(--studio-nav-glow-rgb, 79, 153, 255), var(--studio-nav-glow-opacity, 0.92))
+  );
+  animation: studio-edge-orbit var(--studio-nav-glow-speed, 3.8s) linear infinite;
 }
 
 @keyframes studio-edge-orbit {

@@ -31,6 +31,7 @@ import {
   WandSparkles
 } from "lucide-react";
 import styles from "./GlassHomeStudio.module.css";
+import { EdgeTuner } from "./EdgeTuner";
 import { GlassTuner, getGlassTunerStyle, useGlassTunerSettings } from "./GlassTuner";
 import { STUDIO_BACKGROUNDS } from "./studio-backgrounds";
 import { useStudioBackground } from "./useStudioBackground";
@@ -209,6 +210,7 @@ export function GlassHomeStudio() {
                     <button
                       aria-label={"使用" + background.label + "底图"}
                       aria-pressed={!hasCustomBackground && presetBackgroundUrl === background.url}
+                      data-no-optical-highlight="true"
                       className={styles.backgroundPreset}
                       key={background.id}
                       onClick={() => choosePresetBackground(background.url)}
@@ -252,6 +254,10 @@ export function GlassHomeStudio() {
                 ) : null}
                 <GlassTuner
                   resetSettings={resetGlassSettings}
+                  setSettings={setGlassSettings}
+                  settings={glassSettings}
+                  triggerClassName={styles.secondaryButton}
+                />                <EdgeTuner
                   setSettings={setGlassSettings}
                   settings={glassSettings}
                   triggerClassName={styles.secondaryButton}

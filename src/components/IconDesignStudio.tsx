@@ -235,6 +235,7 @@ export function IconDesignStudio() {
           />
           <button
             className={styles.primaryButton}
+            data-generate-action="true"
             disabled={!ready || isBusy}
             onClick={generateAll}
             type="button"
@@ -439,7 +440,7 @@ function OutputCard({
       </div>
       <div className={styles.outputMeta}>
         <div>
-          {output ? <CheckCircle2 aria-hidden color="#12805c" size={16} /> : null}
+          {output ? <CheckCircle2 aria-hidden color="#0049bb" size={16} /> : null}
           <strong>{variant.label}</strong>
         </div>
         <p>{variant.description}</p>

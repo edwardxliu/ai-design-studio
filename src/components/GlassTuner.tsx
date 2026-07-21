@@ -7,7 +7,32 @@ import styles from "./GlassTuner.module.css";
 
 export const GLASS_TUNER_STORAGE_KEY = "midea-home-glass-tuner";
 
-export type GlassTunerSettings = {
+export type EdgeTunerSettings = {
+  edgeBorderColor: string;
+  edgeBorderMidColor: string;
+  edgeBorderEndColor: string;
+  edgeBorderGradientAngle: number;
+  edgeBorderGradientMidpoint: number;
+  edgeBorderOpacity: number;
+  edgeBorderWidth: number;
+  edgeGlowColor: string;
+  edgeGlowBrightness: number;
+  edgeGlowSize: number;
+  edgeGlowSpan: number;
+  edgeGlowSpeed: number;
+  navBorderColor: string;
+  navBorderEndColor: string;
+  navBorderGradientAngle: number;
+  navBorderOpacity: number;
+  navBorderWidth: number;
+  navGlowColor: string;
+  navGlowBrightness: number;
+  navGlowSize: number;
+  navGlowSpan: number;
+  navGlowSpeed: number;
+};
+
+export type GlassTunerSettings = EdgeTunerSettings & {
   frameColor: string;
   surfaceColor: string;
   frameOpacity: number;
@@ -18,6 +43,31 @@ export type GlassTunerSettings = {
   overlayOpacity: number;
 };
 
+export const DEFAULT_EDGE_TUNER_SETTINGS: EdgeTunerSettings = {
+  edgeBorderColor: "#4f99ff",
+  edgeBorderMidColor: "#0049bb",
+  edgeBorderEndColor: "#001a42",
+  edgeBorderGradientAngle: 120,
+  edgeBorderGradientMidpoint: 52,
+  edgeBorderOpacity: 0.76,
+  edgeBorderWidth: 1,
+  edgeGlowColor: "#4f99ff",
+  edgeGlowBrightness: 0.82,
+  edgeGlowSize: 7,
+  edgeGlowSpan: 86,
+  edgeGlowSpeed: 5.6,
+  navBorderColor: "#4f99ff",
+  navBorderEndColor: "#002c79",
+  navBorderGradientAngle: 110,
+  navBorderOpacity: 0.72,
+  navBorderWidth: 1,
+  navGlowColor: "#4f99ff",
+  navGlowBrightness: 0.92,
+  navGlowSize: 4,
+  navGlowSpan: 96,
+  navGlowSpeed: 3.8
+};
+
 export const DEFAULT_GLASS_TUNER_SETTINGS: GlassTunerSettings = {
   frameColor: "#f0f5f7",
   surfaceColor: "#ffffff",
@@ -26,7 +76,8 @@ export const DEFAULT_GLASS_TUNER_SETTINGS: GlassTunerSettings = {
   controlOpacity: 0.24,
   blur: 24,
   saturation: 128,
-  overlayOpacity: 0.14
+  overlayOpacity: 0.14,
+  ...DEFAULT_EDGE_TUNER_SETTINGS
 };
 
 type GlassTunerProps = {
@@ -83,6 +134,8 @@ export function useGlassTunerSettings() {
 }
 
 export function getGlassTunerStyle(settings: GlassTunerSettings): CSSProperties {
+  const edgeStops = getConicStops(settings.edgeGlowSpan);
+  const navStops = getConicStops(settings.navGlowSpan);
   return {
     "--home-frame-rgb": hexToRgbTuple(settings.frameColor),
     "--home-surface-rgb": hexToRgbTuple(settings.surfaceColor),
@@ -91,7 +144,39 @@ export function getGlassTunerStyle(settings: GlassTunerSettings): CSSProperties 
     "--home-control-opacity": String(settings.controlOpacity),
     "--home-glass-blur": settings.blur + "px",
     "--home-glass-saturation": settings.saturation + "%",
-    "--home-overlay-opacity": String(settings.overlayOpacity)
+    "--home-overlay-opacity": String(settings.overlayOpacity),
+    "--studio-border-start-rgb": hexToRgbTuple(settings.edgeBorderColor),
+    "--studio-border-mid-rgb": hexToRgbTuple(settings.edgeBorderMidColor),
+    "--studio-border-end-rgb": hexToRgbTuple(settings.edgeBorderEndColor),
+    "--studio-border-gradient-angle": formatDegrees(settings.edgeBorderGradientAngle),
+    "--studio-border-gradient-midpoint": settings.edgeBorderGradientMidpoint + "%",
+    "--studio-border-opacity": formatCssNumber(settings.edgeBorderOpacity),
+    "--studio-border-width": settings.edgeBorderWidth + "px",
+    "--studio-edge-glow-rgb": hexToRgbTuple(settings.edgeGlowColor),
+    "--studio-edge-glow-opacity": formatCssNumber(settings.edgeGlowBrightness),
+    "--studio-edge-glow-mid-opacity": formatCssNumber(settings.edgeGlowBrightness * 0.52),
+    "--studio-edge-glow-soft-opacity": formatCssNumber(settings.edgeGlowBrightness * 0.16),
+    "--studio-edge-glow-size": settings.edgeGlowSize + "px",
+    "--studio-edge-glow-speed": settings.edgeGlowSpeed + "s",
+    "--studio-edge-glow-start": edgeStops.start,
+    "--studio-edge-glow-leading": edgeStops.leading,
+    "--studio-edge-glow-peak": edgeStops.peak,
+    "--studio-edge-glow-trailing": edgeStops.trailing,
+    "--studio-nav-border-start-rgb": hexToRgbTuple(settings.navBorderColor),
+    "--studio-nav-border-end-rgb": hexToRgbTuple(settings.navBorderEndColor),
+    "--studio-nav-border-gradient-angle": formatDegrees(settings.navBorderGradientAngle),
+    "--studio-nav-border-opacity": formatCssNumber(settings.navBorderOpacity),
+    "--studio-nav-border-width": settings.navBorderWidth + "px",
+    "--studio-nav-glow-rgb": hexToRgbTuple(settings.navGlowColor),
+    "--studio-nav-glow-opacity": formatCssNumber(settings.navGlowBrightness),
+    "--studio-nav-glow-mid-opacity": formatCssNumber(settings.navGlowBrightness * 0.52),
+    "--studio-nav-glow-soft-opacity": formatCssNumber(settings.navGlowBrightness * 0.16),
+    "--studio-nav-glow-size": settings.navGlowSize + "px",
+    "--studio-nav-glow-speed": settings.navGlowSpeed + "s",
+    "--studio-nav-glow-start": navStops.start,
+    "--studio-nav-glow-leading": navStops.leading,
+    "--studio-nav-glow-peak": navStops.peak,
+    "--studio-nav-glow-trailing": navStops.trailing
   } as CSSProperties;
 }
 
@@ -337,7 +422,29 @@ function normalizeSettings(input: Partial<GlassTunerSettings>): GlassTunerSettin
       0,
       0.5,
       DEFAULT_GLASS_TUNER_SETTINGS.overlayOpacity
-    )
+    ),
+    edgeBorderColor: normalizeColor(input.edgeBorderColor, DEFAULT_EDGE_TUNER_SETTINGS.edgeBorderColor),
+    edgeBorderMidColor: normalizeColor(input.edgeBorderMidColor, DEFAULT_EDGE_TUNER_SETTINGS.edgeBorderMidColor),
+    edgeBorderEndColor: normalizeColor(input.edgeBorderEndColor, DEFAULT_EDGE_TUNER_SETTINGS.edgeBorderEndColor),
+    edgeBorderGradientAngle: normalizeNumber(input.edgeBorderGradientAngle, 0, 360, DEFAULT_EDGE_TUNER_SETTINGS.edgeBorderGradientAngle),
+    edgeBorderGradientMidpoint: normalizeNumber(input.edgeBorderGradientMidpoint, 10, 90, DEFAULT_EDGE_TUNER_SETTINGS.edgeBorderGradientMidpoint),
+    edgeBorderOpacity: normalizeNumber(input.edgeBorderOpacity, 0, 1, DEFAULT_EDGE_TUNER_SETTINGS.edgeBorderOpacity),
+    edgeBorderWidth: normalizeNumber(input.edgeBorderWidth, 0.5, 4, DEFAULT_EDGE_TUNER_SETTINGS.edgeBorderWidth),
+    edgeGlowColor: normalizeColor(input.edgeGlowColor, DEFAULT_EDGE_TUNER_SETTINGS.edgeGlowColor),
+    edgeGlowBrightness: normalizeNumber(input.edgeGlowBrightness, 0, 1, DEFAULT_EDGE_TUNER_SETTINGS.edgeGlowBrightness),
+    edgeGlowSize: normalizeNumber(input.edgeGlowSize, 0, 30, DEFAULT_EDGE_TUNER_SETTINGS.edgeGlowSize),
+    edgeGlowSpan: normalizeNumber(input.edgeGlowSpan, 20, 180, DEFAULT_EDGE_TUNER_SETTINGS.edgeGlowSpan),
+    edgeGlowSpeed: normalizeNumber(input.edgeGlowSpeed, 1.5, 20, DEFAULT_EDGE_TUNER_SETTINGS.edgeGlowSpeed),
+    navBorderColor: normalizeColor(input.navBorderColor, DEFAULT_EDGE_TUNER_SETTINGS.navBorderColor),
+    navBorderEndColor: normalizeColor(input.navBorderEndColor, DEFAULT_EDGE_TUNER_SETTINGS.navBorderEndColor),
+    navBorderGradientAngle: normalizeNumber(input.navBorderGradientAngle, 0, 360, DEFAULT_EDGE_TUNER_SETTINGS.navBorderGradientAngle),
+    navBorderOpacity: normalizeNumber(input.navBorderOpacity, 0, 1, DEFAULT_EDGE_TUNER_SETTINGS.navBorderOpacity),
+    navBorderWidth: normalizeNumber(input.navBorderWidth, 0.5, 3, DEFAULT_EDGE_TUNER_SETTINGS.navBorderWidth),
+    navGlowColor: normalizeColor(input.navGlowColor, DEFAULT_EDGE_TUNER_SETTINGS.navGlowColor),
+    navGlowBrightness: normalizeNumber(input.navGlowBrightness, 0, 1, DEFAULT_EDGE_TUNER_SETTINGS.navGlowBrightness),
+    navGlowSize: normalizeNumber(input.navGlowSize, 0, 24, DEFAULT_EDGE_TUNER_SETTINGS.navGlowSize),
+    navGlowSpan: normalizeNumber(input.navGlowSpan, 20, 180, DEFAULT_EDGE_TUNER_SETTINGS.navGlowSpan),
+    navGlowSpeed: normalizeNumber(input.navGlowSpeed, 1.5, 20, DEFAULT_EDGE_TUNER_SETTINGS.navGlowSpeed)
   };
 }
 
@@ -364,6 +471,23 @@ function copyWithTemporaryInput(value: string) {
   return copied;
 }
 
+function getConicStops(span: number) {
+  const start = 360 - span;
+  return {
+    start: formatDegrees(start),
+    leading: formatDegrees(start + span * 0.2),
+    peak: formatDegrees(start + span * 0.5),
+    trailing: formatDegrees(start + span * 0.82)
+  };
+}
+
+function formatDegrees(value: number) {
+  return value.toFixed(1).replace(/\.0$/, "") + "deg";
+}
+
+function formatCssNumber(value: number) {
+  return value.toFixed(3).replace(/0+$/, "").replace(/\.$/, "");
+}
 function hexToRgbTuple(hex: string) {
   const value = hex.replace("#", "");
   return [

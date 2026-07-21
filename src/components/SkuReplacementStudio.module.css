@@ -495,10 +495,10 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  border: 1px solid #b9dccf;
+  border: 1px solid #9bc7ff;
   border-radius: 6px;
-  background: var(--studio-glass-success, rgba(238, 249, 245, 0.5));
-  color: #12805c;
+  background: var(--studio-glass-success, rgba(237, 245, 255, 0.5));
+  color: #0049bb;
   padding: 11px 12px;
   font-size: 13px;
   font-weight: 700;

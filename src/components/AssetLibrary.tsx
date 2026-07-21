@@ -267,7 +267,7 @@ export function AssetLibrary() {
           </button>
         </div>
         <p style={{ color: "var(--muted)", margin: "10px 0 0" }}>{uploadCategory.description}</p>
-        {status ? <p style={{ color: "#12805c", margin: "8px 0 0" }}>{status}</p> : null}
+        {status ? <p style={{ color: "#0049bb", margin: "8px 0 0" }}>{status}</p> : null}
         {error ? <p style={{ color: "#8f1f1f", margin: "8px 0 0" }}>{error}</p> : null}
       </div>
 

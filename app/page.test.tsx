@@ -117,4 +117,38 @@ describe("HomePage", () => {
       expect(screen.getByRole("main").style.getPropertyValue("--home-frame-opacity")).toBe("0.32");
     });
   });
+  it("tunes and persists workbench and active-menu edge lighting", async () => {
+    render(<HomePage />);
+
+    fireEvent.click(screen.getByRole("button", { name: "边框参数" }));
+    fireEvent.change(screen.getByLabelText("流光亮度"), {
+      target: { value: "0.64" }
+    });
+    fireEvent.change(screen.getByLabelText("菜单边框宽度"), {
+      target: { value: "2.2" }
+    });
+    fireEvent.change(screen.getByLabelText("边框结束色"), {
+      target: { value: "#114f99" }
+    });
+    fireEvent.change(screen.getByLabelText("渐变方向"), {
+      target: { value: "145" }
+    });
+
+    const stage = screen.getByRole("main");
+    expect(stage.style.getPropertyValue("--studio-edge-glow-opacity")).toBe("0.64");
+    expect(stage.style.getPropertyValue("--studio-nav-border-width")).toBe("2.2px");
+    expect(stage.style.getPropertyValue("--studio-border-end-rgb")).toBe("17, 79, 153");
+    expect(stage.style.getPropertyValue("--studio-border-gradient-angle")).toBe("145deg");
+    expect(screen.getByText(/edgeGlow=.*\/0\.64\//)).toBeInTheDocument();
+
+    await waitFor(() => {
+      const stored = JSON.parse(
+        window.localStorage.getItem("midea-home-glass-tuner") ?? "{}"
+      ) as { edgeBorderEndColor?: string; edgeBorderGradientAngle?: number; edgeGlowBrightness?: number; navBorderWidth?: number };
+      expect(stored.edgeGlowBrightness).toBe(0.64);
+      expect(stored.navBorderWidth).toBe(2.2);
+      expect(stored.edgeBorderEndColor).toBe("#114f99");
+      expect(stored.edgeBorderGradientAngle).toBe(145);
+    });
+  });
 });

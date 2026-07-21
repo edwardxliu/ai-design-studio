@@ -224,6 +224,7 @@ export function ProductVideoStudio({
       <div className={styles.actions}>
         <button
           className={styles.generateButton}
+          data-generate-action="true"
           disabled={busy || !productImages.length || !products.length}
           onClick={createVideo}
           type="button"

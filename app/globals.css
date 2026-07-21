@@ -3,17 +3,17 @@
   --background: #f6f7f9;
   --surface: #ffffff;
   --surface-subtle: #eef2f6;
-  --text: #1c2924;
-  --muted: #445149;
-  --muted-soft: #59665f;
+  --text: #0b1f3a;
+  --muted: #38516f;
+  --muted-soft: #58718d;
   --line: #d9e0e7;
-  --accent: #819671;
-  --accent-strong: #4d6754;
-  --accent-deep: #354a3c;
-  --accent-warm: #a98e5d;
-  --accent-soft: rgba(129, 150, 113, 0.24);
-  --accent-border: rgba(77, 103, 84, 0.58);
-  --success: #12805c;
+  --accent: #4f99ff;
+  --accent-strong: #0049bb;
+  --accent-deep: #002c79;
+  --accent-warm: #114f99;
+  --accent-soft: rgba(79, 153, 255, 0.24);
+  --accent-border: rgba(0, 73, 187, 0.58);
+  --success: #0049bb;
   --warning: #b36b00;
   --font-ui:
     var(--font-gotham),
@@ -106,9 +106,9 @@ h2 {
 
 .status-pill {
   flex: 0 0 auto;
-  border: 1px solid rgba(77, 103, 84, 0.38);
+  border: 1px solid rgba(0, 73, 187, 0.38);
   border-radius: 999px;
-  background: rgba(129, 150, 113, 0.18);
+  background: rgba(79, 153, 255, 0.18);
   color: var(--accent-strong);
   padding: 8px 12px;
   font-size: 13px;
@@ -292,7 +292,7 @@ select {
   appearance: none !important;
   -webkit-appearance: none !important;
   box-sizing: border-box !important;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1.5 1.5 6 6l4.5-4.5' fill='none' stroke='%23354a3c' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1.5 1.5 6 6l4.5-4.5' fill='none' stroke='%23002c79' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") !important;
   background-position-x: calc(100% - 11px) !important;
   background-position-y: 50% !important;
   background-repeat: no-repeat !important;
@@ -300,15 +300,33 @@ select {
   padding-right: 34px !important;
   line-height: normal !important;
 }
-/* A restrained top highlight gives standalone controls the same glass depth as workspace buttons. */
-button,
-a[class*="Button"],
-label[class*="Button"] {
+/* Only AI generation actions use the solid optical treatment. */
+button[data-generate-action="true"] {
+  border-color: rgba(157, 222, 247, 0.88) !important;
+  background-color: #005ab0 !important;
+  background-image:
+    radial-gradient(ellipse 72% 150% at 2% 50%, rgba(15, 123, 225, 0.98) 0%, rgba(79, 153, 255, 0.58) 42%, rgba(79, 153, 255, 0) 74%),
+    radial-gradient(ellipse 64% 140% at 98% 50%, rgba(255, 221, 183, 0.72) 0%, rgba(255, 239, 226, 0.38) 42%, rgba(255, 221, 183, 0) 76%),
+    radial-gradient(ellipse 48% 76% at 50% 114%, rgba(243, 251, 255, 1) 0%, rgba(157, 222, 247, 0.82) 44%, rgba(157, 222, 247, 0) 80%),
+    linear-gradient(180deg, #0f7be1 0%, #005ab0 56%, #04498b 100%) !important;
+  background-blend-mode: screen, screen, screen, normal !important;
+  color: #f3fbff !important;
+  text-shadow: 0 1px 1px rgba(0, 26, 66, 0.34);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.88),
-    inset 0 9px 16px -15px rgba(255, 255, 255, 0.96),
-    inset 16px 0 28px -24px rgba(114, 188, 255, 0.68),
-    inset -16px 0 28px -24px rgba(255, 215, 183, 0.62),
-    inset 0 -2px 3px rgba(33, 54, 45, 0.15),
-    0 5px 12px rgba(18, 43, 54, 0.11) !important;
+    inset 0 1px 0 rgba(243, 251, 255, 0.94),
+    inset 0 0 30px rgba(222, 254, 255, 0.8),
+    inset 0 0 60px rgba(189, 212, 255, 0.72),
+    0 5px 12px rgba(0, 26, 66, 0.24) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+button[data-generate-action="true"]:hover:not(:disabled) {
+  border-color: #f3fbff !important;
+  filter: brightness(1.06) saturate(1.05);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 1),
+    inset 0 0 34px rgba(222, 254, 255, 0.9),
+    inset 0 0 66px rgba(189, 212, 255, 0.82),
+    0 7px 16px rgba(0, 26, 66, 0.3) !important;
 }

@@ -133,6 +133,7 @@ export function CapabilityRunner({ taskId }: { taskId: CompetitionTaskId }) {
             </span>
           ) : null}
           <button
+            data-generate-action="true"
             disabled={run.state === "running" || !productId}
             onClick={generate}
             style={primaryButtonStyle}
@@ -209,7 +210,7 @@ function OutputCard({ output }: { output: CompetitionOutputArtifact }) {
       ) : null}
       <div>
         <div style={{ alignItems: "center", display: "flex", gap: 8, marginBottom: 6 }}>
-          <CheckCircle2 aria-hidden color="#12805c" size={16} />
+          <CheckCircle2 aria-hidden color="#0049bb" size={16} />
           <strong>{output.spec.label}</strong>
           <span style={modelPillStyle}>{output.provenance.model}</span>
         </div>
@@ -247,10 +248,10 @@ const primaryButtonStyle = {
 } as const;
 
 const modelPillStyle = {
-  background: "#e8f7f1",
-  border: "1px solid #bfe7d5",
+  background: "#edf5ff",
+  border: "1px solid #b9d7ff",
   borderRadius: 999,
-  color: "#12805c",
+  color: "#0049bb",
   fontSize: 12,
   padding: "3px 8px"
 } as const;
