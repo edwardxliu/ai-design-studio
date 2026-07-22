@@ -92,7 +92,7 @@ export function CoverChat() {
   };
 
   return (
-    <div className="cover-chat-boundary">
+    <div className="cover-chat-boundary" id="agent">
       <section aria-label="AI creative assistant" className="cover-chat-panel">
         <h2>Tell us... what would you like to create?</h2>
 

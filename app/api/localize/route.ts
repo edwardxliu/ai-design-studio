@@ -15,32 +15,39 @@ import type { LocalAssetStore } from "@/src/services/local-asset-store";
 import { readRuntimeFile } from "@/src/services/runtime-files";
 
 const GENERATED_ROOT = join(process.cwd(), "public", "generated");
+const MAX_UPLOAD_BYTES = 30 * 1024 * 1024;
+const SUPPORTED_UPLOAD_TYPES = new Set(["image/png", "image/jpeg", "image/webp"]);
 
 export async function POST(request: Request) {
-  const body = await request.json().catch(() => null);
-  const outputUrl = String(body?.outputUrl ?? "");
+  const form = await request.formData().catch(() => null);
+  const imageEntry = form?.get("image");
 
-  if (!outputUrl.startsWith("/generated/")) {
-    return NextResponse.json({ error: "请选择一张已生成的图片。" }, { status: 400 });
-  }
-
-  const segments = outputUrl.replace("/generated/", "").split("/");
-  const file = await readRuntimeFile(GENERATED_ROOT, segments);
-  if (!file) {
-    return NextResponse.json({ error: "所选图片不存在,可能已被清理。" }, { status: 400 });
-  }
-
-  const suppliedImage = parseSuppliedImage(body);
-  if (!suppliedImage && !["image/png", "image/jpeg", "image/webp"].includes(file.contentType)) {
+  if (!form || !isUploadedFile(imageEntry)) {
     return NextResponse.json(
-      { error: "SVG 输出需要先在浏览器中栅格化后再转换。" },
+      { error: "请上传一张需要转换文字语言的图片。" },
+      { status: 400 }
+    );
+  }
+
+  const contentType = imageEntry.type.toLowerCase();
+  if (!SUPPORTED_UPLOAD_TYPES.has(contentType)) {
+    return NextResponse.json(
+      { error: "仅支持 PNG、JPEG 或 WebP 图片。SVG 请先在浏览器中转换为 PNG。" },
+      { status: 415 }
+    );
+  }
+
+  const bytes = Buffer.from(await imageEntry.arrayBuffer());
+  if (!bytes.length || bytes.length > MAX_UPLOAD_BYTES) {
+    return NextResponse.json(
+      { error: "图片为空或超过 30 MB 上传限制。" },
       { status: 400 }
     );
   }
 
   let dimensions: PixelDimensions;
   try {
-    dimensions = await readImageDimensions(file.bytes);
+    dimensions = await readImageDimensions(bytes);
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "无法读取原图尺寸。" },
@@ -50,18 +57,20 @@ export async function POST(request: Request) {
 
   const taskId = `localize-${Date.now()}`;
   const imageStore = createDemoAssetStore();
+  const sourceName = safeSourceName(imageEntry.name);
+
   try {
     const result = await localizeGeneratedImage({
       taskId,
-      sourceUrl: outputUrl,
-      imageBytes: suppliedImage?.bytes ?? file.bytes,
-      contentType: suppliedImage?.contentType ?? file.contentType,
-      country: String(body?.country ?? "Mexico"),
-      language: String(body?.language ?? "Spanish"),
+      sourceUrl: `upload:${sourceName}`,
+      imageBytes: bytes,
+      contentType,
+      country: String(form.get("country") ?? "Mexico"),
+      language: String(form.get("language") ?? "Spanish"),
       size: chooseImageProviderSize(dimensions),
       sourceWidth: dimensions.width,
       sourceHeight: dimensions.height,
-      imageModel: parseImageModelChoice(body?.imageModel),
+      imageModel: parseImageModelChoice(form.get("imageModel")),
       imageStore,
       costLedger: createDefaultCostLedger()
     });
@@ -74,6 +83,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       ...result,
+      sourceUrl: `upload:${sourceName}`,
       url: exactUrl,
       width: dimensions.width,
       height: dimensions.height
@@ -86,23 +96,19 @@ export async function POST(request: Request) {
   }
 }
 
-function parseSuppliedImage(body: unknown): { bytes: Buffer; contentType: string } | undefined {
-  if (typeof body !== "object" || body === null) {
-    return undefined;
-  }
-  const record = body as Record<string, unknown>;
-  if (typeof record.imageBase64 !== "string" || record.imageBase64.length === 0) {
-    return undefined;
-  }
-  const contentType = String(record.imageContentType ?? "");
-  if (!["image/png", "image/jpeg", "image/webp"].includes(contentType)) {
-    return undefined;
-  }
-  const bytes = Buffer.from(record.imageBase64, "base64");
-  if (bytes.length === 0 || bytes.length > 30 * 1024 * 1024) {
-    return undefined;
-  }
-  return { bytes, contentType };
+function isUploadedFile(value: FormDataEntryValue | null | undefined): value is File {
+  return (
+    value !== null &&
+    value !== undefined &&
+    typeof value !== "string" &&
+    typeof value.arrayBuffer === "function" &&
+    typeof value.type === "string"
+  );
+}
+
+function safeSourceName(value: string): string {
+  const cleaned = value.replace(/[^a-zA-Z0-9._-]+/g, "-").replace(/^-+|-+$/g, "");
+  return cleaned.slice(0, 120) || "uploaded-image";
 }
 
 async function conformOutputDimensions(
@@ -136,7 +142,7 @@ async function readGeneratedOutputBytes(outputUrl: string): Promise<Buffer> {
       outputUrl.replace("/generated/", "").split("/")
     );
     if (!file) {
-      throw new Error("无法读取本地化模型输出。" );
+      throw new Error("无法读取本地化模型输出。");
     }
     return file.bytes;
   }
@@ -147,7 +153,7 @@ async function readGeneratedOutputBytes(outputUrl: string): Promise<Buffer> {
   }
 
   if (!/^https?:\/\//i.test(outputUrl)) {
-    throw new Error("本地化模型返回了不支持的图片地址。" );
+    throw new Error("本地化模型返回了不支持的图片地址。");
   }
   const response = await fetchOpenAi(
     outputUrl,
@@ -164,7 +170,7 @@ function resolveGeneratedPath(outputUrl: string): string {
   const root = resolve(GENERATED_ROOT);
   const target = resolve(root, ...outputUrl.replace("/generated/", "").split("/"));
   if (target !== root && !target.startsWith(root + sep)) {
-    throw new Error("本地化输出路径不安全。" );
+    throw new Error("本地化输出路径不安全。");
   }
   return target;
 }

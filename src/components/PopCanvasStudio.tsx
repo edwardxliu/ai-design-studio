@@ -1091,8 +1091,6 @@ async function rasterizeSvg(svg: string): Promise<string | undefined> {
       return undefined;
     }
 
-    context.fillStyle = "#ffffff";
-    context.fillRect(0, 0, canvas.width, canvas.height);
     context.drawImage(image, 0, 0, canvas.width, canvas.height);
     return canvas.toDataURL("image/png").split(",")[1];
   } finally {

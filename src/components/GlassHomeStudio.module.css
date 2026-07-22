@@ -236,15 +236,6 @@
   display: block;
 }
 
-.intro {
-  max-width: 600px;
-  margin: 9px 0 0;
-  color: var(--muted);
-  font-family: var(--font-gotham), Arial, sans-serif;
-  font-size: 11px;
-  line-height: 1.45;
-}
-
 .topbarSide {
   min-width: 0;
   display: grid;
@@ -1038,11 +1029,6 @@
   line-height: 0.96;
 }
 
-.intro {
-  margin-top: 10px;
-  font-size: 10px;
-}
-
 .utilityGrid {
   display: grid;
   grid-template-columns: 88px minmax(0, 1fr);
@@ -1321,5 +1307,28 @@
 
   .featureCard {
     aspect-ratio: 4 / 3;
+  }
+}
+/* The workbench is narrower than the viewport, so respond to its content width. */
+.content {
+  container-name: studio-home-content;
+  container-type: inline-size;
+}
+
+.utilityGrid > *,
+.infoStack,
+.infoCard {
+  min-width: 0;
+}
+
+@container studio-home-content (max-width: 760px) {
+  .topbar {
+    min-height: 0;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+  }
+
+  .topbarSide {
+    width: 100%;
   }
 }

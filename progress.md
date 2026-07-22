@@ -313,3 +313,10 @@ POP 定向验证通过：src/domain/pop.test.ts、pop-template-sets.test.ts、�
 - `npm run typecheck`: passed.
 - `npm test -- app/page.test.tsx`: 1 file / 1 test passed.
 - Runtime checks: root HTML order valid; all three MP4 resources returned HTTP 200 with `video/mp4`.
+## 2026-07-22 Stage 22 complete
+- POP flat SVGs and generated PNG inputs now retain transparent backgrounds.
+- The studio-home subtitle was removed and the top-right controls stack below the heading when the content panel becomes narrow.
+- npm run typecheck: passed.
+- Focused tests: 2 files / 14 tests passed.
+- Runtime checks: /studio-home and /pop both returned HTTP 200; no browser was opened.
+- A broader PopCanvasStudio run exposed one pre-existing stale test for the removed image-model selector; the remaining 19 tests in that run passed.

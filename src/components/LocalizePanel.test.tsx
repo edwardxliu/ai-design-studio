@@ -4,44 +4,31 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { LocalizePanel } from "./LocalizePanel";
 
 const fetchMock = vi.fn();
+let objectUrlIndex = 0;
 
 beforeEach(() => {
+  objectUrlIndex = 0;
   fetchMock.mockReset();
   fetchMock.mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = String(input);
-    if (url.includes("/generated/c/three.svg")) {
-      return {
-        ok: true,
-        text: async () =>
-          '<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="600"></svg>'
-      };
-    }
     if (url.includes("/api/settings") && init?.method === "PUT") {
       return { ok: true, json: async () => ({ settings: JSON.parse(String(init.body)) }) };
     }
     if (url.includes("/api/settings")) {
-      return { ok: true, json: async () => ({ settings: { country: "Mexico", language: "Spanish" } }) };
-    }
-    if (url.includes("/api/outputs")) {
       return {
         ok: true,
-        json: async () => ({
-          outputs: [
-            { url: "/generated/a/one.png", filename: "one.png", taskId: "a", modifiedAt: "" },
-            { url: "/generated/b/two.png", filename: "two.png", taskId: "b", modifiedAt: "" },
-            { url: "/generated/c/three.svg", filename: "three.svg", taskId: "c", modifiedAt: "" }
-          ]
-        })
+        json: async () => ({ settings: { country: "Mexico", language: "Spanish" } })
       };
     }
     if (url.includes("/api/localize")) {
-      const body = JSON.parse(String(init?.body));
+      const form = init?.body as FormData;
+      const image = form.get("image") as File;
       return {
         ok: true,
         json: async () => ({
-          url: `${body.outputUrl}.localized.png`,
+          url: `/generated/localized-${image.name}`,
           model: "gpt-image-1",
-          sourceUrl: body.outputUrl
+          sourceUrl: `upload:${image.name}`
         })
       };
     }
@@ -67,7 +54,8 @@ beforeEach(() => {
     "URL",
     class TestURL extends URL {
       static createObjectURL() {
-        return "blob:localized-svg";
+        objectUrlIndex += 1;
+        return `blob:localized-${objectUrlIndex}`;
       }
 
       static revokeObjectURL() {
@@ -80,9 +68,9 @@ beforeEach(() => {
     fillRect: vi.fn(),
     fillStyle: "#ffffff"
   } as unknown as CanvasRenderingContext2D);
-  vi.spyOn(HTMLCanvasElement.prototype, "toDataURL").mockReturnValue(
-    "data:image/png;base64,c3Zn"
-  );
+  vi.spyOn(HTMLCanvasElement.prototype, "toBlob").mockImplementation((callback) => {
+    callback(new Blob(["png"], { type: "image/png" }));
+  });
 });
 
 afterEach(() => {
@@ -109,15 +97,20 @@ describe("LocalizePanel", () => {
     });
   });
 
-  it("batch-converts every selected image into the target language", async () => {
+  it("batch-converts user-uploaded images with multipart form data", async () => {
     const user = userEvent.setup();
     render(<LocalizePanel />);
 
-    await user.click(await screen.findByLabelText("选择 one.png"));
-    await user.click(screen.getByLabelText("选择 two.png"));
+    const input = await screen.findByLabelText("上传待转换图片");
+    await user.upload(input, [
+      new File(["one"], "one.png", { type: "image/png" }),
+      new File(["two"], "two.webp", { type: "image/webp" })
+    ]);
+    await screen.findByText("one.png");
+    await screen.findByText("two.webp");
     await user.selectOptions(screen.getByLabelText("目标语言"), "Arabic");
     await user.selectOptions(screen.getByLabelText("图像模型"), "doubao");
-    await user.click(screen.getByRole("button", { name: /批量转换所选\(2\)/ }));
+    await user.click(screen.getByRole("button", { name: "转换上传图片（2）" }));
 
     await waitFor(() => {
       const localizeCalls = fetchMock.mock.calls.filter(([url]) =>
@@ -125,37 +118,46 @@ describe("LocalizePanel", () => {
       );
       expect(localizeCalls).toHaveLength(2);
       for (const [, init] of localizeCalls) {
-        expect(JSON.parse(String(init.body))).toMatchObject({
-          language: "Arabic",
-          imageModel: "doubao"
-        });
+        expect(init?.headers).toBeUndefined();
+        const form = init?.body as FormData;
+        expect(form.get("language")).toBe("Arabic");
+        expect(form.get("imageModel")).toBe("doubao");
+        expect(form.get("image")).toBeInstanceOf(File);
       }
     });
 
-    expect(await screen.findAllByAltText("本地化结果")).toHaveLength(2);
+    expect(await screen.findAllByAltText(/本地化结果/)).toHaveLength(2);
+    expect(fetchMock.mock.calls.some(([url]) => String(url).includes("/api/outputs"))).toBe(false);
   });
 
-  it("rasterizes generated SVG artwork before language conversion", async () => {
+  it("rasterizes an uploaded SVG before sending it to the API", async () => {
     const user = userEvent.setup();
     render(<LocalizePanel />);
 
-    await user.click(await screen.findByLabelText("选择 three.svg"));
-    await user.click(screen.getByRole("button", { name: /批量转换所选\(1\)/ }));
+    const input = await screen.findByLabelText("上传待转换图片");
+    await user.upload(
+      input,
+      new File(
+        ['<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="600"/>'],
+        "long-artwork.svg",
+        { type: "image/svg+xml" }
+      )
+    );
+    await screen.findByText("long-artwork.svg");
+    await user.click(screen.getByRole("button", { name: "转换上传图片（1）" }));
 
     await waitFor(() => {
-      const call = fetchMock.mock.calls.find(
-        ([url, init]) =>
-          String(url).includes("/api/localize") &&
-          JSON.parse(String(init?.body)).outputUrl.endsWith("three.svg")
+      const call = fetchMock.mock.calls.find(([url]) =>
+        String(url).includes("/api/localize")
       );
       expect(call).toBeDefined();
-      expect(JSON.parse(String(call![1].body))).toMatchObject({
-        imageBase64: "c3Zn",
-        imageContentType: "image/png",
-        size: "1536x1024"
-      });
+      const form = call![1].body as FormData;
+      const image = form.get("image") as File;
+      expect(image.name).toBe("long-artwork.png");
+      expect(image.type).toBe("image/png");
     });
   });
+
   it("has no mock toggle anywhere", async () => {
     render(<LocalizePanel />);
     await screen.findByText("系统语言设置");

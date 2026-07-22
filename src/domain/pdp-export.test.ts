@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { SellingPoint } from "./types";
 import { buildDefaultPdpCanvasLayout, getSellingPointBlockId, movePdpCanvasBlock } from "./pdp-canvas-layout";
 import { buildPdpDocument } from "./pdp";
-import { renderPdpSvg } from "./pdp-export";
+import { buildVerticalPdpExportLayout, renderPdpSvg } from "./pdp-export";
 
 function makePoints(count: number): SellingPoint[] {
   return Array.from({ length: count }, (_, index) => ({
@@ -69,6 +69,21 @@ describe("renderPdpSvg (vertical long image)", () => {
     expect(large.width).toBe(small.width);
     expect(large.height).toBeGreaterThan(small.height);
     expect(small.width).toBe(920);
+  });
+
+  it("uses content-driven heights for summary blocks instead of preserving canvas whitespace", () => {
+    const layout = buildVerticalPdpExportLayout(
+      buildDefaultPdpCanvasLayout(makePoints(7)),
+      { sellingPointCount: 7, specificationCount: 7 }
+    );
+    const brand = layout.blocks.find((block) => block.kind === "brand");
+    const features = layout.blocks.find((block) => block.kind === "features");
+    const specification = layout.blocks.find((block) => block.kind === "specification");
+
+    expect(brand?.height).toBe(895);
+    expect(features?.height).toBe(326);
+    expect(specification?.height).toBe(308);
+    expect(layout.height).toBeLessThan(7_500);
   });
 
   it("renders every selling point even beyond five", () => {

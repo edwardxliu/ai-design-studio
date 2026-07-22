@@ -174,3 +174,8 @@
 - The new section preserves the requested order: demo1 left, demo2 right, demo3 left; the surrounding text alternates accordingly.
 - The three copied assets total 49,955,517 bytes and each source/target SHA-256 hash matches.
 - Runtime HTML confirms the section occurs after `Where ideas become the work` and before `Start with a signal.`.
+## 2026-07-22 POP transparency and studio-home header
+- The visible white sticker box came from both the SVG root rectangle and the PNG rasterizer background fill; both layers must preserve alpha.
+- White text, logos, strokes, and image-slot content remain unchanged because only the full-canvas root rectangles were made transparent.
+- The studio workbench can be much narrower than the viewport, so a CSS container query is more reliable than a viewport-only media query for the top-right controls.
+- The focused POP template and studio-home tests pass. One older PopCanvasStudio test still expects a removed image-model selector and fails before reaching generation; this is unrelated to the transparency change.

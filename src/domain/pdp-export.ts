@@ -13,7 +13,15 @@ export type RenderPdpSvgOptions = {
   brandImageDataUri?: string;
 };
 
-export function buildVerticalPdpExportLayout(source: PdpCanvasLayout): PdpCanvasLayout {
+export type VerticalPdpExportMetrics = {
+  sellingPointCount?: number;
+  specificationCount?: number;
+};
+
+export function buildVerticalPdpExportLayout(
+  source: PdpCanvasLayout,
+  metrics: VerticalPdpExportMetrics = {}
+): PdpCanvasLayout {
   const width = 920;
   const padding = 44;
   const gap = 24;
@@ -36,14 +44,37 @@ export function buildVerticalPdpExportLayout(source: PdpCanvasLayout): PdpCanvas
         left.x - right.x
     )
     .map((block) => {
-      const scale = contentWidth / Math.max(1, block.width);
-      const height = Math.max(120, Math.round(block.height * scale));
+      const height = verticalExportBlockHeight(block, contentWidth, metrics);
       const next = { ...block, x: padding, y, width: contentWidth, height };
       y += height + gap;
       return next;
     });
 
   return { width, height: y + 42, blocks };
+}
+
+function verticalExportBlockHeight(
+  block: PdpCanvasBlock,
+  contentWidth: number,
+  metrics: VerticalPdpExportMetrics
+): number {
+  if (block.kind === "brand") {
+    return Math.round(contentWidth * (941 / 875));
+  }
+  if (block.kind === "kv") {
+    return Math.round(contentWidth * 0.76);
+  }
+  if (block.kind === "features") {
+    const rows = Math.max(1, Math.ceil((metrics.sellingPointCount ?? 0) / 3));
+    return 44 + rows * 86 + 24;
+  }
+  if (block.kind === "specification") {
+    const rows = Math.max(1, metrics.specificationCount ?? 0);
+    return 44 + rows * 36 + 12;
+  }
+
+  const scale = contentWidth / Math.max(1, block.width);
+  return clamp(Math.round(block.height * scale), 420, 680);
 }
 
 export function renderPdpSvg(
@@ -62,7 +93,10 @@ export function renderPdpSvg(
         enabled: true
       }))
     );
-  const layout = buildVerticalPdpExportLayout(sourceLayout);
+  const layout = buildVerticalPdpExportLayout(sourceLayout, {
+    sellingPointCount: document.sections.length,
+    specificationCount: specification.length
+  });
   const sectionById = new Map(
     document.sections.map((section) => [section.sellingPointId, section])
   );

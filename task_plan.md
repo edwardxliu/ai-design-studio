@@ -263,3 +263,9 @@
 - [x] Use the supplied demo1, demo2, and demo3 videos with the exact requested copy.
 - [x] Match the reference with spacious two-column composition, dotted media canvases, thin borders, and restrained typography.
 - [x] Verify with npm typecheck, focused Vitest coverage, HTTP order checks, and video asset responses.
+## Stage 22 - POP transparency and compact homepage header (completed)
+- [x] Remove the full-canvas white background from every refrigerator and oven POP SVG.
+- [x] Preserve alpha while rasterizing POP artwork to PNG.
+- [x] Remove the requested studio-home supporting sentence.
+- [x] Add content-width responsive behavior for the background, date, and weather controls.
+- [x] Verify with npm typecheck, focused Vitest coverage, and HTTP 200 checks without opening a browser.

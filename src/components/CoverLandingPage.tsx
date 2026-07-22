@@ -88,21 +88,12 @@ export function CoverLandingPage() {
         ref={brandSectionRef}
       >
         <div className="brand-collage brand-floating-collage">
-          <div className="brand-collage-nav">
-            <span>Product</span>
-            <span>Solutions</span>
-            <span>Security</span>
-            <span>Company</span>
-            <span>Careers</span>
-            <span>Blog</span>
-            <span className="brand-collage-login">Log in</span>
-            <Link href="/studio-home">Enter studio</Link>
-          </div>
-          <img
-            alt="brand.ai"
-            className="brand-collage-logo"
-            src="/midea-ai/brand-reference/brand-logo.png"
-          />
+          <nav aria-label="Landing page sections" className="brand-collage-nav">
+            <a href="#agent">Agent</a>
+            <a href="#tutorial">Tutorial</a>
+            <a href="#details">More Details</a>
+            <Link className="brand-collage-enter" href="/studio-home">Enter Studio</Link>
+          </nav>
           <div
             aria-label="brand.ai floating reference collage"
             className="brand-floating-grid"

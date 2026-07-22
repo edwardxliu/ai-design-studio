@@ -42,7 +42,7 @@ describe("HomePage", () => {
     expect(
       screen.getByRole("heading", { name: /Hi,\s*How Can I Help You\?/i })
     ).toBeInTheDocument();
-    expect(screen.getByText(/Start with one product asset/i)).toBeInTheDocument();
+    expect(screen.queryByText(/Start with one product asset/i)).not.toBeInTheDocument();
     expect(screen.getAllByRole("link", { name: /上传产品素材/ })).toHaveLength(1);
     expect(screen.getAllByRole("link", { name: /场景与风格/ })).toHaveLength(1);
     expect(screen.getAllByRole("link", { name: /全球市场交付/ })).toHaveLength(1);

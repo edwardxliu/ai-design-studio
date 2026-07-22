@@ -197,10 +197,6 @@ export function GlassHomeStudio() {
                 <span>Hi,</span>
                 How Can I Help You?
               </h1>
-              <p className={styles.intro}>
-                Start with one product asset, then build images, templates, videos and localized
-                campaigns.
-              </p>
             </div>
 
             <div className={styles.topbarSide}>
@@ -386,22 +382,21 @@ function HomeInfoWidgets() {
   }, []);
 
   useEffect(() => {
-    const controller = new AbortController();
+    let cancelled = false;
 
     const loadWeather = async () => {
       try {
-        const response = await fetch("/api/weather", {
-          cache: "no-store",
-          signal: controller.signal
-        });
+        const response = await fetch("/api/weather", { cache: "no-store" });
         if (!response.ok) {
           throw new Error("Weather request failed");
         }
         const nextWeather = (await response.json()) as WeatherData;
-        setWeather(nextWeather);
-        setWeatherUnavailable(false);
+        if (!cancelled) {
+          setWeather(nextWeather);
+          setWeatherUnavailable(false);
+        }
       } catch {
-        if (!controller.signal.aborted) {
+        if (!cancelled) {
           setWeather(undefined);
           setWeatherUnavailable(true);
         }
@@ -411,7 +406,7 @@ function HomeInfoWidgets() {
     void loadWeather();
     const timer = window.setInterval(loadWeather, 10 * 60_000);
     return () => {
-      controller.abort();
+      cancelled = true;
       window.clearInterval(timer);
     };
   }, []);

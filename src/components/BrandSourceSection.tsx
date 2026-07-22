@@ -18,7 +18,7 @@ export function BrandSourceSection() {
         </Link>
       </div>
 
-      <div className="brand-source-video-frame">
+      <div className="brand-source-video-frame" id="tutorial">
         <video
           aria-label="Platform introduction video"
           autoPlay

@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import HomePage from "./page";
 vi.mock("next/navigation", () => ({
@@ -47,6 +47,27 @@ describe("Cover HomePage", () => {
     ].forEach((src) => {
       expect(container.querySelector(`source[src="${src}"]`)).not.toBeNull();
     });
+    const landingNav = screen.getByRole("navigation", { name: "Landing page sections" });
+    expect(within(landingNav).getByRole("link", { name: "Agent" })).toHaveAttribute(
+      "href",
+      "#agent"
+    );
+    expect(within(landingNav).getByRole("link", { name: "Tutorial" })).toHaveAttribute(
+      "href",
+      "#tutorial"
+    );
+    expect(within(landingNav).getByRole("link", { name: "More Details" })).toHaveAttribute(
+      "href",
+      "#details"
+    );
+    expect(within(landingNav).getByRole("link", { name: "Enter Studio" })).toHaveAttribute(
+      "href",
+      "/studio-home"
+    );
+    expect(container.querySelector(".brand-collage-logo")).toBeNull();
+    expect(container.querySelector("#agent")).not.toBeNull();
+    expect(container.querySelector("#tutorial")).not.toBeNull();
+    expect(container.querySelector("#details")).not.toBeNull();
     expect(
       screen.getByLabelText("brand.ai floating reference collage").querySelectorAll("img")
     ).toHaveLength(16);

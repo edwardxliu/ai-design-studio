@@ -27,6 +27,7 @@ export function ExecutionShowcaseSection() {
         {executionDemos.map((demo, index) => (
           <article
             className={`execution-showcase-row${index % 2 === 1 ? " is-reversed" : ""}`}
+            id={index === 0 ? "details" : undefined}
             key={demo.src}
           >
             <div className="execution-showcase-visual">
