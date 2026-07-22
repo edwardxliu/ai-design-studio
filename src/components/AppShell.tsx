@@ -29,7 +29,7 @@ type NavigationItem = {
 };
 
 const navItems: NavigationItem[] = [
-  { href: "/", label: "工作台", icon: House },
+  { href: "/studio-home", label: "工作台", icon: House },
   { href: "/assets", label: "素材库", icon: Boxes },
   { href: "/products", label: "产品档案", icon: PackageSearch },
   { href: "/white-background", label: "白底多角度", icon: Box },
@@ -68,9 +68,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive =
-                item.href === "/"
-                  ? pathname === "/"
-                  : pathname === item.href || pathname.startsWith(item.href + "/");
+                pathname === item.href || pathname.startsWith(item.href + "/");
 
               return (
                 <Link

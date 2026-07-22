@@ -231,3 +231,35 @@
 - [ ] 将 POP 从 AI 写实生成改为指定产品底图上的拖动/缩放本地贴装
 - [ ] 更新测试并完成类型、CSS 与定向回归验证
 - **状态：** in_progress
+
+### 阶段 18：CreativeStudio AI 封面页迁移（2026-07-22）
+- [x] 创建独立功能分支 `codex/cover-page`
+- [x] 核对源封面页面组件、样式、动效和静态素材依赖
+- [x] 将现有工作台首页迁移到独立路由并保持所有入口可用
+- [x] 将封面页迁入根路由，Start now 导航到工作台
+- [x] 复制最小必要素材并补充路由/交互测试
+- [x] 使用 npm 完成类型检查、定向测试和生产构建
+- **状态：** completed
+
+### 阶段 19：封面边界 AI 聊天入口（2026-07-22）
+- [x] 核对 Luma 风格参考、封面边界结构和现有文本模型网络链路
+- [x] 定义聊天消息协议、页面意图映射和服务端模型调用
+- [x] 在蓝/白页面交界处加入随页面自然滚走的悬浮聊天框
+- [x] 加入 4 个常用页面直达入口与 1 个省略号按钮
+- [x] 补充聊天、跳转和错误状态测试
+- [x] 使用 npm 完成类型检查、定向测试和生产构建
+- **状态：** completed
+
+## Stage 20 - Brand.ai-style video section (completed)
+- [x] Replace the complete Imagine / Shape / Share workflow section.
+- [x] Add the requested headline, supporting copy, and Start Now route to `/studio-home`.
+- [x] Copy and verify the supplied 1920x1080 hero video under `public/midea-ai/`.
+- [x] Match the warm off-white, centered black typography, compact dark CTA, and rounded video composition.
+- [x] Verify with npm typecheck, a focused Vitest test, and HTTP checks without opening a browser.
+
+## Stage 21 - Alternating execution video showcase (completed)
+- [x] Insert a new section between the Brand hero video and the final city section.
+- [x] Build three alternating rows with video positions left, right, and left.
+- [x] Use the supplied demo1, demo2, and demo3 videos with the exact requested copy.
+- [x] Match the reference with spacious two-column composition, dotted media canvases, thin borders, and restrained typography.
+- [x] Verify with npm typecheck, focused Vitest coverage, HTTP order checks, and video asset responses.

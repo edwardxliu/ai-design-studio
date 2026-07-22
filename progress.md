@@ -273,3 +273,43 @@ POP 定向验证通过：src/domain/pop.test.ts、pop-template-sets.test.ts、�
 - 已读取现有计划、发现和进度记录，并确认当前分支为 `codex/glass-homepage`。
 - 工作区已有 `app/page.test.tsx` 与 `src/components/GlassTuner.tsx` 两处上一轮未提交修改，后续将在其基础上继续，不回退。
 - 已将 13 项需求按全局外壳、首页、子页性能、POP 本地贴装和验证五组拆解。
+
+## 2026-07-22 封面页迁移开始
+- 已创建并切换到 `codex/cover-page`。
+- 已确认源页面为独立 Next.js 项目，后续只迁移组件、样式与 `public/midea-ai` 必要素材。
+- 按用户要求不打开本地浏览器，验证使用 npm 类型检查、测试和构建。
+
+- 已确认当前分支为 `codex/cover-page`，并完成现有路由清单核对。
+
+## 2026-07-22 CreativeStudio AI 封面页迁移完成
+- 根路由 `/` 改为完整滚动封面：视频首屏、品牌视觉拼贴、工作流和末尾入口。
+- 原毛玻璃工作台迁移到 `/studio-home`，全站“工作台”导航与激活态同步更新。
+- `Start now`、顶部 `Enter` 和拼贴区入口均使用 Next.js 客户端导航进入 `/studio-home`。
+- 复制 20 个必要素材，共 57,961,374 字节；逐文件 SHA-256 与源项目一致。
+- 验证：`npm run typecheck` 通过；3 个定向测试文件共 9 项通过；`npm run build` 通过。
+- 命令行 HTTP 验证：`/`、`/studio-home`、封面 MP4 均返回 200；未打开本地浏览器。
+- 构建仍报告 POP Canvas CSS 中两处 `end` 对齐兼容性警告，与本次封面迁移无关。
+## 2026-07-22 封面边界 AI 聊天入口完成
+- 在视频蓝色结尾与白色品牌拼贴页之间加入零高度锚定的 Luma 风格聊天面板；继续滚动时随文档自然离场。
+- 底部提供 POP、PDP、风格迁移、产品视频 4 个直达入口和 1 个圆形省略号占位按钮。
+- 新增 `/api/cover-chat`：动作意图优先映射到系统白名单路由，普通对话复用 OpenAI 文本模型与现有代理配置。
+- 前端支持会话记录、Enter 发送、等待/错误状态、模型回复展示和 Next.js 自动路由跳转。
+- 验证：`npm run typecheck` 通过；6 个定向测试文件共 16 项通过；干净 `npm run build` 通过。
+- 真实联网验证：`gpt-4o-mini` 普通聊天返回 `CHAT_OK`；根页、`/studio-home` 和导航聊天 API 均返回 200。
+- 开发服务器使用 npm 隐藏启动并保持在 `http://127.0.0.1:3000/`；未打开浏览器。
+
+## 2026-07-22 Stage 20 complete
+- Added `BrandSourceSection` with the requested English headline, copy, CTA, and looping inline hero video.
+- Replaced the cover workflow section and added warm Brand.ai-inspired styling.
+- Copied the source MP4 with matching SHA-256 hashes.
+- `npm run typecheck`: passed.
+- `npm test -- app/page.test.tsx`: 1 file / 1 test passed.
+- Runtime checks: `/`, `/studio-home`, and the MP4 returned HTTP 200; no browser was opened.
+
+## 2026-07-22 Stage 21 complete
+- Added `ExecutionShowcaseSection` and inserted it between the Brand video and final city sections.
+- Added three 4:3 looping, muted, inline demo videos with the supplied headlines and body copy.
+- Added alternating responsive layout and a dotted Luma-inspired visual treatment.
+- `npm run typecheck`: passed.
+- `npm test -- app/page.test.tsx`: 1 file / 1 test passed.
+- Runtime checks: root HTML order valid; all three MP4 resources returned HTTP 200 with `video/mp4`.

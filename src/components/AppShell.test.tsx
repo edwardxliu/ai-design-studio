@@ -37,5 +37,9 @@ describe("AppShell", () => {
       "page"
     );
     expect(screen.getByRole("link", { name: "工作台" })).not.toHaveAttribute("aria-current");
+    expect(screen.getByRole("link", { name: "工作台" })).toHaveAttribute(
+      "href",
+      "/studio-home"
+    );
   });
 });

@@ -1,5 +1,6 @@
-import { GlassHomeStudio } from "@/src/components/GlassHomeStudio";
+import { CoverLandingPage } from "@/src/components/CoverLandingPage";
+import "./cover.css";
 
 export default function HomePage() {
-  return <GlassHomeStudio />;
+  return <CoverLandingPage />;
 }

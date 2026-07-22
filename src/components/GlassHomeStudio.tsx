@@ -50,7 +50,7 @@ type WeatherData = {
 };
 
 const navigation: StudioLink[] = [
-  { href: "/", label: "工作台", icon: House },
+  { href: "/studio-home", label: "工作台", icon: House },
   { href: "/assets", label: "素材库", icon: Boxes },
   { href: "/products", label: "产品档案", icon: PackageSearch },
   { href: "/white-background", label: "白底多角度", icon: Box },
@@ -171,8 +171,8 @@ export function GlassHomeStudio() {
               const Icon = item.icon;
               return (
                 <Link
-                  aria-current={item.href === "/" ? "page" : undefined}
-                  className={styles.navLink + (item.href === "/" ? " " + styles.navLinkActive : "")}
+                  aria-current={item.href === "/studio-home" ? "page" : undefined}
+                  className={styles.navLink + (item.href === "/studio-home" ? " " + styles.navLinkActive : "")}
                   href={item.href}
                   key={item.href}
                 >

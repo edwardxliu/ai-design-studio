@@ -144,3 +144,33 @@
 - SKU generation overflow is caused by the top control band keeping the model select and long generation button in one rigid row; use a shrinkable grid/minmax layout and cap the action width.
 - POP still submits to /api/pop/generate-scene; replace that result flow with an in-browser refrigerator sticker compositor and PNG export.
 - Existing edge defaults are blue and stored under the original localStorage key; use the requested neutral defaults and a versioned key so old blue defaults do not override them.
+
+## 2026-07-22 CreativeStudio AI 封面页迁移
+- 源目录 `E:\workspace\nato-studio\CreativeStudio-AI` 是独立 Next.js 项目。
+- 可迁移代码集中在 `components/JobyInspiredHero.tsx`、`components/MideaAIDraft.tsx`、`app/midea-ai/*`。
+- 必要静态素材位于 `public/midea-ai/`；源项目的 `.next`、`node_modules`、缓存与日志不得复制。
+- 目标路由结构暂定为 `/` 封面页、`/studio-home` 现有工作台；Start now 使用 Next.js 客户端导航进入工作台。
+
+- 分支确认：`codex/cover-page` 已创建并已切换；工作区原有未提交改动继续保留。
+- 当前根路由 `app/page.tsx` 仅作为 `GlassHomeStudio` 的轻量入口，适合将原工作台迁到 `/studio-home`，再由根路由承载封面。
+
+- 源封面是四段完整滚动体验：视频首屏、16 张视觉拼贴、三步工作流、末尾 Start now。
+- 可移植素材共 20 个文件、约 55.3 MiB，其中视频约 39.1 MiB，单文件低于 GitHub 100 MiB 限制；只复制实际引用素材，不复制缓存、node_modules、.DS_Store 或 extra 图片。
+- 源 CSS 类名均使用 midea-/joby-/brand- 前缀，与当前业务组件无命名碰撞；保留独立路由样式即可。
+
+## 2026-07-22 封面边界 AI 聊天入口
+- 聊天框应放在 `CoverHero` 与 `brand-platform` 之间，用零高度边界锚点和负向位移覆盖蓝/白分界；不使用 fixed/sticky，因此继续下滚会自然离场。
+- 普通聊天复用 `OPENAI_API_KEY`、`OPENAI_TEXT_MODEL`、`OPENAI_BASE_URL` 与现有 `createProxyDispatcher/fetchOpenAi` 网络实现。
+- 页面跳转采用服务端白名单映射；带“打开/进入/跳转/我要做”等动作意图时直接返回目标路由，避免模型生成任意 URL。
+- 快捷入口采用 POP、PDP、风格迁移、产品视频四个高频页面，第五个省略号按钮仅作视觉占位。
+
+## 2026-07-22 Brand source-code section
+- The supplied `hero video.mp4` is 1920x1080, 30 fps, 38 seconds, and 3,760,588 bytes, so a native 16:9 frame avoids crop distortion.
+- The new section remains at `id="workflow"`, preserving existing anchor behavior while replacing the old three-card content completely.
+- Both Start Now entry points resolve to `/studio-home`; the new video is served from `/midea-ai/brand-source-hero.mp4`.
+
+## 2026-07-22 Alternating execution demos
+- All three supplied demos use a 4:3 frame, allowing one stable visual-card geometry without cropping or per-row layout exceptions.
+- The new section preserves the requested order: demo1 left, demo2 right, demo3 left; the surrounding text alternates accordingly.
+- The three copied assets total 49,955,517 bytes and each source/target SHA-256 hash matches.
+- Runtime HTML confirms the section occurs after `Where ideas become the work` and before `Start with a signal.`.
