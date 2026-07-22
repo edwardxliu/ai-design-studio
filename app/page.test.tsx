@@ -106,7 +106,7 @@ describe("HomePage", () => {
 
     await waitFor(() => {
       const stored = JSON.parse(
-        window.localStorage.getItem("midea-home-glass-tuner") ?? "{}"
+        window.localStorage.getItem("midea-home-glass-tuner-v2") ?? "{}"
       ) as { frameOpacity?: number };
       expect(stored.frameOpacity).toBe(0.32);
     });
@@ -115,6 +115,27 @@ describe("HomePage", () => {
     render(<HomePage />);
     await waitFor(() => {
       expect(screen.getByRole("main").style.getPropertyValue("--home-frame-opacity")).toBe("0.32");
+    });
+  });
+  it("migrates legacy edge colors to the blue palette", async () => {
+    window.localStorage.setItem(
+      "midea-home-glass-tuner-v2",
+      JSON.stringify({
+        edgeBorderColor: "#ffffff",
+        edgeGlowColor: "#dafff2",
+        navBorderColor: "#ffffff",
+        navGlowColor: "#dafff2"
+      })
+    );
+
+    render(<HomePage />);
+
+    await waitFor(() => {
+      const stage = screen.getByRole("main");
+      expect(stage.style.getPropertyValue("--studio-border-start-rgb")).toBe("79, 153, 255");
+      expect(stage.style.getPropertyValue("--studio-edge-glow-rgb")).toBe("79, 153, 255");
+      expect(stage.style.getPropertyValue("--studio-nav-border-start-rgb")).toBe("79, 153, 255");
+      expect(stage.style.getPropertyValue("--studio-nav-glow-rgb")).toBe("79, 153, 255");
     });
   });
   it("tunes and persists workbench and active-menu edge lighting", async () => {
@@ -143,7 +164,7 @@ describe("HomePage", () => {
 
     await waitFor(() => {
       const stored = JSON.parse(
-        window.localStorage.getItem("midea-home-glass-tuner") ?? "{}"
+        window.localStorage.getItem("midea-home-glass-tuner-v2") ?? "{}"
       ) as { edgeBorderEndColor?: string; edgeBorderGradientAngle?: number; edgeGlowBrightness?: number; navBorderWidth?: number };
       expect(stored.edgeGlowBrightness).toBe(0.64);
       expect(stored.navBorderWidth).toBe(2.2);

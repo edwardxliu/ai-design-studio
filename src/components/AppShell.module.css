@@ -1091,3 +1091,125 @@
     inset 0 0 66px rgba(189, 212, 255, 0.82),
     0 7px 16px rgba(0, 26, 66, 0.3) !important;
 }
+
+/* Stage 17 neutral shell, compact frame, and lightweight controls. */
+.workbench {
+  --text: #24282c;
+  --muted: #50575d;
+  --muted-soft: #737a80;
+  --accent: #8b9196;
+  --accent-strong: #464c51;
+  --accent-deep: #2f3438;
+  --accent-warm: #62686d;
+  --accent-soft: rgba(105, 105, 105, 0.18);
+  --accent-border: rgba(105, 105, 105, 0.42);
+  height: min(69dvh, 660px);
+  min-height: 560px;
+}
+
+.brand span,
+.navLink,
+.navLink:hover,
+.navLink:focus-visible,
+.navLinkActive,
+.sidebarFooter {
+  color: var(--text);
+}
+
+.onlineDot {
+  background: #737a80;
+  box-shadow: 0 0 0 3px rgba(115, 122, 128, 0.16);
+}
+
+.navLink {
+  transition: background-color 90ms ease, color 90ms ease;
+}
+
+.navLinkActive {
+  background: rgba(
+    var(--home-surface-rgb, 255, 255, 255),
+    calc(var(--home-control-opacity, 0.24) + 0.08)
+  );
+  color: var(--text);
+  box-shadow: none;
+}
+
+.navLinkActive::before {
+  display: none;
+}
+
+.main :global(select) {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1.5 1.5 6 6l4.5-4.5' fill='none' stroke='%23464c51' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") !important;
+}
+
+.main :global(button:not([data-generate-action="true"])),
+.main :global(a[class*="Button"]),
+.main :global(label[class*="Button"]) {
+  border: 1px solid transparent !important;
+  background:
+    linear-gradient(
+      rgba(var(--home-surface-rgb, 255, 255, 255), var(--home-control-opacity, 0.24)),
+      rgba(var(--home-surface-rgb, 255, 255, 255), var(--home-control-opacity, 0.24))
+    ) padding-box,
+    linear-gradient(
+      var(--studio-border-gradient-angle, 78deg),
+      rgba(var(--studio-border-start-rgb, 230, 230, 230), var(--studio-border-opacity, 0.1)) 0%,
+      rgba(var(--studio-border-mid-rgb, 181, 181, 181), var(--studio-border-opacity, 0.1))
+        var(--studio-border-gradient-midpoint, 52%),
+      rgba(var(--studio-border-end-rgb, 105, 105, 105), var(--studio-border-opacity, 0.1)) 100%
+    ) border-box !important;
+  color: var(--text) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.52),
+    0 5px 14px rgba(10, 24, 34, 0.07) !important;
+  backdrop-filter: blur(18px) saturate(126%) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(126%) !important;
+  transition: background-color 90ms ease, box-shadow 90ms ease, filter 90ms ease;
+}
+
+.main :global(button:not([data-generate-action="true"]):hover:not(:disabled)),
+.main :global(a[class*="Button"]:hover),
+.main :global(label[class*="Button"]:hover) {
+  background:
+    linear-gradient(
+      rgba(var(--home-surface-rgb, 255, 255, 255), calc(var(--home-control-opacity, 0.24) + 0.08)),
+      rgba(var(--home-surface-rgb, 255, 255, 255), calc(var(--home-control-opacity, 0.24) + 0.08))
+    ) padding-box,
+    linear-gradient(
+      var(--studio-border-gradient-angle, 78deg),
+      rgba(var(--studio-border-start-rgb, 230, 230, 230), var(--studio-border-opacity, 0.1)) 0%,
+      rgba(var(--studio-border-mid-rgb, 181, 181, 181), var(--studio-border-opacity, 0.1))
+        var(--studio-border-gradient-midpoint, 52%),
+      rgba(var(--studio-border-end-rgb, 105, 105, 105), var(--studio-border-opacity, 0.1)) 100%
+    ) border-box !important;
+  color: var(--text) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.66),
+    0 7px 18px rgba(10, 24, 34, 0.1) !important;
+}
+
+.main :global(button[aria-pressed="true"]:not([data-generate-action="true"])),
+.main :global(button[aria-selected="true"]:not([data-generate-action="true"])),
+.main :global(button[class*="Active"]:not([data-generate-action="true"])) {
+  border-color: transparent !important;
+  background:
+    linear-gradient(
+      rgba(var(--home-surface-rgb, 255, 255, 255), calc(var(--home-control-opacity, 0.24) + 0.1)),
+      rgba(var(--home-surface-rgb, 255, 255, 255), calc(var(--home-control-opacity, 0.24) + 0.1))
+    ) padding-box,
+    linear-gradient(#ffffff, #ffffff) border-box !important;
+  color: var(--text) !important;
+}
+
+@media (max-width: 1180px) {
+  .workbench {
+    height: min(72dvh, 640px);
+  }
+}
+
+@media (max-width: 760px) {
+  .workbench {
+    height: auto;
+    min-height: calc(100dvh - 24px);
+  }
+}

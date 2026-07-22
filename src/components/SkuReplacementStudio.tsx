@@ -377,7 +377,6 @@ export function SkuReplacementStudio() {
             <SkuMaskEditor
               asset={baseAsset}
               disabled={generating || Boolean(uploadingType)}
-              key={mode + ":" + (baseAsset?.id ?? "empty")}
               onSelectionChange={setHasSelection}
               ref={maskEditorRef}
             />

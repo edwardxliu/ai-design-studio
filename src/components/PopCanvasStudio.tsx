@@ -2,9 +2,13 @@
 
 import {
   CookingPot,
+  Download,
   ImagePlus,
+  Maximize2,
+  Move,
   Play,
   Refrigerator,
+  RotateCcw,
   ZoomIn,
   ZoomOut
 } from "lucide-react";
@@ -13,7 +17,10 @@ import {
   useMemo,
   useRef,
   useState,
-  type ChangeEvent
+  type ChangeEvent,
+  type CSSProperties,
+  type KeyboardEvent as ReactKeyboardEvent,
+  type PointerEvent as ReactPointerEvent
 } from "react";
 import type { Asset, ProductWithProfile } from "@/src/domain/types";
 import { parseAspectRatio } from "@/src/domain/image-crop";
@@ -79,6 +86,7 @@ type PendingCrop = {
 const MIN_CANVAS_ZOOM = 0.5;
 const MAX_CANVAS_ZOOM = 2;
 const CANVAS_ZOOM_STEP = 0.25;
+const POP_PRODUCT_IMAGE = "/pop/pop-sticker-product.png";
 
 export function PopCanvasStudio({ products }: { products: ProductWithProfile[] }) {
   const initialProduct = products[0];
@@ -477,28 +485,6 @@ export function PopCanvasStudio({ products }: { products: ProductWithProfile[] }
           </div>
         </div>
 
-        <label className={styles.field}>
-          产品参考图
-          <select
-            aria-label="产品参考图"
-            onChange={(event) => setProductAssetId(event.target.value)}
-            value={productAssetId}
-          >
-            <option value="">默认产品主图</option>
-            {productPhotoOptions.map((asset) => (
-              <option key={asset.id} value={asset.id}>
-                {asset.filename}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <ImageModelSelector
-          className={styles.field}
-          disabled={status === "generating" || status === "uploading"}
-          onChange={setImageModel}
-          value={imageModel}
-        />
 
       </div>
 
@@ -651,79 +637,19 @@ export function PopCanvasStudio({ products }: { products: ProductWithProfile[] }
               )
             )}
 
-            <label className={styles.field}>
-              贴装位置
-              <select
-                onChange={(event) => setPlacement(event.target.value)}
-                value={placement}
-              >
-                {selectedTemplate.placementHints.map((hint) => (
-                  <option key={hint}>{hint}</option>
-                ))}
-              </select>
-            </label>
-          </div>
-
-          <div className={styles.actions}>
-            <button
-              className={styles.generateButton}
-              data-generate-action="true"
-              disabled={status === "generating" || status === "uploading"}
-              onClick={generateScene}
-              type="button"
-            >
-              <Play aria-hidden="true" fill="currentColor" size={17} />
-              {status === "generating" ? "生成中" : "生成所选 Sticker 贴装图"}
-            </button>
-
-            {stage ? (
-              <div aria-live="polite" className={styles.stage}>
-                {stage}
-              </div>
-            ) : null}
-            {error ? <div className={styles.error}>{error}</div> : null}
+            <div className={styles.compositorNotice}>
+              <Move aria-hidden="true" size={16} />
+              在下方产品预览中直接拖动 Sticker，并拖拽右下角控制点调整大小。
+            </div>
           </div>
         </aside>
       </div>
 
-      {result ? (
-        <section className={styles.result}>
-          <div className={styles.resultHeader}>
-            <h3>生成结果</h3>
-            <span className={styles.resultMode}>{result.scene.model}</span>
-          </div>
-
-          <div className={styles.resultGrid}>
-            <div className={styles.flatPreview}>
-              <p className={styles.resultLabel}>所选 Sticker 平面稿</p>
-              <div
-                data-testid="selected-pop-flat-preview"
-                dangerouslySetInnerHTML={{ __html: previewSvg }}
-              />
-            </div>
-            <div className={styles.scenePreview}>
-              <p className={styles.resultLabel}>写实产品贴装图</p>
-              <img alt="POP 写实贴装场景" src={result.scene.url} />
-            </div>
-          </div>
-
-          <p className={styles.links}>
-            平面稿：
-            <a href={result.flatUrl} rel="noreferrer" target="_blank">
-              {result.flatUrl}
-            </a>
-            {result.flatPngUrl ? (
-              <>
-                {" · PNG："}
-                <a href={result.flatPngUrl} rel="noreferrer" target="_blank">
-                  {result.flatPngUrl}
-                </a>
-              </>
-            ) : null}
-          </p>
-        </section>
-      ) : null}
-
+      <StickerProductComposer
+        flatSvg={flatSvg}
+        key={selectedTemplateId}
+        templateName={selectedTemplate.name}
+      />
       <input
         accept="image/png,image/jpeg,image/webp"
         className={styles.hiddenInput}
@@ -744,6 +670,340 @@ export function PopCanvasStudio({ products }: { products: ProductWithProfile[] }
   );
 }
 
+
+type StickerPlacement = {
+  x: number;
+  y: number;
+  width: number;
+};
+
+type StickerDragState = {
+  mode: "move" | "resize";
+  pointerId: number;
+  startClientX: number;
+  startClientY: number;
+  initial: StickerPlacement;
+  aspectRatio: number;
+  heightPercent: number;
+};
+
+const DEFAULT_STICKER_PLACEMENT: StickerPlacement = {
+  x: 55,
+  y: 25,
+  width: 25
+};
+
+function StickerProductComposer({
+  flatSvg,
+  templateName
+}: {
+  flatSvg: string;
+  templateName: string;
+}) {
+  const [placement, setPlacement] = useState<StickerPlacement>(DEFAULT_STICKER_PLACEMENT);
+  const [exportState, setExportState] = useState<"idle" | "exporting" | "done" | "failed">("idle");
+  const [exportError, setExportError] = useState("");
+  const [exportUrl, setExportUrl] = useState("");
+  const stageRef = useRef<HTMLDivElement>(null);
+  const stickerRef = useRef<HTMLDivElement>(null);
+  const dragRef = useRef<StickerDragState | null>(null);
+  const exportUrlRef = useRef("");
+
+  useEffect(() => {
+    return () => {
+      if (exportUrlRef.current) {
+        URL.revokeObjectURL(exportUrlRef.current);
+      }
+    };
+  }, []);
+
+  function resetPlacement() {
+    setPlacement(DEFAULT_STICKER_PLACEMENT);
+    clearExport();
+  }
+
+  function clearExport() {
+    if (exportUrlRef.current) {
+      URL.revokeObjectURL(exportUrlRef.current);
+      exportUrlRef.current = "";
+    }
+    setExportUrl("");
+    setExportState("idle");
+    setExportError("");
+  }
+
+  function beginDrag(
+    event: ReactPointerEvent<HTMLElement>,
+    mode: StickerDragState["mode"]
+  ) {
+    const stage = stageRef.current;
+    const sticker = stickerRef.current;
+    if (!stage || !sticker) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+    const stageBounds = stage.getBoundingClientRect();
+    const stickerBounds = sticker.getBoundingClientRect();
+    const heightPercent = (stickerBounds.height / stageBounds.height) * 100;
+    dragRef.current = {
+      mode,
+      pointerId: event.pointerId,
+      startClientX: event.clientX,
+      startClientY: event.clientY,
+      initial: placement,
+      aspectRatio: stickerBounds.width / Math.max(1, stickerBounds.height),
+      heightPercent
+    };
+    stage.setPointerCapture(event.pointerId);
+    clearExport();
+  }
+
+  function updateDrag(event: ReactPointerEvent<HTMLDivElement>) {
+    const drag = dragRef.current;
+    const stage = stageRef.current;
+    if (!drag || !stage || drag.pointerId !== event.pointerId) {
+      return;
+    }
+
+    const bounds = stage.getBoundingClientRect();
+    const deltaX = ((event.clientX - drag.startClientX) / bounds.width) * 100;
+    const deltaY = ((event.clientY - drag.startClientY) / bounds.height) * 100;
+
+    if (drag.mode === "move") {
+      setPlacement({
+        ...drag.initial,
+        x: clamp(drag.initial.x + deltaX, 0, 100 - drag.initial.width),
+        y: clamp(drag.initial.y + deltaY, 0, 100 - drag.heightPercent)
+      });
+      return;
+    }
+
+    const maximumWidth = Math.max(
+      8,
+      Math.min(
+        64,
+        100 - drag.initial.x,
+        (100 - drag.initial.y) * drag.aspectRatio
+      )
+    );
+    setPlacement({
+      ...drag.initial,
+      width: clamp(drag.initial.width + deltaX, 8, maximumWidth)
+    });
+  }
+
+  function endDrag(event: ReactPointerEvent<HTMLDivElement>) {
+    if (dragRef.current?.pointerId !== event.pointerId) {
+      return;
+    }
+    dragRef.current = null;
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+  }
+
+  function handleKeyboard(event: ReactKeyboardEvent<HTMLDivElement>) {
+    const step = event.shiftKey ? 5 : 1;
+    let next = placement;
+    if (event.key === "ArrowLeft") {
+      next = { ...placement, x: clamp(placement.x - step, 0, 100 - placement.width) };
+    } else if (event.key === "ArrowRight") {
+      next = { ...placement, x: clamp(placement.x + step, 0, 100 - placement.width) };
+    } else if (event.key === "ArrowUp") {
+      next = { ...placement, y: clamp(placement.y - step, 0, 92) };
+    } else if (event.key === "ArrowDown") {
+      next = { ...placement, y: clamp(placement.y + step, 0, 92) };
+    } else {
+      return;
+    }
+    event.preventDefault();
+    setPlacement(next);
+    clearExport();
+  }
+
+  async function exportComposition() {
+    setExportState("exporting");
+    setExportError("");
+    const svgUrl = URL.createObjectURL(
+      new Blob([flatSvg], { type: "image/svg+xml;charset=utf-8" })
+    );
+
+    try {
+      const [productImage, stickerImage] = await Promise.all([
+        loadImage(POP_PRODUCT_IMAGE),
+        loadImage(svgUrl)
+      ]);
+      const canvas = document.createElement("canvas");
+      canvas.width = productImage.naturalWidth || productImage.width;
+      canvas.height = productImage.naturalHeight || productImage.height;
+      const context = canvas.getContext("2d");
+      if (!context) {
+        throw new Error("浏览器无法创建贴装画布。");
+      }
+
+      context.drawImage(productImage, 0, 0, canvas.width, canvas.height);
+      const stickerWidth = (placement.width / 100) * canvas.width;
+      const stickerHeight =
+        stickerWidth *
+        ((stickerImage.naturalHeight || stickerImage.height) /
+          Math.max(1, stickerImage.naturalWidth || stickerImage.width));
+      context.drawImage(
+        stickerImage,
+        (placement.x / 100) * canvas.width,
+        (placement.y / 100) * canvas.height,
+        stickerWidth,
+        stickerHeight
+      );
+
+      const blob = await canvasToBlob(canvas);
+      if (exportUrlRef.current) {
+        URL.revokeObjectURL(exportUrlRef.current);
+      }
+      const nextUrl = URL.createObjectURL(blob);
+      exportUrlRef.current = nextUrl;
+      setExportUrl(nextUrl);
+      setExportState("done");
+
+      const anchor = document.createElement("a");
+      anchor.href = nextUrl;
+      anchor.download = "midea-pop-sticker-composition.png";
+      anchor.click();
+    } catch (cause) {
+      setExportState("failed");
+      setExportError(cause instanceof Error ? cause.message : "贴装图导出失败。");
+    } finally {
+      URL.revokeObjectURL(svgUrl);
+    }
+  }
+
+  const stickerStyle = {
+    left: placement.x + "%",
+    top: placement.y + "%",
+    width: placement.width + "%"
+  } as CSSProperties;
+  const displaySvg = flatSvg.replace(
+    "<svg ",
+    '<svg style="width:100%;height:auto;display:block;pointer-events:none" '
+  );
+
+  return (
+    <section className={styles.compositorSection} aria-labelledby="pop-compositor-title">
+      <div className={styles.compositorHeader}>
+        <div>
+          <p className={styles.eyebrow}>PRODUCT STICKER COMPOSITOR</p>
+          <h3 id="pop-compositor-title">产品贴装预览</h3>
+          <span>固定演示产品 · {templateName}</span>
+        </div>
+        <div className={styles.compositorActions}>
+          <label className={styles.sizeControl}>
+            <span>Sticker 大小</span>
+            <input
+              aria-label="Sticker 大小"
+              max="64"
+              min="8"
+              onChange={(event) => {
+                setPlacement((current) => ({
+                  ...current,
+                  width: Number(event.target.value)
+                }));
+                clearExport();
+              }}
+              step="1"
+              type="range"
+              value={placement.width}
+            />
+            <output>{Math.round(placement.width)}%</output>
+          </label>
+          <button className={styles.resetPlacementButton} onClick={resetPlacement} type="button">
+            <RotateCcw aria-hidden="true" size={15} />
+            复位
+          </button>
+          <button
+            className={styles.exportButton}
+            disabled={exportState === "exporting"}
+            onClick={exportComposition}
+            type="button"
+          >
+            <Download aria-hidden="true" size={16} />
+            {exportState === "exporting" ? "正在导出" : "导出当前贴装图"}
+          </button>
+        </div>
+      </div>
+
+      <div
+        className={styles.compositorStage}
+        data-testid="pop-product-compositor"
+        onPointerCancel={endDrag}
+        onPointerMove={updateDrag}
+        onPointerUp={endDrag}
+        ref={stageRef}
+      >
+        <img alt="POP 固定演示冰箱产品" draggable={false} src={POP_PRODUCT_IMAGE} />
+        <div
+          aria-label="可拖动 Sticker"
+          className={styles.stickerOverlay}
+          onKeyDown={handleKeyboard}
+          onPointerDown={(event) => beginDrag(event, "move")}
+          ref={stickerRef}
+          role="application"
+          style={stickerStyle}
+          tabIndex={0}
+        >
+          <div
+            className={styles.stickerArtwork}
+            dangerouslySetInnerHTML={{ __html: displaySvg }}
+          />
+          <button
+            aria-label="拖动调整 Sticker 大小"
+            className={styles.stickerResizeHandle}
+            onPointerDown={(event) => beginDrag(event, "resize")}
+            type="button"
+          >
+            <Maximize2 aria-hidden="true" size={13} />
+          </button>
+        </div>
+      </div>
+
+      <div className={styles.compositorFooter}>
+        <span>
+          <Move aria-hidden="true" size={15} />
+          拖动 Sticker 调整位置；拖动右下角控制点或使用滑杆调整大小。
+        </span>
+        {exportUrl ? (
+          <a download="midea-pop-sticker-composition.png" href={exportUrl}>
+            <Download aria-hidden="true" size={14} />
+            再次下载
+          </a>
+        ) : null}
+        {exportError ? <strong>{exportError}</strong> : null}
+      </div>
+    </section>
+  );
+}
+
+function loadImage(source: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => resolve(image);
+    image.onerror = () => reject(new Error("贴装素材载入失败。"));
+    image.src = source;
+  });
+}
+
+function canvasToBlob(canvas: HTMLCanvasElement): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    canvas.toBlob(
+      (blob) => (blob ? resolve(blob) : reject(new Error("贴装图导出失败。"))),
+      "image/png"
+    );
+  });
+}
+
+function clamp(value: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, value));
+}
 function buildInitialDrafts(): Record<string, PopTemplateDraft> {
   return Object.fromEntries(
     allPopTemplates.map((template) => [

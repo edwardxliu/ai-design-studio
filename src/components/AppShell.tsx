@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import type { CSSProperties, ComponentType, ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import {
@@ -72,15 +73,16 @@ export function AppShell({ children }: { children: ReactNode }) {
                   : pathname === item.href || pathname.startsWith(item.href + "/");
 
               return (
-                <a
+                <Link
                   aria-current={isActive ? "page" : undefined}
                   className={styles.navLink + (isActive ? " " + styles.navLinkActive : "")}
                   href={item.href}
+                  prefetch={true}
                   key={item.href}
                 >
                   <Icon size={15} strokeWidth={1.8} />
                   <span>{item.label}</span>
-                </a>
+                </Link>
               );
             })}
           </nav>

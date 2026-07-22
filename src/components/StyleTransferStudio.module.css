@@ -515,3 +515,46 @@
     flex-direction: column;
   }
 }
+
+/* Stage 17 denser six-preset rail. */
+.presetGrid {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.preset,
+.presetActive {
+  min-height: 126px;
+  grid-template-rows: minmax(0, 1fr) auto;
+  contain: layout paint;
+  transition: none;
+}
+
+.preset img,
+.presetActive img {
+  height: 100%;
+  min-height: 78px;
+  aspect-ratio: 16 / 10;
+}
+
+.preset > span,
+.presetActive > span {
+  gap: 2px;
+  padding: 6px 7px 7px;
+}
+
+.preset strong,
+.presetActive strong {
+  overflow: hidden;
+  font-size: 10px;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.preset small,
+.presetActive small {
+  font-size: 8px;
+  line-height: 1.25;
+  -webkit-line-clamp: 2;
+}

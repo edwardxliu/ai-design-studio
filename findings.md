@@ -132,3 +132,15 @@
 - POP/PDP 共用上传前裁切弹窗：默认居中 cover，支持拖动、缩放、重置和按目标灰框比例输出 PNG。
 - PDP 交互画布品牌块固定使用 `public/pdp/midea-brand-no1.png`，品牌说明在检查器中可编辑；服务端导出将品牌、KV、卖点、More Features 和 Specification 统一转为 920px 宽的纵向长图。
 - Icon Design 仅保留两张紧凑 VI 预览，提示词模板继续内部使用但不再向用户开放编辑。
+## 2026-07-22 新一轮界面与 POP 调整
+- 用户要求恢复中性文字色，蓝色仅保留在生成按钮的实心视觉层次中。
+- 外框默认边框改为灰白三段渐变，主窗与当前菜单分别使用用户给定的透明度、角度、宽度和白色流光。
+- 首页临时玻璃/边框参数入口需要隐藏，但底层设置与持久化能力保留。
+- POP 不再调用 AI 生成写实贴装图；改为在指定冰箱产品图上直接叠加当前 Sticker，并让用户拖动与缩放后导出。
+- 按既有要求，本轮不打开或控制本地浏览器。
+## 2026-07-22 Stage 17 live findings
+- Homepage still renders GlassTuner and EdgeTuner in the top-right action row; hide both triggers while preserving the shared settings hook/CSS variables.
+- Homepage structure already separates hero, three feature cards, and quick-tool scroller, so requested 4:3 and 3:4 geometry can be handled in CSS without changing navigation data.
+- SKU generation overflow is caused by the top control band keeping the model select and long generation button in one rigid row; use a shrinkable grid/minmax layout and cap the action width.
+- POP still submits to /api/pop/generate-scene; replace that result flow with an in-browser refrigerator sticker compositor and PNG export.
+- Existing edge defaults are blue and stored under the original localStorage key; use the requested neutral defaults and a versioned key so old blue defaults do not override them.

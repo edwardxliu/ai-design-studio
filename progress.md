@@ -269,3 +269,7 @@ POP 定向验证通过：src/domain/pop.test.ts、pop-template-sets.test.ts、�
 - PDP 使用指定 Midea Brand 图、可编辑品牌文案，并按单列纵向拼接导出长图。
 - 验证：TypeScript `--noEmit` 通过；完整 Vitest 46 文件 / 194 项通过；Next.js 15.5.20 生产构建通过。
 - 遵照用户要求，未打开或控制本地浏览器。
+## 2026-07-22 阶段 17 开始
+- 已读取现有计划、发现和进度记录，并确认当前分支为 `codex/glass-homepage`。
+- 工作区已有 `app/page.test.tsx` 与 `src/components/GlassTuner.tsx` 两处上一轮未提交修改，后续将在其基础上继续，不回退。
+- 已将 13 项需求按全局外壳、首页、子页性能、POP 本地贴装和验证五组拆解。

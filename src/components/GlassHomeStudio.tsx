@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import type { CSSProperties, ComponentType } from "react";
 import { useEffect, useRef, useState } from "react";
 import {
@@ -87,6 +88,7 @@ export function GlassHomeStudio() {
     setSettings: setGlassSettings,
     settings: glassSettings
   } = useGlassTunerSettings();
+
   const [customBackgroundUrl, setCustomBackgroundUrl] = useState<string>();
   const [quickPosition, setQuickPosition] = useState(0);
   const backgroundUrl = customBackgroundUrl ?? presetBackgroundUrl;
@@ -168,7 +170,7 @@ export function GlassHomeStudio() {
             {navigation.map((item) => {
               const Icon = item.icon;
               return (
-                <a
+                <Link
                   aria-current={item.href === "/" ? "page" : undefined}
                   className={styles.navLink + (item.href === "/" ? " " + styles.navLinkActive : "")}
                   href={item.href}
@@ -176,7 +178,7 @@ export function GlassHomeStudio() {
                 >
                   <Icon size={15} strokeWidth={1.8} />
                   <span>{item.label}</span>
-                </a>
+                </Link>
               );
             })}
           </nav>
@@ -202,83 +204,64 @@ export function GlassHomeStudio() {
             </div>
 
             <div className={styles.topbarSide}>
-              <HomeInfoWidgets />
-
-              <div className={styles.backgroundActions}>
-                <div aria-label="默认底图" className={styles.backgroundPresets} role="group">
-                  {STUDIO_BACKGROUNDS.map((background) => (
-                    <button
-                      aria-label={"使用" + background.label + "底图"}
-                      aria-pressed={!hasCustomBackground && presetBackgroundUrl === background.url}
-                      data-no-optical-highlight="true"
-                      className={styles.backgroundPreset}
-                      key={background.id}
-                      onClick={() => choosePresetBackground(background.url)}
-                      style={
-                        {
-                          "--preset-background": 'url("' + background.url + '")'
-                        } as CSSProperties
-                      }
-                      title={background.label}
-                      type="button"
-                    />
-                  ))}
-                </div>
-                <input
-                  accept="image/*"
-                  aria-label="选择首页背景图片"
-                  className={styles.fileInput}
-                  onChange={(event) => replaceBackground(event.target.files?.[0])}
-                  ref={fileInputRef}
-                  type="file"
-                />
-                <button
-                  className={styles.secondaryButton}
-                  onClick={() => fileInputRef.current?.click()}
-                  title="替换首页底图"
-                  type="button"
-                >
-                  <ImagePlus size={16} />
-                  <span>替换底图</span>
-                </button>
-                {hasCustomBackground ? (
+              <div className={styles.utilityGrid}>
+                <div className={styles.backgroundTile}>
+                  <div aria-label="默认底图" className={styles.backgroundPresets} role="group">
+                    {STUDIO_BACKGROUNDS.map((background) => (
+                      <button
+                        aria-label={"使用" + background.label + "底图"}
+                        aria-pressed={!hasCustomBackground && presetBackgroundUrl === background.url}
+                        className={styles.backgroundPreset}
+                        data-no-optical-highlight="true"
+                        key={background.id}
+                        onClick={() => choosePresetBackground(background.url)}
+                        style={
+                          {
+                            "--preset-background": 'url("' + background.url + '")'
+                          } as CSSProperties
+                        }
+                        title={background.label}
+                        type="button"
+                      />
+                    ))}
+                  </div>
+                  <input
+                    accept="image/*"
+                    aria-label="选择首页背景图片"
+                    className={styles.fileInput}
+                    onChange={(event) => replaceBackground(event.target.files?.[0])}
+                    ref={fileInputRef}
+                    type="file"
+                  />
                   <button
-                    aria-label="恢复默认底图"
-                    className={styles.iconButton}
-                    onClick={restoreBackground}
-                    title="恢复默认底图"
+                    className={styles.backgroundReplaceButton}
+                    onClick={() => fileInputRef.current?.click()}
+                    title="替换首页底图"
                     type="button"
                   >
-                    <RefreshCcw size={16} />
+                    <ImagePlus size={15} />
+                    <span>替换底图</span>
                   </button>
-                ) : null}
-                <GlassTuner
-                  resetSettings={resetGlassSettings}
-                  setSettings={setGlassSettings}
-                  settings={glassSettings}
-                  triggerClassName={styles.secondaryButton}
-                />                <EdgeTuner
-                  setSettings={setGlassSettings}
-                  settings={glassSettings}
-                  triggerClassName={styles.secondaryButton}
-                />
+                  {hasCustomBackground ? (
+                    <button
+                      aria-label="恢复默认底图"
+                      className={styles.backgroundRestoreButton}
+                      onClick={restoreBackground}
+                      title="恢复默认底图"
+                      type="button"
+                    >
+                      <RefreshCcw size={14} />
+                    </button>
+                  ) : null}
+                </div>
+                <HomeInfoWidgets />
               </div>
             </div>
           </header>
 
-          <section aria-labelledby="start-title" className={styles.startSection}>
-            <div className={styles.sectionHeading}>
-              <div>
-                <p className={styles.sectionLabel}>START</p>
-                <h2 id="start-title">从产品开始</h2>
-              </div>
-              <a className={styles.textLink} href="/assets">
-                查看全部素材 <ArrowUpRight size={15} />
-              </a>
-            </div>
-
+          <section aria-label="从产品开始" className={styles.startSection}>
             <div className={styles.featureGrid}>
-              <a className={styles.featureCard + " " + styles.productFeature} href="/assets">
+              <Link className={styles.featureCard + " " + styles.productFeature} href="/assets">
                 <span aria-hidden="true" className={styles.featureBackdrop} />
                 <span className={styles.featureContent}>
                   <span className={styles.featureIcon}>
@@ -289,9 +272,9 @@ export function GlassHomeStudio() {
                   <span>建立产品档案并识别卖点</span>
                 </span>
                 <ArrowUpRight className={styles.featureArrow} size={18} />
-              </a>
+              </Link>
 
-              <a
+              <Link
                 className={styles.featureCard + " " + styles.styleFeature}
                 href="/style-transfer"
               >
@@ -305,9 +288,9 @@ export function GlassHomeStudio() {
                   <span>Keywords 驱动场景生成</span>
                 </span>
                 <ArrowUpRight className={styles.featureArrow} size={18} />
-              </a>
+              </Link>
 
-              <a
+              <Link
                 className={styles.featureCard + " " + styles.deliveryFeature}
                 href="/localize"
               >
@@ -320,19 +303,12 @@ export function GlassHomeStudio() {
                   <span>图像文字批量本地化</span>
                 </span>
                 <ArrowUpRight className={styles.featureArrow} size={18} />
-              </a>
+              </Link>
             </div>
           </section>
 
-          <section aria-labelledby="tools-title" className={styles.toolsSection}>
-            <div className={styles.toolsHeader}>
-              <div>
-                <p className={styles.sectionLabel}>CREATE</p>
-                <h2 id="tools-title">快捷创作</h2>
-              </div>
-              <span>{String(quickTools.length).padStart(2, "0")} TOOLS</span>
-            </div>
-
+          <section aria-label="快捷创作" className={styles.toolsSection}>
+            <h2 className={styles.visuallyHidden}>快捷创作</h2>
             <label className={styles.quickSlider}>
               <span className={styles.visuallyHidden}>快捷工具横向位置</span>
               <input
@@ -355,7 +331,7 @@ export function GlassHomeStudio() {
                 {quickTools.map((item, index) => {
                   const Icon = item.icon;
                   return (
-                    <a
+                    <Link
                       className={styles.quickTool}
                       href={item.href}
                       key={item.href + "-" + index}
@@ -366,7 +342,7 @@ export function GlassHomeStudio() {
                       <Icon size={20} strokeWidth={1.7} />
                       <strong>{item.label}</strong>
                       <ArrowUpRight className={styles.quickArrow} size={15} />
-                    </a>
+                    </Link>
                   );
                 })}
               </div>
@@ -375,9 +351,22 @@ export function GlassHomeStudio() {
 
           <footer className={styles.contentFooter}>
             <span>Midea AI Content Studio</span>
-            <a href="/costs">
+            <div className={styles.tunerActions}>
+              <GlassTuner
+                resetSettings={resetGlassSettings}
+                setSettings={setGlassSettings}
+                settings={glassSettings}
+                triggerClassName={styles.secondaryButton}
+              />
+              <EdgeTuner
+                setSettings={setGlassSettings}
+                settings={glassSettings}
+                triggerClassName={styles.secondaryButton}
+              />
+            </div>
+            <Link href="/costs">
               <FileImage size={14} /> 查看生成记录
-            </a>
+            </Link>
           </footer>
         </div>
       </section>
@@ -443,7 +432,7 @@ function HomeInfoWidgets() {
   const WeatherIcon = getWeatherIcon(weather?.weatherCode);
 
   return (
-    <div className={styles.infoGrid}>
+    <div className={styles.infoStack}>
       <article className={styles.infoCard}>
         <span aria-hidden="true" className={styles.infoBackdrop} />
         <CalendarDays size={18} />

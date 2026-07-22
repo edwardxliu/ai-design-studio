@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { Check, Copy, RotateCcw, SlidersHorizontal, X } from "lucide-react";
 import styles from "./GlassTuner.module.css";
 
-export const GLASS_TUNER_STORAGE_KEY = "midea-home-glass-tuner";
+export const GLASS_TUNER_STORAGE_KEY = "midea-home-glass-tuner-v2";
 
 export type EdgeTunerSettings = {
   edgeBorderColor: string;
@@ -44,28 +44,28 @@ export type GlassTunerSettings = EdgeTunerSettings & {
 };
 
 export const DEFAULT_EDGE_TUNER_SETTINGS: EdgeTunerSettings = {
-  edgeBorderColor: "#4f99ff",
-  edgeBorderMidColor: "#0049bb",
-  edgeBorderEndColor: "#001a42",
-  edgeBorderGradientAngle: 120,
+  edgeBorderColor: "#e6e6e6",
+  edgeBorderMidColor: "#b5b5b5",
+  edgeBorderEndColor: "#696969",
+  edgeBorderGradientAngle: 78,
   edgeBorderGradientMidpoint: 52,
-  edgeBorderOpacity: 0.76,
+  edgeBorderOpacity: 0.1,
   edgeBorderWidth: 1,
-  edgeGlowColor: "#4f99ff",
-  edgeGlowBrightness: 0.82,
-  edgeGlowSize: 7,
-  edgeGlowSpan: 86,
+  edgeGlowColor: "#ffffff",
+  edgeGlowBrightness: 1,
+  edgeGlowSize: 27,
+  edgeGlowSpan: 80,
   edgeGlowSpeed: 5.6,
-  navBorderColor: "#4f99ff",
-  navBorderEndColor: "#002c79",
-  navBorderGradientAngle: 110,
-  navBorderOpacity: 0.72,
-  navBorderWidth: 1,
-  navGlowColor: "#4f99ff",
-  navGlowBrightness: 0.92,
-  navGlowSize: 4,
-  navGlowSpan: 96,
-  navGlowSpeed: 3.8
+  navBorderColor: "#ffffff",
+  navBorderEndColor: "#999999",
+  navBorderGradientAngle: 128,
+  navBorderOpacity: 0.06,
+  navBorderWidth: 0.9,
+  navGlowColor: "#ffffff",
+  navGlowBrightness: 1,
+  navGlowSize: 8,
+  navGlowSpan: 106,
+  navGlowSpeed: 3
 };
 
 export const DEFAULT_GLASS_TUNER_SETTINGS: GlassTunerSettings = {
@@ -423,24 +423,40 @@ function normalizeSettings(input: Partial<GlassTunerSettings>): GlassTunerSettin
       0.5,
       DEFAULT_GLASS_TUNER_SETTINGS.overlayOpacity
     ),
-    edgeBorderColor: normalizeColor(input.edgeBorderColor, DEFAULT_EDGE_TUNER_SETTINGS.edgeBorderColor),
+    edgeBorderColor: normalizeLegacyEdgeColor(
+      input.edgeBorderColor,
+      DEFAULT_EDGE_TUNER_SETTINGS.edgeBorderColor,
+      ["#ffffff"]
+    ),
     edgeBorderMidColor: normalizeColor(input.edgeBorderMidColor, DEFAULT_EDGE_TUNER_SETTINGS.edgeBorderMidColor),
     edgeBorderEndColor: normalizeColor(input.edgeBorderEndColor, DEFAULT_EDGE_TUNER_SETTINGS.edgeBorderEndColor),
     edgeBorderGradientAngle: normalizeNumber(input.edgeBorderGradientAngle, 0, 360, DEFAULT_EDGE_TUNER_SETTINGS.edgeBorderGradientAngle),
     edgeBorderGradientMidpoint: normalizeNumber(input.edgeBorderGradientMidpoint, 10, 90, DEFAULT_EDGE_TUNER_SETTINGS.edgeBorderGradientMidpoint),
     edgeBorderOpacity: normalizeNumber(input.edgeBorderOpacity, 0, 1, DEFAULT_EDGE_TUNER_SETTINGS.edgeBorderOpacity),
     edgeBorderWidth: normalizeNumber(input.edgeBorderWidth, 0.5, 4, DEFAULT_EDGE_TUNER_SETTINGS.edgeBorderWidth),
-    edgeGlowColor: normalizeColor(input.edgeGlowColor, DEFAULT_EDGE_TUNER_SETTINGS.edgeGlowColor),
+    edgeGlowColor: normalizeLegacyEdgeColor(
+      input.edgeGlowColor,
+      DEFAULT_EDGE_TUNER_SETTINGS.edgeGlowColor,
+      ["#dafff2"]
+    ),
     edgeGlowBrightness: normalizeNumber(input.edgeGlowBrightness, 0, 1, DEFAULT_EDGE_TUNER_SETTINGS.edgeGlowBrightness),
     edgeGlowSize: normalizeNumber(input.edgeGlowSize, 0, 30, DEFAULT_EDGE_TUNER_SETTINGS.edgeGlowSize),
     edgeGlowSpan: normalizeNumber(input.edgeGlowSpan, 20, 180, DEFAULT_EDGE_TUNER_SETTINGS.edgeGlowSpan),
     edgeGlowSpeed: normalizeNumber(input.edgeGlowSpeed, 1.5, 20, DEFAULT_EDGE_TUNER_SETTINGS.edgeGlowSpeed),
-    navBorderColor: normalizeColor(input.navBorderColor, DEFAULT_EDGE_TUNER_SETTINGS.navBorderColor),
+    navBorderColor: normalizeLegacyEdgeColor(
+      input.navBorderColor,
+      DEFAULT_EDGE_TUNER_SETTINGS.navBorderColor,
+      ["#ffffff"]
+    ),
     navBorderEndColor: normalizeColor(input.navBorderEndColor, DEFAULT_EDGE_TUNER_SETTINGS.navBorderEndColor),
     navBorderGradientAngle: normalizeNumber(input.navBorderGradientAngle, 0, 360, DEFAULT_EDGE_TUNER_SETTINGS.navBorderGradientAngle),
     navBorderOpacity: normalizeNumber(input.navBorderOpacity, 0, 1, DEFAULT_EDGE_TUNER_SETTINGS.navBorderOpacity),
     navBorderWidth: normalizeNumber(input.navBorderWidth, 0.5, 3, DEFAULT_EDGE_TUNER_SETTINGS.navBorderWidth),
-    navGlowColor: normalizeColor(input.navGlowColor, DEFAULT_EDGE_TUNER_SETTINGS.navGlowColor),
+    navGlowColor: normalizeLegacyEdgeColor(
+      input.navGlowColor,
+      DEFAULT_EDGE_TUNER_SETTINGS.navGlowColor,
+      ["#dafff2"]
+    ),
     navGlowBrightness: normalizeNumber(input.navGlowBrightness, 0, 1, DEFAULT_EDGE_TUNER_SETTINGS.navGlowBrightness),
     navGlowSize: normalizeNumber(input.navGlowSize, 0, 24, DEFAULT_EDGE_TUNER_SETTINGS.navGlowSize),
     navGlowSpan: normalizeNumber(input.navGlowSpan, 20, 180, DEFAULT_EDGE_TUNER_SETTINGS.navGlowSpan),
@@ -450,6 +466,11 @@ function normalizeSettings(input: Partial<GlassTunerSettings>): GlassTunerSettin
 
 function normalizeColor(value: unknown, fallback: string) {
   return typeof value === "string" && /^#[0-9a-f]{6}$/i.test(value) ? value : fallback;
+}
+
+function normalizeLegacyEdgeColor(value: unknown, fallback: string, legacyColors: string[]) {
+  const normalized = normalizeColor(value, fallback);
+  return legacyColors.includes(normalized.toLowerCase()) ? "#4f99ff" : normalized;
 }
 
 function normalizeNumber(value: unknown, min: number, max: number, fallback: number) {

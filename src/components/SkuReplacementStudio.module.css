@@ -17,7 +17,7 @@
 
 .controlBand {
   display: grid;
-  grid-template-columns: minmax(300px, 1fr) minmax(560px, 1.2fr);
+  grid-template-columns: minmax(0, 1fr) minmax(340px, 0.92fr);
   gap: 20px;
   align-items: end;
   padding: 18px;
@@ -40,7 +40,7 @@
 
 .controls {
   display: grid;
-  grid-template-columns: minmax(180px, 1fr) minmax(180px, auto);
+  grid-template-columns: minmax(0, 1fr) minmax(146px, max-content);
   gap: 12px;
   align-items: end;
 }
@@ -670,5 +670,50 @@
 
   .uploadButton {
     flex: 1;
+  }
+}
+/* Stage 17 responsive SKU action row. */
+.controlBand,
+.taskCopy,
+.controls,
+.controls > * {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.generateButton {
+  width: min(100%, 190px);
+  max-width: 100%;
+  justify-self: end;
+  overflow: hidden;
+  padding-inline: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.modeTab,
+.modeTabActive {
+  transition: background-color 90ms ease, color 90ms ease;
+  contain: layout paint;
+}
+
+@media (max-width: 1080px) {
+  .controlBand {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .controls {
+    grid-template-columns: minmax(0, 1fr) minmax(146px, 190px);
+  }
+}
+
+@media (max-width: 620px) {
+  .controls {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .generateButton {
+    width: 100%;
+    justify-self: stretch;
   }
 }
