@@ -75,7 +75,6 @@ export function CoverLandingPage() {
   return (
     <main className="midea-draft">
       <CoverHero />
-      <CoverChat />
 
       <section
         className="midea-platform brand-platform"
@@ -94,6 +93,7 @@ export function CoverLandingPage() {
             <a href="#details">More Details</a>
             <Link className="brand-collage-enter" href="/studio-home">Enter Studio</Link>
           </nav>
+          <CoverChat />
           <div
             aria-label="brand.ai floating reference collage"
             className="brand-floating-grid"
@@ -128,7 +128,7 @@ export function CoverLandingPage() {
           <p className="midea-kicker">Your next move</p>
           <h2>Start with a signal.</h2>
           <Link className="midea-start-button dark-button" href="/studio-home">
-            Start now <span aria-hidden="true">&rarr;</span>
+            Start now
           </Link>
         </div>
         <div className="midea-final-meta">

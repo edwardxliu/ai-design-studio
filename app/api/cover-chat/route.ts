@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { createCoverChatReply } from "@/src/services/cover-chat";
+import {
+  createCoverChatReply,
+  getCoverChatUnavailableMessage
+} from "@/src/services/cover-chat";
 
 const requestSchema = z.object({
   message: z.string().trim().min(1).max(2_000),
@@ -30,7 +33,10 @@ export async function POST(request: Request) {
     return NextResponse.json(result);
   } catch (error) {
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "聊天服务暂时不可用。" },
+      {
+        error: getCoverChatUnavailableMessage(parsed.data.message),
+        details: error instanceof Error ? error.message : undefined
+      },
       { status: 502 }
     );
   }

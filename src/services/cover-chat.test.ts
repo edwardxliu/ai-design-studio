@@ -17,6 +17,14 @@ describe("cover chat service", () => {
     });
   });
 
+  it("answers navigation requests in the language of the latest message", async () => {
+    await expect(
+      createCoverChatReply({ message: "带我去 POP 页面" })
+    ).resolves.toMatchObject({ reply: "好的，正在为你打开POP 设计。" });
+    await expect(
+      createCoverChatReply({ message: "Open the product video tool" })
+    ).resolves.toMatchObject({ reply: "Opening Product Video." });
+  });
   it("does not navigate when a module is only being discussed", () => {
     expect(resolveCoverNavigation("POP 是什么？")).toBeUndefined();
     expect(resolveCoverNavigation("请解释一下 PDP 和 POP 的区别")).toBeUndefined();

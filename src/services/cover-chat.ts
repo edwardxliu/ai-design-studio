@@ -89,13 +89,121 @@ const NAVIGATION_ACTION =
   /打开|进入|跳转|带我去|前往|去到|我要去|我想去|我要做|我想做|开始做|开始制作|帮我做|帮我生成|open|go to|take me|navigate|start|create|make|design/i;
 
 const SYSTEM_PROMPT = [
-  "You are the concise bilingual assistant for Midea Overseas AI Content Studio.",
-  "Reply in the language used by the user, unless they request another language.",
+  "You are the concise multilingual assistant for Midea Overseas AI Content Studio.",
+  "Reply entirely in the language used by the user's latest message, unless they explicitly request another language.",
   "Help with product marketing creative workflows, prompts, planning, and choosing the right module.",
   "Keep most replies to 1-3 short sentences and no more than 100 words.",
   "Available modules include POP Design, PDP Builder, white-background multi-view images, phone-photo standardization, SKU replacement, style transfer, Icon Design, product video, localization, assets, and product profiles.",
   "Do not claim that you navigated anywhere; navigation is handled separately by the application."
 ].join(" ");
+export type CoverChatLanguage =
+  | "zh"
+  | "en"
+  | "ja"
+  | "ko"
+  | "ar"
+  | "ru"
+  | "es"
+  | "pt"
+  | "fr"
+  | "de";
+
+const ENGLISH_DESTINATION_LABELS: Record<string, string> = {
+  "/pop": "POP Design",
+  "/pdp": "PDP Builder",
+  "/white-background": "White-background multi-view",
+  "/phone-standardize": "Phone photo standardization",
+  "/sku-variants": "SKU replacement",
+  "/style-transfer": "Style Transfer",
+  "/icon-design": "Icon Design",
+  "/product-video": "Product Video",
+  "/localize": "Localization",
+  "/assets": "Asset Library",
+  "/products": "Product Profiles",
+  "/costs": "Resource Usage",
+  "/studio-home": "Studio Home"
+};
+
+const LANGUAGE_NAMES: Record<CoverChatLanguage, string> = {
+  zh: "Simplified Chinese",
+  en: "English",
+  ja: "Japanese",
+  ko: "Korean",
+  ar: "Arabic",
+  ru: "Russian",
+  es: "Spanish",
+  pt: "Portuguese",
+  fr: "French",
+  de: "German"
+};
+
+export function detectCoverChatLanguage(message: string): CoverChatLanguage {
+  if (/[\u3040-\u30ff]/u.test(message)) return "ja";
+  if (/[\uac00-\ud7af]/u.test(message)) return "ko";
+  if (/[\u0600-\u06ff]/u.test(message)) return "ar";
+  if (/[\u0400-\u04ff]/u.test(message)) return "ru";
+  if (/[\u3400-\u9fff]/u.test(message)) return "zh";
+
+  const normalized = message.toLocaleLowerCase();
+  if (/\b(hola|quiero|abre|abrir|crear|diseñar|página|por favor)\b/u.test(normalized)) {
+    return "es";
+  }
+  if (/\b(olá|quero|abra|abrir|criar|projetar|página|por favor)\b/u.test(normalized)) {
+    return "pt";
+  }
+  if (/\b(bonjour|je veux|ouvre|ouvrir|créer|concevoir|page|s'il vous plaît)\b/u.test(normalized)) {
+    return "fr";
+  }
+  if (/\b(hallo|ich möchte|öffne|öffnen|erstellen|gestalten|seite|bitte)\b/u.test(normalized)) {
+    return "de";
+  }
+  return "en";
+}
+
+function getNavigationReplyLabel(navigation: CoverNavigationTarget, language: CoverChatLanguage) {
+  return language === "zh"
+    ? navigation.label
+    : ENGLISH_DESTINATION_LABELS[navigation.href] ?? navigation.label;
+}
+
+function createNavigationReply(message: string, navigation: CoverNavigationTarget): string {
+  const language = detectCoverChatLanguage(message);
+  const label = getNavigationReplyLabel(navigation, language);
+  const replies: Record<CoverChatLanguage, string> = {
+    zh: `好的，正在为你打开${label}。`,
+    en: `Opening ${label}.`,
+    ja: `${label}を開きます。`,
+    ko: `${label} 페이지를 엽니다.`,
+    ar: `جارٍ فتح ${label}.`,
+    ru: `Открываю ${label}.`,
+    es: `Abriendo ${label}.`,
+    pt: `Abrindo ${label}.`,
+    fr: `Ouverture de ${label}.`,
+    de: `${label} wird geöffnet.`
+  };
+  return replies[language];
+}
+
+function createLanguageInstruction(message: string): string {
+  const language = LANGUAGE_NAMES[detectCoverChatLanguage(message)];
+  return `The latest user message is in ${language}. Write the entire answer in ${language}.`;
+}
+
+export function getCoverChatUnavailableMessage(message: string): string {
+  const replies: Record<CoverChatLanguage, string> = {
+    zh: "助手暂时不可用，请稍后再试。",
+    en: "The assistant is temporarily unavailable. Please try again.",
+    ja: "アシスタントは一時的に利用できません。しばらくしてからもう一度お試しください。",
+    ko: "어시스턴트를 일시적으로 사용할 수 없습니다. 잠시 후 다시 시도해 주세요.",
+    ar: "المساعد غير متاح مؤقتًا. يرجى المحاولة مرة أخرى لاحقًا.",
+    ru: "Ассистент временно недоступен. Повторите попытку позже.",
+    es: "El asistente no está disponible temporalmente. Inténtalo de nuevo más tarde.",
+    pt: "O assistente está temporariamente indisponível. Tente novamente mais tarde.",
+    fr: "L’assistant est temporairement indisponible. Réessayez plus tard.",
+    de: "Der Assistent ist vorübergehend nicht verfügbar. Bitte versuchen Sie es später erneut."
+  };
+  return replies[detectCoverChatLanguage(message)];
+}
 
 export function resolveCoverNavigation(message: string): CoverNavigationTarget | undefined {
   const normalized = message.trim();
@@ -114,7 +222,7 @@ export async function createCoverChatReply(
   const navigation = resolveCoverNavigation(message);
   if (navigation) {
     return {
-      reply: `好的，正在为你打开${navigation.label}。`,
+      reply: createNavigationReply(message, navigation),
       navigation
     };
   }
@@ -158,7 +266,7 @@ function createDefaultCompletion(apiKey: string, baseUrl?: string): CoverChatCom
           body: JSON.stringify({
             model,
             messages: [
-              { role: "system", content: SYSTEM_PROMPT },
+              { role: "system", content: `${SYSTEM_PROMPT} ${createLanguageInstruction(message)}` },
               ...history,
               { role: "user", content: message }
             ],

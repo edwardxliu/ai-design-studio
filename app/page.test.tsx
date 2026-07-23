@@ -65,6 +65,12 @@ describe("Cover HomePage", () => {
       "/studio-home"
     );
     expect(container.querySelector(".brand-collage-logo")).toBeNull();
+    const finaleButton = container.querySelector(".midea-finale .midea-start-button");
+    expect(finaleButton?.textContent?.trim()).toBe("Start now");
+    expect(finaleButton?.querySelector("span")).toBeNull();
+    expect(
+      container.querySelector(".brand-floating-collage > .cover-chat-boundary")
+    ).not.toBeNull();
     expect(container.querySelector("#agent")).not.toBeNull();
     expect(container.querySelector("#tutorial")).not.toBeNull();
     expect(container.querySelector("#details")).not.toBeNull();

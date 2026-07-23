@@ -18,6 +18,21 @@ describe("cover chat route", () => {
     });
   });
 
+  it("returns English copy for an English navigation request", async () => {
+    const response = await POST(
+      new Request("http://localhost/api/cover-chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: "Open the product video tool", history: [] })
+      })
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({
+      reply: "Opening Product Video.",
+      navigation: { href: "/product-video", label: "产品视频" }
+    });
+  });
   it("rejects empty messages", async () => {
     const response = await POST(
       new Request("http://localhost/api/cover-chat", {

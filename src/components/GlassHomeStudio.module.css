@@ -1332,3 +1332,79 @@
     width: 100%;
   }
 }
+
+/* Compact dashboard utility cards for cross-platform layouts. */
+.topbar {
+  grid-template-columns: minmax(0, 1fr) 252px;
+}
+
+.topbarSide {
+  width: 252px;
+  justify-self: end;
+}
+
+.utilityGrid {
+  grid-template-columns: 70px minmax(0, 174px);
+  min-height: 104px;
+}
+
+.infoStack {
+  width: 174px;
+  gap: 6px;
+}
+
+.infoCard {
+  padding: 7px 9px;
+  gap: 7px;
+}
+
+.infoCard small {
+  font-size: 7px;
+}
+
+.infoCard strong {
+  font-size: 13px;
+}
+
+@media (max-width: 1180px) {
+  .topbar {
+    grid-template-columns: minmax(0, 1fr) 236px;
+  }
+
+  .topbarSide {
+    width: 236px;
+  }
+
+  .utilityGrid {
+    grid-template-columns: 64px minmax(0, 1fr);
+    min-height: 100px;
+  }
+
+  .infoStack {
+    width: auto;
+  }
+}
+
+@media (max-width: 760px) {
+  .topbar {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .topbarSide {
+    width: min(100%, 252px);
+  }
+
+  .utilityGrid {
+    grid-template-columns: 70px minmax(0, 174px);
+  }
+
+  .infoStack {
+    width: 174px;
+  }
+}
+
+@container studio-home-content (max-width: 760px) {
+  .topbarSide {
+    width: min(100%, 252px);
+  }
+}

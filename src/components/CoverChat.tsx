@@ -48,6 +48,10 @@ export function CoverChat() {
     setMessages((current) => [...current, { role: "user", content: message }]);
     setPending(true);
 
+    let failureMessage = /[\u3400-\u9fff]/u.test(message)
+      ? "助手暂时不可用，请稍后再试。"
+      : "The assistant is temporarily unavailable. Please try again.";
+
     try {
       const response = await fetch("/api/cover-chat", {
         method: "POST",
@@ -56,7 +60,8 @@ export function CoverChat() {
       });
       const payload = (await response.json().catch(() => ({}))) as ChatResponse;
       if (!response.ok || !payload.reply) {
-        throw new Error(payload.error || "The assistant is temporarily unavailable.");
+        failureMessage = payload.error || failureMessage;
+        throw new Error(failureMessage);
       }
 
       setMessages((current) => [
@@ -66,13 +71,10 @@ export function CoverChat() {
       if (payload.navigation?.href) {
         router.push(payload.navigation.href);
       }
-    } catch (error) {
+    } catch {
       setMessages((current) => [
         ...current,
-        {
-          role: "assistant",
-          content: error instanceof Error ? error.message : "The assistant is temporarily unavailable."
-        }
+        { role: "assistant", content: failureMessage }
       ]);
     } finally {
       setPending(false);
