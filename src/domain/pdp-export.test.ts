@@ -24,9 +24,10 @@ function makeDocument(pointCount: number, images: Record<string, string> = {}) {
     templateVersion: "pdp-tree-v3",
     cover: {
       title: "Uploaded Product",
-      subtitle: "Demo value proposition",
+      subtitle: "Editable KV supporting copy",
       imageAssetId: "asset-cover"
     },
+    brandMessage: "Demo brand statement",
     sellingPoints: makePoints(pointCount),
     sectionImageBySellingPointId: images
   });
@@ -46,8 +47,8 @@ describe("renderPdpSvg (vertical long image)", () => {
 
     expect(svg).toContain("<svg");
     expect(svg).toContain("Uploaded Product");
-    expect(svg).toContain("Label 1");
-    expect(svg).toContain("Label 4");
+    expect(svg).toContain("Feature 1");
+    expect(svg).toContain("Feature 4");
     expect(svg).toContain("More Features");
     expect(svg).toContain("Specification");
     expect(svg).toContain("640L");
@@ -60,7 +61,8 @@ describe("renderPdpSvg (vertical long image)", () => {
     });
 
     expect(svg).toContain(`href="${brandUri}"`);
-    expect(svg).toContain("Demo value proposition");
+    expect(svg).toContain("Demo brand statement");
+    expect(svg).toContain("Editable KV supporting copy");
   });
   it("keeps a fixed export width and grows height with selling-point count", () => {
     const small = svgSize(renderPdpSvg(makeDocument(2), "P"));
@@ -86,11 +88,37 @@ describe("renderPdpSvg (vertical long image)", () => {
     expect(layout.height).toBeLessThan(7_500);
   });
 
+  it("uses a gray page background and preserves source block aspect ratios", () => {
+    const source = buildDefaultPdpCanvasLayout(makePoints(7));
+    const layout = buildVerticalPdpExportLayout(source, {
+      sellingPointCount: 7,
+      specificationCount: 7
+    });
+    const sourceKv = source.blocks.find((block) => block.kind === "kv")!;
+    const exportKv = layout.blocks.find((block) => block.kind === "kv")!;
+    const sourceSelling = source.blocks.find((block) => block.kind === "selling-point")!;
+    const exportSelling = layout.blocks.find((block) => block.kind === "selling-point")!;
+    const svg = renderPdpSvg(makeDocument(2, { "feature-1": "asset-feature" }), "P", {
+      imageDataUris: { "asset-feature": "data:image/png;base64,c2VjdGlvbg==" }
+    });
+
+    expect(exportKv.width / exportKv.height).toBeCloseTo(
+      sourceKv.width / sourceKv.height,
+      3
+    );
+    expect(exportSelling.width / exportSelling.height).toBeCloseTo(
+      sourceSelling.width / sourceSelling.height,
+      3
+    );
+    expect(svg).toContain('fill="#d3d6da"');
+    expect(svg).toContain('preserveAspectRatio="xMidYMid meet"');
+    expect(svg).not.toMatch(/<rect[^>]+fill="#17202a"/);
+  });
   it("renders every selling point even beyond five", () => {
     const svg = renderPdpSvg(makeDocument(7), "P");
 
     for (let index = 1; index <= 7; index += 1) {
-      expect(svg).toContain(`Label ${index}`);
+      expect(svg).toContain(`Feature ${index}`);
     }
   });
 

@@ -61,8 +61,11 @@ function verticalExportBlockHeight(
   if (block.kind === "brand") {
     return Math.round(contentWidth * (941 / 875));
   }
-  if (block.kind === "kv") {
-    return Math.round(contentWidth * 0.76);
+  if (block.kind === "kv" || block.kind === "selling-point") {
+    return Math.max(
+      1,
+      Math.round(contentWidth * (block.height / Math.max(1, block.width)))
+    );
   }
   if (block.kind === "features") {
     const rows = Math.max(1, Math.ceil((metrics.sellingPointCount ?? 0) / 3));
@@ -73,8 +76,7 @@ function verticalExportBlockHeight(
     return 44 + rows * 36 + 12;
   }
 
-  const scale = contentWidth / Math.max(1, block.width);
-  return clamp(Math.round(block.height * scale), 420, 680);
+  return Math.round(contentWidth * (block.height / Math.max(1, block.width)));
 }
 
 export function renderPdpSvg(
@@ -127,8 +129,7 @@ const blocks = layout.blocks
       <feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="#17202a" flood-opacity="0.10"/>
     </filter>
   </defs>
-  <rect width="${layout.width}" height="${layout.height}" fill="#f2f4f7"/>
-  <rect width="${layout.width}" height="${layout.height}" fill="url(#pdp-grid)"/>
+  <rect width="${layout.width}" height="${layout.height}" fill="#d3d6da"/>
 ${blocks}
   <text x="40" y="${layout.height - 22}" font-family="Arial, sans-serif" font-size="12" fill="#5f6c7b">${escapeXml(label)}</text>
 </svg>`;
@@ -146,7 +147,7 @@ function renderBlock(
   let body = "";
 
   if (block.kind === "brand") {
-    body = brandBlock(block, document, brandImageDataUri);
+    body = brandBlock(block, brandImageDataUri);
   } else if (block.kind === "kv") {
     body = kvBlock(
       block,
@@ -177,35 +178,11 @@ ${body}
   </g>`;
 }
 
-function brandBlock(
-  block: PdpCanvasBlock,
-  document: PdpDocument,
-  brandImageDataUri?: string
-): string {
+function brandBlock(block: PdpCanvasBlock, brandImageDataUri?: string): string {
   const imageHref = brandImageDataUri || "/pdp/midea-brand-no1.png";
-  const panelY = Math.round(block.height * 0.56);
-  const panelHeight = Math.round(block.height * 0.18);
-  const message = document.cover.subtitle || "Midea - World's No.1 Smart Home Appliances Brand.";
-  const messageLines = wrapText(
-    message,
-    Math.max(36, Math.floor(block.width / 10)),
-    4
-  );
 
   return `    <rect width="${block.width}" height="${block.height}" fill="#ffffff" stroke="#cfd7df"/>
-    <image href="${escapeXml(imageHref)}" width="${block.width}" height="${block.height}" preserveAspectRatio="xMidYMid meet"/>
-    <rect y="${panelY}" width="${block.width}" height="${panelHeight}" fill="#ffffff" fill-opacity="0.96"/>
-${svgTextLines(
-  messageLines,
-  24,
-  panelY + 16,
-  Math.max(17, Math.round(block.width / 44)),
-  Math.max(13, Math.round(block.width / 58)),
-  "#3f4549",
-  600,
-  "middle",
-  block.width / 2
-)}`;
+    <image href="${escapeXml(imageHref)}" width="${block.width}" height="${block.height}" preserveAspectRatio="xMidYMid meet"/>`;
 }
 
 function kvBlock(
@@ -214,23 +191,26 @@ function kvBlock(
   productName: string,
   imageDataUri: string | undefined
 ): string {
-  const titleHeight = 54;
-  const subtitleHeight = 40;
+  const titleHeight = clamp(Math.round(block.height * 0.10), 58, 120);
+  const subtitleHeight = clamp(Math.round(block.height * 0.08), 48, 96);
   const imageHeight = block.height - titleHeight - subtitleHeight;
   const titleLines = wrapText(
     document.cover.title || productName,
-    Math.max(16, Math.floor(block.width / 10)),
+    Math.max(20, Math.floor(block.width / 16)),
     2
   );
+  const subtitleLines = wrapText(
+    document.cover.subtitle || "Product overview",
+    Math.max(24, Math.floor(block.width / 13)),
+    3
+  );
 
-  return `    <rect width="${block.width}" height="${block.height}" fill="#ffffff" stroke="#cfd7df"/>
+  return `    <rect width="${block.width}" height="${block.height}" fill="#d9dde3" stroke="#b9c0c7"/>
 ${imageBlock(imageDataUri, 0, 0, block.width, imageHeight, block.id, "KV")}
-    <rect y="${imageHeight}" width="${block.width}" height="${titleHeight}" fill="#17202a"/>
-${svgTextLines(titleLines, 16, imageHeight + 20, 18, 16, "#ffffff", 800)}
+    <rect y="${imageHeight}" width="${block.width}" height="${titleHeight}" fill="#bcc2c8"/>
+${svgCenteredTextLines(titleLines, 18, imageHeight, block.width - 36, titleHeight, 25, 22, "#26323c", 800)}
     <rect y="${imageHeight + titleHeight}" width="${block.width}" height="${subtitleHeight}" fill="#d9dde3"/>
-    <text x="16" y="${block.height - 14}" font-family="Arial, sans-serif" font-size="12" fill="#3c4b5d">${escapeXml(
-      `${document.country} / ${document.language}`
-    )}</text>`;
+${svgCenteredTextLines(subtitleLines, 20, imageHeight + titleHeight, block.width - 40, subtitleHeight, 19, 16, "#4d5964", 500)}`;
 }
 
 function sellingPointBlock(
@@ -238,37 +218,70 @@ function sellingPointBlock(
   section: PdpSection,
   imageDataUri: string | undefined
 ): string {
-  const titleHeight = clamp(Math.round(block.height * 0.18), 30, 48);
-  const proofHeight = clamp(Math.round(block.height * 0.16), 26, 42);
-  const imageHeight = Math.max(42, block.height - titleHeight - proofHeight);
-  const fontSize = clamp(Math.round(block.width / 17), 11, 17);
+  if ((block.level ?? 1) >= 3) {
+    return wideSellingPointBlock(block, section, imageDataUri);
+  }
+
+  const titleHeight = Math.round(block.height * 0.20);
+  const descriptionHeight = Math.round(block.height * 0.18);
+  const imageHeight = Math.max(42, block.height - titleHeight - descriptionHeight);
+  const fontSize = clamp(Math.round(block.width / 38), 16, 24);
   const titleLines = wrapText(
     section.blackTitle,
-    Math.max(10, Math.floor((block.width - 50) / (fontSize * 0.58))),
-    titleHeight > 38 ? 2 : 1
+    Math.max(18, Math.floor(block.width / (fontSize * 0.6))),
+    2
   );
-  const proofLines = wrapText(
+  const descriptionLines = wrapText(
     section.narrowGrayText,
-    Math.max(12, Math.floor(block.width / 7)),
-    proofHeight > 32 ? 2 : 1
+    Math.max(24, Math.floor(block.width / 13)),
+    3
   );
 
-  return `    <rect width="${block.width}" height="${block.height}" fill="#ffffff" stroke="#cfd7df"/>
-    <rect width="${block.width}" height="${titleHeight}" fill="#17202a"/>
-${svgTextLines(titleLines, 12, 10, fontSize + 2, fontSize, "#ffffff", 800)}
-    <rect x="${block.width - 38}" y="7" width="30" height="20" fill="#00a6d6"/>
-    <text x="${block.width - 23}" y="21" text-anchor="middle" font-family="Arial, sans-serif" font-size="10" font-weight="800" fill="#ffffff">P${section.order}</text>
-    <rect y="${titleHeight}" width="${block.width}" height="${proofHeight}" fill="#d9dde3"/>
-${svgTextLines(proofLines, 12, titleHeight + 7, 13, 11, "#3c4b5d", 500)}
+  return `    <rect width="${block.width}" height="${block.height}" fill="#d9dde3" stroke="#b9c0c7"/>
+    <rect width="${block.width}" height="${titleHeight}" fill="#bcc2c8"/>
+${svgCenteredTextLines(titleLines, 20, 0, block.width - 40, titleHeight, fontSize + 5, fontSize, "#26323c", 800)}
+    <text x="${block.width - 14}" y="22" text-anchor="end" font-family="Arial, sans-serif" font-size="11" font-weight="700" fill="#66717b">P${section.order}</text>
+    <rect y="${titleHeight}" width="${block.width}" height="${descriptionHeight}" fill="#d9dde3"/>
+${svgCenteredTextLines(descriptionLines, 24, titleHeight, block.width - 48, descriptionHeight, 19, 15, "#4d5964", 500)}
 ${imageBlock(
     imageDataUri,
     0,
-    titleHeight + proofHeight,
+    titleHeight + descriptionHeight,
     block.width,
     imageHeight,
     block.id,
     "IMAGE"
   )}`;
+}
+
+function wideSellingPointBlock(
+  block: PdpCanvasBlock,
+  section: PdpSection,
+  imageDataUri: string | undefined
+): string {
+  const imageOnLeft = section.order % 2 === 1;
+  const imageWidth = Math.round(block.width / 2);
+  const textWidth = block.width - imageWidth;
+  const imageX = imageOnLeft ? 0 : textWidth;
+  const textX = imageOnLeft ? imageWidth : 0;
+  const titleHeight = Math.round(block.height * 0.43);
+  const titleLines = wrapText(
+    section.blackTitle,
+    Math.max(14, Math.floor(textWidth / 15)),
+    2
+  );
+  const descriptionLines = wrapText(
+    section.narrowGrayText,
+    Math.max(18, Math.floor(textWidth / 12)),
+    3
+  );
+
+  return `    <rect width="${block.width}" height="${block.height}" fill="#d9dde3" stroke="#b9c0c7"/>
+${imageBlock(imageDataUri, imageX, 0, imageWidth, block.height, block.id, "IMAGE")}
+    <rect x="${textX}" width="${textWidth}" height="${titleHeight}" fill="#bcc2c8"/>
+${svgCenteredTextLines(titleLines, textX + 16, 0, textWidth - 32, titleHeight, 19, 16, "#26323c", 800)}
+    <rect x="${textX}" y="${titleHeight}" width="${textWidth}" height="${block.height - titleHeight}" fill="#d9dde3"/>
+${svgCenteredTextLines(descriptionLines, textX + 18, titleHeight, textWidth - 36, block.height - titleHeight, 16, 13, "#4d5964", 500)}`;
 }
 
 function featuresBlock(block: PdpCanvasBlock, document: PdpDocument): string {
@@ -299,9 +312,9 @@ ${svgTextLines(
     })
     .join("\n");
 
-  return `    <rect width="${block.width}" height="${block.height}" fill="#ffffff" stroke="#cfd7df"/>
-    <rect width="${block.width}" height="${headerHeight}" fill="#17202a"/>
-    <text x="14" y="28" font-family="Arial, sans-serif" font-size="13" font-weight="700" fill="#ffffff">More Features</text>
+  return `    <rect width="${block.width}" height="${block.height}" fill="#eef0f2" stroke="#b9c0c7"/>
+    <rect width="${block.width}" height="${headerHeight}" fill="#bcc2c8"/>
+    <text x="${block.width / 2}" y="28" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" font-weight="700" fill="#26323c">More Features</text>
 ${icons}`;
 }
 
@@ -330,9 +343,9 @@ function specificationBlock(
     })
     .join("\n");
 
-  return `    <rect width="${block.width}" height="${block.height}" fill="#ffffff" stroke="#cfd7df"/>
-    <rect width="${block.width}" height="${headerHeight}" fill="#17202a"/>
-    <text x="14" y="28" font-family="Arial, sans-serif" font-size="13" font-weight="700" fill="#ffffff">Specification</text>
+  return `    <rect width="${block.width}" height="${block.height}" fill="#eef0f2" stroke="#b9c0c7"/>
+    <rect width="${block.width}" height="${headerHeight}" fill="#bcc2c8"/>
+    <text x="${block.width / 2}" y="28" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" font-weight="700" fill="#26323c">Specification</text>
 ${rows}`;
 }
 
@@ -347,8 +360,9 @@ function imageBlock(
 ): string {
   if (dataUri) {
     const clipId = `pdp-clip-${clipKey.replace(/[^a-zA-Z0-9-]/g, "")}`;
-    return `    <clipPath id="${clipId}"><rect x="${x}" y="${y}" width="${width}" height="${height}"/></clipPath>
-    <image href="${escapeXml(dataUri)}" x="${x}" y="${y}" width="${width}" height="${height}" preserveAspectRatio="xMidYMid slice" clip-path="url(#${clipId})"/>`;
+    return `    <rect x="${x}" y="${y}" width="${width}" height="${height}" fill="#d9dde3"/>
+    <clipPath id="${clipId}"><rect x="${x}" y="${y}" width="${width}" height="${height}"/></clipPath>
+    <image href="${escapeXml(dataUri)}" x="${x}" y="${y}" width="${width}" height="${height}" preserveAspectRatio="xMidYMid meet" clip-path="url(#${clipId})"/>`;
   }
 
   const centerX = x + width / 2;
@@ -357,6 +371,27 @@ function imageBlock(
     <rect x="${centerX - 17}" y="${centerY - 14}" width="34" height="28" fill="none" stroke="#b9c4ce"/>
     <path d="M ${centerX - 13} ${centerY + 9} L ${centerX - 2} ${centerY - 2} L ${centerX + 5} ${centerY + 5} L ${centerX + 13} ${centerY - 5}" fill="none" stroke="#b9c4ce"/>
     <text x="${centerX}" y="${centerY + 30}" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" font-weight="700" fill="#7d8a98">${label}</text>`;
+}
+
+function svgCenteredTextLines(
+  lines: string[],
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  lineHeight: number,
+  fontSize: number,
+  color: string,
+  weight: number
+): string {
+  const textX = x + width / 2;
+  const firstLineY = y + height / 2 - ((lines.length - 1) * lineHeight) / 2;
+  return `    <text x="${textX}" y="${firstLineY}" text-anchor="middle" dominant-baseline="middle" font-family="Arial, sans-serif" font-size="${fontSize}" font-weight="${weight}" fill="${color}">${lines
+    .map(
+      (line, index) =>
+        `<tspan x="${textX}" dy="${index === 0 ? 0 : lineHeight}">${escapeXml(line)}</tspan>`
+    )
+    .join("")}</text>`;
 }
 
 function svgTextLines(

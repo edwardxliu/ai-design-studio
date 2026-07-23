@@ -28,8 +28,9 @@ describe("buildPdpDocument", () => {
     expect(document.cover.title).toContain("SPACE Master");
     expect(document.sections).toHaveLength(3);
     expect(document.sections[0]).toMatchObject({
-      blackTitle: "640L Capacity",
-      narrowGrayText: "23 cu.ft. / 640L, with 434L refrigerator and 206L freezer zones.",
+      blackTitle: "Large Capacity",
+      narrowGrayText:
+        "Large space to store food and maximize use of every corner for family needs.",
       largeImageAssetId: "asset-capacity"
     });
   });

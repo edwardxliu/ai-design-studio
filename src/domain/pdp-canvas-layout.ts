@@ -30,6 +30,12 @@ export const PDP_CANVAS_TOP = 62;
 export const PDP_CANVAS_ROW_GAP = 16;
 export const PDP_CANVAS_COLUMN_GAP = 26;
 export const PDP_CANVAS_TREE_HEIGHT = 560;
+export const PDP_BRAND_ASPECT_RATIO = 875 / 941;
+export const PDP_BRAND_BLOCK_WIDTH = 300;
+export const PDP_BRAND_BLOCK_HEIGHT = Math.round(
+  PDP_BRAND_BLOCK_WIDTH * (941 / 875)
+);
+export const PDP_WIDE_SELLING_POINT_WIDTH = 304;
 
 export const PDP_BRAND_BLOCK_ID = "pdp-block-brand";
 export const PDP_KV_BLOCK_ID = "pdp-block-kv";
@@ -56,10 +62,10 @@ export function buildDefaultPdpCanvasLayout(
     kind: "brand",
     x,
     y: PDP_CANVAS_TOP,
-    width: 232,
-    height: 360
+    width: PDP_BRAND_BLOCK_WIDTH,
+    height: PDP_BRAND_BLOCK_HEIGHT
   });
-  x += 232 + PDP_CANVAS_COLUMN_GAP;
+  x += PDP_BRAND_BLOCK_WIDTH + PDP_CANVAS_COLUMN_GAP;
 
   blocks.push({
     id: PDP_KV_BLOCK_ID,
@@ -77,11 +83,13 @@ export function buildDefaultPdpCanvasLayout(
   while (pointIndex < selected.length) {
     const capacity = level + 1;
     const columnPoints = selected.slice(pointIndex, pointIndex + capacity);
-    const width = Math.max(176, 292 - (level - 1) * 36);
+    const width =
+      level >= 3 ? PDP_WIDE_SELLING_POINT_WIDTH : 292 - (level - 1) * 36;
+    const rowGap = level >= 3 ? 4 : PDP_CANVAS_ROW_GAP;
     const height = Math.max(
       112,
       Math.floor(
-        (PDP_CANVAS_TREE_HEIGHT - (capacity - 1) * PDP_CANVAS_ROW_GAP) / capacity
+        (PDP_CANVAS_TREE_HEIGHT - (capacity - 1) * rowGap) / capacity
       )
     );
 
@@ -93,7 +101,7 @@ export function buildDefaultPdpCanvasLayout(
         priority: pointIndex + slotIndex + 1,
         level,
         x,
-        y: PDP_CANVAS_TOP + slotIndex * (height + PDP_CANVAS_ROW_GAP),
+        y: PDP_CANVAS_TOP + slotIndex * (height + rowGap),
         width,
         height
       });

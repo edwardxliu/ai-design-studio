@@ -38,9 +38,6 @@ type EditablePoint = SellingPoint & { custom?: boolean };
 type PendingCrop = { file: File; blockId: string; aspectRatio: number };
 type EditorStatus = "idle" | "uploading" | "exporting" | "done" | "failed";
 
-const DEFAULT_BRAND_MESSAGE =
-  "Midea - World's No.1 Smart Home Appliances Brand. Midea uplifts your life experience and creates more precious moments for you, making you feel right at home.";
-
 
 export function PdpCanvasEditor({ products }: { products: ProductWithProfile[] }) {
   const initialProduct = products[0];
@@ -57,8 +54,11 @@ export function PdpCanvasEditor({ products }: { products: ProductWithProfile[] }
   const [coverAssetId, setCoverAssetId] = useState("");
   const [country, setCountry] = useState("Mexico");
   const [language, setLanguage] = useState("Spanish");
-  const [brandMessage, setBrandMessage] = useState(
-    initialProduct?.profile.valueProposition || DEFAULT_BRAND_MESSAGE
+  const [coverTitle, setCoverTitle] = useState(
+    initialProduct?.displayName ?? initialProduct?.id ?? "Product key visual"
+  );
+  const [coverSubtitle, setCoverSubtitle] = useState(
+    initialProduct?.profile.category ?? "Product overview"
   );
 
   useEffect(() => {
@@ -158,7 +158,8 @@ export function PdpCanvasEditor({ products }: { products: ProductWithProfile[] }
     );
     setSectionImages({});
     setCoverAssetId("");
-    setBrandMessage(nextProduct?.profile.valueProposition || DEFAULT_BRAND_MESSAGE);
+    setCoverTitle(nextProduct?.displayName ?? nextProduct?.id ?? "Product key visual");
+    setCoverSubtitle(nextProduct?.profile.category ?? "Product overview");
     setResult(null);
     setError("");
     setStatus("idle");
@@ -350,7 +351,8 @@ export function PdpCanvasEditor({ products }: { products: ProductWithProfile[] }
           language,
           templateVersion: "pdp-canvas-v4",
           coverAssetId: effectiveCoverAssetId || undefined,
-          brandMessage,
+          coverTitle,
+          coverSubtitle,
           sectionImages,
           layout,
           sellingPoints: exportPoints.map((point) => ({
@@ -485,7 +487,8 @@ export function PdpCanvasEditor({ products }: { products: ProductWithProfile[] }
         <div className={styles.canvasPane}>
           <PdpCanvas
             brandName={product.brand ?? "Midea"}
-            brandMessage={brandMessage}
+            coverTitle={coverTitle}
+            coverSubtitle={coverSubtitle}
             country={country}
             imageUrlByBlockId={imageUrlByBlockId}
             language={language}
@@ -535,12 +538,9 @@ export function PdpCanvasEditor({ products }: { products: ProductWithProfile[] }
                   <input
                     aria-label="卖点标题"
                     onChange={(event) =>
-                      updateSelectedPoint({
-                        title: event.target.value,
-                        shortLabel: event.target.value
-                      })
+                      updateSelectedPoint({ title: event.target.value })
                     }
-                    value={selectedPoint.shortLabel || selectedPoint.title}
+                    value={selectedPoint.title}
                   />
                 </label>
                 <label className={styles.field}>
@@ -548,12 +548,9 @@ export function PdpCanvasEditor({ products }: { products: ProductWithProfile[] }
                   <textarea
                     aria-label="卖点说明"
                     onChange={(event) =>
-                      updateSelectedPoint({
-                        benefit: event.target.value,
-                        technicalProof: event.target.value
-                      })
+                      updateSelectedPoint({ benefit: event.target.value })
                     }
-                    value={selectedPoint.technicalProof || selectedPoint.benefit}
+                    value={selectedPoint.benefit}
                   />
                 </label>
                 <ImageAssetField
@@ -576,6 +573,30 @@ export function PdpCanvasEditor({ products }: { products: ProductWithProfile[] }
               </>
             ) : selectedBlock?.kind === "kv" ? (
               <>
+                <label className={styles.field}>
+                  KV 标题
+                  <input
+                    aria-label="KV 标题"
+                    maxLength={160}
+                    onChange={(event) => {
+                      setCoverTitle(event.target.value);
+                      markDirty();
+                    }}
+                    value={coverTitle}
+                  />
+                </label>
+                <label className={styles.field}>
+                  KV 说明
+                  <textarea
+                    aria-label="KV 说明"
+                    maxLength={320}
+                    onChange={(event) => {
+                      setCoverSubtitle(event.target.value);
+                      markDirty();
+                    }}
+                    value={coverSubtitle}
+                  />
+                </label>
                 <ImageAssetField
                   assetId={selectedAssetId}
                   assets={imageAssets}
@@ -583,24 +604,7 @@ export function PdpCanvasEditor({ products }: { products: ProductWithProfile[] }
                   onUpload={() => requestImage(selectedBlock.id)}
                 />
                 <AssetPreview asset={selectedAsset} />
-                <div className={styles.inspectorSummary}>
-                  <strong>{product.displayName ?? product.id}</strong>
-                  <p>{country} / {language}</p>
-                </div>
               </>
-            ) : selectedBlock?.kind === "brand" ? (
-              <label className={styles.field}>
-                品牌说明
-                <textarea
-                  aria-label="品牌说明"
-                  maxLength={420}
-                  onChange={(event) => {
-                    setBrandMessage(event.target.value);
-                    markDirty();
-                  }}
-                  value={brandMessage}
-                />
-              </label>
             ) : (
               <div className={styles.inspectorSummary}>
                 <strong>{blockTitle(selectedBlock, selectedPoint)}</strong>
@@ -704,9 +708,12 @@ function getPdpImageAspectRatio(block: PdpCanvasBlock): number {
     return block.width / Math.max(1, block.height - 94);
   }
   if (block.kind === "selling-point") {
-    const titleHeight = Math.min(48, Math.max(30, Math.round(block.height * 0.18)));
-    const proofHeight = Math.min(42, Math.max(26, Math.round(block.height * 0.16)));
-    return block.width / Math.max(1, block.height - titleHeight - proofHeight);
+    if ((block.level ?? 1) >= 3) {
+      return (block.width / 2) / Math.max(1, block.height);
+    }
+    const titleHeight = Math.min(54, Math.max(34, Math.round(block.height * 0.21)));
+    const descriptionHeight = Math.min(50, Math.max(32, Math.round(block.height * 0.19)));
+    return block.width / Math.max(1, block.height - titleHeight - descriptionHeight);
   }
   return block.width / Math.max(1, block.height);
 }
@@ -721,7 +728,7 @@ function toEditablePoints(product: ProductWithProfile | undefined): EditablePoin
 function blockOptionLabel(block: PdpCanvasBlock, points: EditablePoint[]): string {
   if (block.kind === "selling-point") {
     const point = points.find((item) => item.id === block.sellingPointId);
-    return `SP${block.level ?? 1} · ${point?.shortLabel || point?.title || "Selling point"}`;
+    return `SP${block.level ?? 1} · ${point?.title || "Selling point"}`;
   }
   return getPdpCanvasColumnLabel(block);
 }
@@ -734,7 +741,7 @@ function blockTitle(
     return "未选择";
   }
   if (block.kind === "selling-point") {
-    return point?.shortLabel || point?.title || "Selling point";
+    return point?.title || "Selling point";
   }
   return getPdpCanvasColumnLabel(block);
 }
@@ -744,7 +751,7 @@ function generatedBlockSummary(
   sellingPointCount: number
 ): string {
   if (block?.kind === "brand") {
-    return "品牌头图、产品名称与品牌资产入口。";
+    return "固定品牌头图，使用系统品牌素材。";
   }
   if (block?.kind === "features") {
     return `根据 ${sellingPointCount} 个卖点自动生成图标索引。`;

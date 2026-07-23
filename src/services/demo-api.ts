@@ -302,6 +302,8 @@ export type ExportDemoPdpInput = {
   sellingPoints?: SellingPoint[];
   sectionImages?: Record<string, string>;
   coverAssetId?: string;
+  coverTitle?: string;
+  coverSubtitle?: string;
   brandMessage?: string;
   layout?: PdpCanvasLayout;
   imageStore?: LocalAssetStore;
@@ -338,10 +340,11 @@ export async function exportDemoPdp(input: ExportDemoPdpInput): Promise<ExportDe
     language: input.language,
     templateVersion,
     cover: {
-      title: productName,
-      subtitle: input.brandMessage || product.profile.valueProposition,
+      title: input.coverTitle || productName,
+      subtitle: input.coverSubtitle || `${input.country} / ${input.language}`,
       imageAssetId: coverAssetId
     },
+    brandMessage: input.brandMessage || product.profile.valueProposition,
     sellingPoints,
     sectionImageBySellingPointId: sectionImages
   });
@@ -363,7 +366,7 @@ export async function exportDemoPdp(input: ExportDemoPdpInput): Promise<ExportDe
 
   const specification: Array<[string, string]> = sellingPoints
     .filter((point) => point.enabled !== false)
-    .map((point) => [point.shortLabel || point.title, point.technicalProof ?? point.benefit]);
+    .map((point) => [point.title, point.benefit]);
 
   let brandImageDataUri: string | undefined;
   try {

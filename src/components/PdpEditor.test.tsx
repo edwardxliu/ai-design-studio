@@ -66,7 +66,7 @@ describe("PdpEditor canvas interaction", () => {
     expect(canvas.tagName).toBe("CANVAS");
     expect(canvas).toHaveAttribute("role", "application");
     expect(screen.queryByTestId("pdp-point-row")).not.toBeInTheDocument();
-    expect(screen.getByLabelText("卖点标题")).toHaveValue("640L Capacity");
+    expect(screen.getByLabelText("卖点标题")).toHaveValue("Large Capacity");
   });
 
   it("adds a selling-point block and opens it in the contextual inspector", async () => {
@@ -96,10 +96,16 @@ describe("PdpEditor canvas interaction", () => {
     const user = userEvent.setup();
     render(<PdpEditor products={demoProducts} />);
 
+    await user.selectOptions(screen.getByLabelText("当前图层"), "pdp-block-kv");
+    const kvTitle = screen.getByLabelText("KV 标题");
+    const kvSubtitle = screen.getByLabelText("KV 说明");
+    await user.clear(kvTitle);
+    await user.type(kvTitle, "Editable KV headline");
+    await user.clear(kvSubtitle);
+    await user.type(kvSubtitle, "Editable KV supporting copy");
+
     await user.selectOptions(screen.getByLabelText("当前图层"), "pdp-block-brand");
-    const brandMessage = screen.getByLabelText("品牌说明");
-    await user.clear(brandMessage);
-    await user.type(brandMessage, "Editable global brand statement");
+    expect(screen.queryByLabelText("品牌说明")).not.toBeInTheDocument();
 
     const canvas = screen.getByTestId("pdp-canvas");
     canvas.focus();
@@ -114,7 +120,9 @@ describe("PdpEditor canvas interaction", () => {
     const payload = JSON.parse(String(request.body));
 
     expect(payload.templateVersion).toBe("pdp-canvas-v4");
-    expect(payload.brandMessage).toBe("Editable global brand statement");
+    expect(payload.brandMessage).toBeUndefined();
+    expect(payload.coverTitle).toBe("Editable KV headline");
+    expect(payload.coverSubtitle).toBe("Editable KV supporting copy");
     expect(payload.layout.blocks.some((block: { kind: string }) => block.kind === "brand")).toBe(true);
     expect(
       payload.layout.blocks.some(
@@ -122,7 +130,8 @@ describe("PdpEditor canvas interaction", () => {
           block.kind === "selling-point" && block.sellingPointId === "feature-capacity"
       )
     ).toBe(true);
-    expect(payload.sellingPoints[0].shortLabel).toBe("640L Capacity");
+    expect(payload.sellingPoints[0].title).toBe("Large Capacity");
+    expect(payload.sellingPoints[0].benefit).toContain("Large space");
     expect(await screen.findByText("打开导出文件")).toBeInTheDocument();
   });
 
@@ -132,8 +141,7 @@ describe("PdpEditor canvas interaction", () => {
 
     await user.click(screen.getByRole("button", { name: "移除卖点" }));
 
-    expect(screen.getByLabelText("卖点标题")).not.toHaveValue("640L Capacity");
-    expect(screen.queryByText("640L Capacity")).not.toBeInTheDocument();
+    expect(screen.getByLabelText("卖点标题")).not.toHaveValue("Large Capacity");
+    expect(screen.queryByText("Large Capacity")).not.toBeInTheDocument();
   });
 });
-

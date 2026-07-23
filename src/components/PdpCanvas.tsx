@@ -24,7 +24,8 @@ type PdpCanvasProps = {
   points: SellingPoint[];
   productName: string;
   brandName: string;
-  brandMessage: string;
+  coverTitle: string;
+  coverSubtitle: string;
   country: string;
   language: string;
   imageUrlByBlockId: Record<string, string | undefined>;
@@ -49,7 +50,8 @@ export function PdpCanvas({
   points,
   productName,
   brandName,
-  brandMessage,
+  coverTitle,
+  coverSubtitle,
   country,
   language,
   imageUrlByBlockId,
@@ -123,7 +125,8 @@ export function PdpCanvas({
       points,
       productName,
       brandName,
-      brandMessage,
+      coverTitle,
+      coverSubtitle,
       country,
       language,
       imageUrlByBlockId,
@@ -133,7 +136,8 @@ export function PdpCanvas({
     });
   }, [
     brandName,
-    brandMessage,
+    coverTitle,
+    coverSubtitle,
     country,
     draggingBlockId,
     imageRevision,
@@ -295,7 +299,8 @@ function drawPdpCanvas(context: CanvasRenderingContext2D, options: DrawOptions) 
     points,
     productName,
     brandName,
-    brandMessage,
+    coverTitle,
+    coverSubtitle,
     country,
     language,
     imageUrlByBlockId,
@@ -335,9 +340,9 @@ function drawPdpCanvas(context: CanvasRenderingContext2D, options: DrawOptions) 
     context.shadowOffsetY = selected ? 4 : 3;
 
     if (block.kind === "brand") {
-      drawBrandBlock(context, block, imageCache.get(PDP_BRAND_IMAGE_URL), brandMessage);
+      drawBrandBlock(context, block, imageCache.get(PDP_BRAND_IMAGE_URL));
     } else if (block.kind === "kv") {
-      drawKvBlock(context, block, image, productName, country, language);
+      drawKvBlock(context, block, image, coverTitle, coverSubtitle);
     } else if (block.kind === "selling-point") {
       const point = block.sellingPointId ? pointById.get(block.sellingPointId) : undefined;
       drawSellingPointBlock(context, block, point, image);
@@ -397,8 +402,7 @@ function drawGrid(context: CanvasRenderingContext2D, width: number, height: numb
 function drawBrandBlock(
   context: CanvasRenderingContext2D,
   block: PdpCanvasBlock,
-  image: HTMLImageElement | undefined,
-  brandMessage: string
+  image: HTMLImageElement | undefined
 ) {
   drawBlockBase(context, block, "#ffffff");
   if (image?.complete && image.naturalWidth > 0) {
@@ -412,68 +416,50 @@ function drawBrandBlock(
       width,
       height
     );
-  } else {
-    context.fillStyle = "#eef3f5";
-    context.fillRect(block.x, block.y, block.width, block.height);
-    context.fillStyle = "#168ec2";
-    context.font = `800 ${Math.max(22, block.width * 0.13)}px Segoe UI, Arial, sans-serif`;
-    context.fillText("Midea No.1", block.x + 16, block.y + 54);
   }
-
-  const panelY = block.y + block.height * 0.56;
-  const panelHeight = block.height * 0.18;
-  context.fillStyle = "rgba(255, 255, 255, 0.96)";
-  context.fillRect(block.x, panelY, block.width, panelHeight);
-  drawWrappedText(
-    context,
-    brandMessage,
-    block.x + 12,
-    panelY + 10,
-    block.width - 24,
-    12,
-    4,
-    "#3f4549",
-    "600 9px Segoe UI, Arial, sans-serif",
-    "center"
-  );
 }
 
 function drawKvBlock(
   context: CanvasRenderingContext2D,
   block: PdpCanvasBlock,
   image: HTMLImageElement | undefined,
-  productName: string,
-  country: string,
-  language: string
+  coverTitle: string,
+  coverSubtitle: string
 ) {
-  drawBlockBase(context, block, "#ffffff");
-  const titleHeight = 54;
-  const subtitleHeight = 40;
+  drawBlockBase(context, block, "#d9dde3");
+  const titleHeight = 58;
+  const subtitleHeight = 48;
   const imageHeight = block.height - titleHeight - subtitleHeight;
   drawImageArea(context, image, block.x, block.y, block.width, imageHeight, "KV");
 
-  context.fillStyle = "#17202a";
+  context.fillStyle = "#bcc2c8";
   context.fillRect(block.x, block.y + imageHeight, block.width, titleHeight);
-  drawWrappedText(
+  drawCenteredWrappedText(
     context,
-    productName,
+    coverTitle || "Product key visual",
     block.x + 16,
-    block.y + imageHeight + 18,
+    block.y + imageHeight,
     block.width - 32,
+    titleHeight,
     18,
     2,
-    "#ffffff",
+    "#26323c",
     "800 16px Segoe UI, Arial, sans-serif"
   );
 
   context.fillStyle = "#d9dde3";
   context.fillRect(block.x, block.y + imageHeight + titleHeight, block.width, subtitleHeight);
-  context.fillStyle = "#3c4b5d";
-  context.font = "12px Segoe UI, Arial, sans-serif";
-  context.fillText(
-    `${country} / ${language}`,
+  drawCenteredWrappedText(
+    context,
+    coverSubtitle || "Product overview",
     block.x + 16,
-    block.y + block.height - 14
+    block.y + imageHeight + titleHeight,
+    block.width - 32,
+    subtitleHeight,
+    14,
+    2,
+    "#4d5964",
+    "500 11px Segoe UI, Arial, sans-serif"
   );
 }
 
@@ -483,57 +469,110 @@ function drawSellingPointBlock(
   point: SellingPoint | undefined,
   image: HTMLImageElement | undefined
 ) {
-  drawBlockBase(context, block, "#ffffff");
-  const titleHeight = clamp(Math.round(block.height * 0.18), 30, 48);
-  const proofHeight = clamp(Math.round(block.height * 0.16), 26, 42);
-  const imageHeight = Math.max(42, block.height - titleHeight - proofHeight);
-  const fontSize = clamp(Math.round(block.width / 17), 11, 17);
+  if ((block.level ?? 1) >= 3) {
+    drawWideSellingPointBlock(context, block, point, image);
+    return;
+  }
 
-  context.fillStyle = "#17202a";
+  drawBlockBase(context, block, "#d9dde3");
+  const titleHeight = clamp(Math.round(block.height * 0.21), 34, 54);
+  const descriptionHeight = clamp(Math.round(block.height * 0.19), 32, 50);
+  const imageHeight = Math.max(42, block.height - titleHeight - descriptionHeight);
+  const fontSize = clamp(Math.round(block.width / 18), 11, 16);
+
+  context.fillStyle = "#bcc2c8";
   context.fillRect(block.x, block.y, block.width, titleHeight);
-  drawWrappedText(
+  drawCenteredWrappedText(
     context,
-    point?.shortLabel || point?.title || "Selling point",
+    point?.title || "Selling point",
     block.x + 12,
-    block.y + 9,
-    block.width - 52,
-    fontSize + 2,
-    titleHeight > 38 ? 2 : 1,
-    "#ffffff",
+    block.y,
+    block.width - 24,
+    titleHeight,
+    fontSize + 3,
+    2,
+    "#26323c",
     `800 ${fontSize}px Segoe UI, Arial, sans-serif`
   );
 
-  const priorityLabel = `P${point?.priority ?? block.priority ?? 1}`;
-  context.fillStyle = "#00a6d6";
-  context.fillRect(block.x + block.width - 38, block.y + 7, 30, 20);
-  context.fillStyle = "#ffffff";
-  context.font = "800 10px Segoe UI, Arial, sans-serif";
-  context.textAlign = "center";
-  context.fillText(priorityLabel, block.x + block.width - 23, block.y + 21);
-  context.textAlign = "left";
-
   context.fillStyle = "#d9dde3";
-  context.fillRect(block.x, block.y + titleHeight, block.width, proofHeight);
-  drawWrappedText(
+  context.fillRect(block.x, block.y + titleHeight, block.width, descriptionHeight);
+  drawCenteredWrappedText(
     context,
-    point?.technicalProof || point?.benefit || "Feature detail",
+    point?.benefit || "Feature detail",
     block.x + 12,
-    block.y + titleHeight + 7,
+    block.y + titleHeight,
     block.width - 24,
+    descriptionHeight,
     13,
-    proofHeight > 32 ? 2 : 1,
-    "#3c4b5d",
+    3,
+    "#4d5964",
     "500 11px Segoe UI, Arial, sans-serif"
   );
+
+  context.fillStyle = "#66717b";
+  context.font = "700 9px Segoe UI, Arial, sans-serif";
+  context.textAlign = "right";
+  context.fillText(
+    `P${point?.priority ?? block.priority ?? 1}`,
+    block.x + block.width - 8,
+    block.y + 13
+  );
+  context.textAlign = "left";
 
   drawImageArea(
     context,
     image,
     block.x,
-    block.y + titleHeight + proofHeight,
+    block.y + titleHeight + descriptionHeight,
     block.width,
     imageHeight,
     "IMAGE"
+  );
+}
+
+function drawWideSellingPointBlock(
+  context: CanvasRenderingContext2D,
+  block: PdpCanvasBlock,
+  point: SellingPoint | undefined,
+  image: HTMLImageElement | undefined
+) {
+  drawBlockBase(context, block, "#d9dde3");
+  const imageOnLeft = (point?.priority ?? block.priority ?? 1) % 2 === 1;
+  const imageWidth = Math.round(block.width / 2);
+  const textWidth = block.width - imageWidth;
+  const imageX = imageOnLeft ? block.x : block.x + textWidth;
+  const textX = imageOnLeft ? block.x + imageWidth : block.x;
+  const titleHeight = Math.round(block.height * 0.43);
+
+  drawImageArea(context, image, imageX, block.y, imageWidth, block.height, "IMAGE");
+  context.fillStyle = "#bcc2c8";
+  context.fillRect(textX, block.y, textWidth, titleHeight);
+  drawCenteredWrappedText(
+    context,
+    point?.title || "Selling point",
+    textX + 10,
+    block.y,
+    textWidth - 20,
+    titleHeight,
+    13,
+    2,
+    "#26323c",
+    "800 11px Segoe UI, Arial, sans-serif"
+  );
+  context.fillStyle = "#d9dde3";
+  context.fillRect(textX, block.y + titleHeight, textWidth, block.height - titleHeight);
+  drawCenteredWrappedText(
+    context,
+    point?.benefit || "Feature detail",
+    textX + 10,
+    block.y + titleHeight,
+    textWidth - 20,
+    block.height - titleHeight,
+    12,
+    3,
+    "#4d5964",
+    "500 9px Segoe UI, Arial, sans-serif"
   );
 }
 
@@ -542,13 +581,15 @@ function drawFeaturesBlock(
   block: PdpCanvasBlock,
   points: SellingPoint[]
 ) {
-  drawBlockBase(context, block, "#ffffff");
+  drawBlockBase(context, block, "#eef0f2");
   const headerHeight = 44;
-  context.fillStyle = "#17202a";
+  context.fillStyle = "#bcc2c8";
   context.fillRect(block.x, block.y, block.width, headerHeight);
-  context.fillStyle = "#ffffff";
+  context.fillStyle = "#26323c";
   context.font = "700 13px Segoe UI, Arial, sans-serif";
-  context.fillText("More Features", block.x + 14, block.y + 28);
+  context.textAlign = "center";
+  context.fillText("More Features", block.x + block.width / 2, block.y + 28);
+  context.textAlign = "left";
 
   const active = points
     .filter((point) => point.enabled !== false)
@@ -580,7 +621,7 @@ function drawFeaturesBlock(
 
     drawWrappedText(
       context,
-      point.shortLabel || point.title,
+      point.title,
       centerX - cellWidth / 2 + 4,
       centerY + 25,
       cellWidth - 8,
@@ -598,13 +639,15 @@ function drawSpecificationBlock(
   block: PdpCanvasBlock,
   points: SellingPoint[]
 ) {
-  drawBlockBase(context, block, "#ffffff");
+  drawBlockBase(context, block, "#eef0f2");
   const headerHeight = 44;
-  context.fillStyle = "#17202a";
+  context.fillStyle = "#bcc2c8";
   context.fillRect(block.x, block.y, block.width, headerHeight);
-  context.fillStyle = "#ffffff";
+  context.fillStyle = "#26323c";
   context.font = "700 13px Segoe UI, Arial, sans-serif";
-  context.fillText("Specification", block.x + 14, block.y + 28);
+  context.textAlign = "center";
+  context.fillText("Specification", block.x + block.width / 2, block.y + 28);
+  context.textAlign = "left";
 
   const active = points
     .filter((point) => point.enabled !== false)
@@ -623,14 +666,14 @@ function drawSpecificationBlock(
     context.fillStyle = "#17202a";
     context.font = "700 8px Segoe UI, Arial, sans-serif";
     context.fillText(
-      truncate(point.shortLabel || point.title, 18),
+      truncate(point.title, 18),
       block.x + 8,
       y + rowHeight / 2 + 3
     );
     context.fillStyle = "#5f6c7b";
     context.font = "8px Segoe UI, Arial, sans-serif";
     context.fillText(
-      truncate(point.technicalProof || point.benefit, 20),
+      truncate(point.benefit, 20),
       block.x + block.width * 0.48,
       y + rowHeight / 2 + 3
     );
@@ -658,12 +701,14 @@ function drawImageArea(
   height: number,
   label: string
 ) {
+  context.fillStyle = "#d9dde3";
+  context.fillRect(x, y, width, height);
   if (image?.complete && image.naturalWidth > 0) {
     context.save();
     context.beginPath();
     context.rect(x, y, width, height);
     context.clip();
-    const scale = Math.max(width / image.naturalWidth, height / image.naturalHeight);
+    const scale = Math.min(width / image.naturalWidth, height / image.naturalHeight);
     const drawWidth = image.naturalWidth * scale;
     const drawHeight = image.naturalHeight * scale;
     context.drawImage(
@@ -695,6 +740,30 @@ function drawImageArea(
   context.textAlign = "left";
 }
 
+function drawCenteredWrappedText(
+  context: CanvasRenderingContext2D,
+  value: string,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  lineHeight: number,
+  maxLines: number,
+  color: string,
+  font: string
+) {
+  context.save();
+  context.fillStyle = color;
+  context.font = font;
+  context.textAlign = "center";
+  context.textBaseline = "middle";
+  const lines = wrapCanvasText(context, value, width, maxLines);
+  const firstLineY = y + height / 2 - ((lines.length - 1) * lineHeight) / 2;
+  lines.forEach((line, index) => {
+    context.fillText(line, x + width / 2, firstLineY + index * lineHeight);
+  });
+  context.restore();
+}
 function drawWrappedText(
   context: CanvasRenderingContext2D,
   value: string,
@@ -813,4 +882,3 @@ function truncate(value: string, length: number): string {
 function clamp(value: number, minimum: number, maximum: number): number {
   return Math.min(Math.max(value, minimum), maximum);
 }
-

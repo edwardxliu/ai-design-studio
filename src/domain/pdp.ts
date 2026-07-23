@@ -25,6 +25,7 @@ export type PdpDocument = {
   language: string;
   templateVersion: string;
   cover: PdpCover;
+  brandMessage?: string;
   sections: PdpSection[];
   moreFeatures: SellingPoint[];
 };
@@ -36,6 +37,7 @@ export type BuildPdpInput = {
   language: string;
   templateVersion: string;
   cover: PdpCover;
+  brandMessage?: string;
   sellingPoints: SellingPoint[];
   sectionImageBySellingPointId: Record<string, string | undefined>;
 };
@@ -52,8 +54,8 @@ export function buildPdpDocument(input: BuildPdpInput): PdpDocument {
       id: `pdp-section-${point.id}`,
       sellingPointId: point.id,
       order: index + 1,
-      blackTitle: point.shortLabel || point.title,
-      narrowGrayText: point.technicalProof || point.benefit,
+      blackTitle: point.title,
+      narrowGrayText: point.benefit,
       largeImageAssetId: input.sectionImageBySellingPointId[point.id],
       layout: index % 2 === 0 ? "image-right" : "image-left"
     };
@@ -66,6 +68,7 @@ export function buildPdpDocument(input: BuildPdpInput): PdpDocument {
     language: input.language,
     templateVersion: input.templateVersion,
     cover: input.cover,
+    brandMessage: input.brandMessage,
     sections,
     moreFeatures: []
   };
