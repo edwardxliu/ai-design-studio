@@ -1488,3 +1488,41 @@
   font-size: 8.5px;
   line-height: 1.1;
 }
+/* Match the background picker to the compact date and weather stack. */
+.utilityGrid {
+  min-height: 67px;
+  align-items: flex-start;
+}
+
+.backgroundTile {
+  width: 70px;
+  max-width: 70px;
+  height: 68px;
+  min-height: 67px;
+  flex: 0 0 70px;
+  align-self: flex-start;
+  grid-template-rows: auto minmax(18px, 1fr);
+  padding: 4px;
+}
+
+.backgroundPresets {
+  gap: 2px;
+}
+
+.backgroundReplaceButton {
+  min-height: 18px;
+  padding: 2px 1px 0;
+  font-size: 7px;
+}
+
+.backgroundReplaceButton svg {
+  width: 11px;
+  height: 11px;
+}
+
+.backgroundRestoreButton {
+  right: 3px;
+  bottom: 2px;
+  width: 17px;
+  height: 17px;
+}
