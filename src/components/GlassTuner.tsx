@@ -85,6 +85,7 @@ type GlassTunerProps = {
   setSettings: Dispatch<SetStateAction<GlassTunerSettings>>;
   settings: GlassTunerSettings;
   triggerClassName: string;
+  embedded?: boolean;
 };
 
 type ColorControlProps = {
@@ -197,7 +198,8 @@ export function GlassTuner({
   resetSettings,
   setSettings,
   settings,
-  triggerClassName
+  triggerClassName,
+  embedded = false
 }: GlassTunerProps) {
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -235,7 +237,7 @@ export function GlassTuner({
 
   return (
     <div className={styles.root}>
-      <button
+      {!embedded ? <button
         aria-expanded={open}
         aria-haspopup="dialog"
         className={triggerClassName}
@@ -244,23 +246,23 @@ export function GlassTuner({
       >
         <SlidersHorizontal size={18} />
         <span>玻璃参数</span>
-      </button>
+      </button> : null}
 
-      {open ? (
-        <aside aria-label="毛玻璃参数调节" className={styles.panel}>
+      {open || embedded ? (
+        <aside aria-label="毛玻璃参数调节" className={embedded ? styles.embeddedPanel : styles.panel}>
           <header className={styles.header}>
             <div>
-              <span>TEMP</span>
+              {!embedded ? <span>TEMP</span> : null}
               <strong>毛玻璃参数</strong>
             </div>
-            <button
+            {!embedded ? <button
               aria-label="关闭毛玻璃参数"
               className={styles.iconButton}
               onClick={() => setOpen(false)}
               type="button"
             >
               <X size={17} />
-            </button>
+            </button> : null}
           </header>
 
           <div className={styles.colorGrid}>

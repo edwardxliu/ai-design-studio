@@ -3,6 +3,11 @@
   z-index: 20;
 }
 
+.embeddedPanel { position: static; width: 100%; color: #24282c; }
+.embeddedPanel .header strong { font-size: 13px; }
+.embeddedPanel .values { display: none; }
+.embeddedPanel .rangeControl { grid-template-columns: 100px minmax(70px,1fr) 46px; }
+
 .panel {
   width: min(360px, calc(100vw - 32px));
   max-height: min(680px, calc(100dvh - 100px));

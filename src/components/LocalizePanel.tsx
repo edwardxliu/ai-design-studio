@@ -41,9 +41,7 @@ const SUPPORTED_IMAGE_TYPES = new Set([
 ]);
 
 export function LocalizePanel() {
-  const [settings, setSettings] = useState({ country: "Mexico", language: "Spanish" });
   const [imageModel, setImageModel] = useState<ImageModelChoice>(DEFAULT_IMAGE_MODEL_CHOICE);
-  const [settingsStatus, setSettingsStatus] = useState("");
   const [targetCountry, setTargetCountry] = useState(countries[1]);
   const [targetLanguage, setTargetLanguage] = useState(languages[1]);
   const [items, setItems] = useState<UploadItem[]>([]);
@@ -52,43 +50,13 @@ export function LocalizePanel() {
   const previewUrls = useRef(new Set<string>());
 
   useEffect(() => {
-    let cancelled = false;
-    fetch("/api/settings")
-      .then(async (response) => (response.ok ? response.json() : null))
-      .then((payload) => {
-        if (!cancelled && payload?.settings) {
-          setSettings(payload.settings);
-        }
-      })
-      .catch(() => undefined);
-
     return () => {
-      cancelled = true;
       for (const url of previewUrls.current) {
         revokeObjectUrl(url);
       }
       previewUrls.current.clear();
     };
   }, []);
-
-  async function saveSettings() {
-    setSettingsStatus("保存中...");
-    try {
-      const response = await fetch("/api/settings", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(settings)
-      });
-      const payload = await response.json();
-      if (!response.ok || payload.error) {
-        throw new Error(payload.error ?? "保存失败");
-      }
-      setSettings(payload.settings);
-      setSettingsStatus("已保存。后续设计任务会使用该国家和语言作为系统默认值。");
-    } catch (cause) {
-      setSettingsStatus(cause instanceof Error ? cause.message : "保存失败");
-    }
-  }
 
   async function addFiles(fileList: FileList | null) {
     if (!fileList?.length) {
@@ -207,39 +175,6 @@ export function LocalizePanel() {
 
   return (
     <section style={{ display: "grid", gap: 20 }}>
-      <div style={panelStyle}>
-        <div style={{ display: "grid", gap: 4 }}>
-          <strong>系统语言设置</strong>
-          <span style={mutedStyle}>设置设计工作台默认使用的国家和语言。</span>
-        </div>
-        <div style={controlGridStyle}>
-          <label style={fieldStyle}>
-            系统国家
-            <select
-              aria-label="系统国家"
-              onChange={(event) => setSettings((current) => ({ ...current, country: event.target.value }))}
-              value={settings.country}
-            >
-              {countries.map((country) => <option key={country}>{country}</option>)}
-            </select>
-          </label>
-          <label style={fieldStyle}>
-            系统语言
-            <select
-              aria-label="系统语言"
-              onChange={(event) => setSettings((current) => ({ ...current, language: event.target.value }))}
-              value={settings.language}
-            >
-              {languages.map((language) => <option key={language}>{language}</option>)}
-            </select>
-          </label>
-          <button onClick={saveSettings} style={secondaryButtonStyle} type="button">
-            保存系统语言
-          </button>
-        </div>
-        {settingsStatus ? <p style={{ ...mutedStyle, margin: 0 }}>{settingsStatus}</p> : null}
-      </div>
-
       <div style={panelStyle}>
         <div style={{ display: "flex", justifyContent: "space-between", gap: 16, alignItems: "start", flexWrap: "wrap" }}>
           <div style={{ display: "grid", gap: 4 }}>

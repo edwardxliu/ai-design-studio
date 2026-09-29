@@ -79,22 +79,11 @@ afterEach(() => {
 });
 
 describe("LocalizePanel", () => {
-  it("saves the system-wide market language", async () => {
-    const user = userEvent.setup();
+  it("keeps task-specific targets separate from global settings", () => {
     render(<LocalizePanel />);
-
-    await user.selectOptions(await screen.findByLabelText("系统语言"), "Portuguese");
-    await user.selectOptions(screen.getByLabelText("系统国家"), "Brazil");
-    await user.click(screen.getByRole("button", { name: "保存系统语言" }));
-
-    const putCall = fetchMock.mock.calls.find(
-      ([url, init]) => String(url).includes("/api/settings") && init?.method === "PUT"
-    );
-    expect(putCall).toBeDefined();
-    expect(JSON.parse(String(putCall![1].body))).toEqual({
-      country: "Brazil",
-      language: "Portuguese"
-    });
+    expect(screen.queryByLabelText("系统语言")).not.toBeInTheDocument();
+    expect(screen.getByLabelText("目标语言")).toBeEnabled();
+    expect(screen.getByLabelText("目标国家")).toBeEnabled();
   });
 
   it("batch-converts user-uploaded images with multipart form data", async () => {
@@ -160,7 +149,7 @@ describe("LocalizePanel", () => {
 
   it("has no mock toggle anywhere", async () => {
     render(<LocalizePanel />);
-    await screen.findByText("系统语言设置");
+    await screen.findByText("批量转换图片文字语言");
 
     expect(document.body.textContent).not.toMatch(/[Mm]ock/);
   });

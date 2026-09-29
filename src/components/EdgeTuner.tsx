@@ -14,6 +14,7 @@ type EdgeTunerProps = {
   setSettings: Dispatch<SetStateAction<GlassTunerSettings>>;
   settings: GlassTunerSettings;
   triggerClassName: string;
+  embedded?: boolean;
 };
 
 type ColorControlProps = {
@@ -32,7 +33,7 @@ type RangeControlProps = {
   value: number;
 };
 
-export function EdgeTuner({ setSettings, settings, triggerClassName }: EdgeTunerProps) {
+export function EdgeTuner({ setSettings, settings, triggerClassName, embedded = false }: EdgeTunerProps) {
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const serializedSettings = serializeEdgeSettings(settings);
@@ -69,7 +70,7 @@ export function EdgeTuner({ setSettings, settings, triggerClassName }: EdgeTuner
 
   return (
     <div className={styles.root}>
-      <button
+      {!embedded ? <button
         aria-expanded={open}
         aria-haspopup="dialog"
         className={triggerClassName}
@@ -78,23 +79,23 @@ export function EdgeTuner({ setSettings, settings, triggerClassName }: EdgeTuner
       >
         <Sparkles size={18} />
         <span>边框参数</span>
-      </button>
+      </button> : null}
 
-      {open ? (
-        <aside aria-label="边框与流光参数调节" className={styles.panel}>
+      {open || embedded ? (
+        <aside aria-label="边框与流光参数调节" className={embedded ? styles.embeddedPanel : styles.panel}>
           <header className={styles.header}>
             <div>
-              <span>TEMP</span>
+              {!embedded ? <span>TEMP</span> : null}
               <strong>边框与流光参数</strong>
             </div>
-            <button
+            {!embedded ? <button
               aria-label="关闭边框与流光参数"
               className={styles.iconButton}
               onClick={() => setOpen(false)}
               type="button"
             >
               <X size={17} />
-            </button>
+            </button> : null}
           </header>
 
           <h3 className={styles.subheading}>主工作台</h3>

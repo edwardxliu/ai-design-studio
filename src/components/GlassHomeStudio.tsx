@@ -8,7 +8,6 @@ import {
   Box,
   Boxes,
   CalendarDays,
-  CircleDollarSign,
   CloudFog,
   CloudLightning,
   CloudRain,
@@ -17,14 +16,10 @@ import {
   FileImage,
   Film,
   Globe2,
-  House,
   ImageIcon,
-  ImagePlus,
   Languages,
   LayoutTemplate,
-  PackageSearch,
   PanelTop,
-  RefreshCcw,
   ScanLine,
   Sparkles,
   Sun,
@@ -32,9 +27,9 @@ import {
   WandSparkles
 } from "lucide-react";
 import styles from "./GlassHomeStudio.module.css";
-import { EdgeTuner } from "./EdgeTuner";
-import { GlassTuner, getGlassTunerStyle, useGlassTunerSettings } from "./GlassTuner";
-import { STUDIO_BACKGROUNDS } from "./studio-backgrounds";
+import { StudioNavigation } from "./StudioNavigation";
+import { StudioSettings } from "./StudioSettings";
+import { getGlassTunerStyle, useGlassTunerSettings } from "./GlassTuner";
 import { useStudioBackground } from "./useStudioBackground";
 
 type StudioLink = {
@@ -48,22 +43,6 @@ type WeatherData = {
   temperature: number;
   weatherCode: number;
 };
-
-const navigation: StudioLink[] = [
-  { href: "/studio-home", label: "工作台", icon: House },
-  { href: "/assets", label: "素材库", icon: Boxes },
-  { href: "/products", label: "产品档案", icon: PackageSearch },
-  { href: "/white-background", label: "白底多角度", icon: Box },
-  { href: "/phone-standardize", label: "手机图标准化", icon: ScanLine },
-  { href: "/sku-variants", label: "SKU 替换", icon: WandSparkles },
-  { href: "/style-transfer", label: "风格迁移", icon: SwatchBook },
-  { href: "/icon-design", label: "Icon Design", icon: Sparkles },
-  { href: "/product-video", label: "产品视频", icon: Film },
-  { href: "/pop", label: "POP 设计", icon: PanelTop },
-  { href: "/pdp", label: "PDP 构建", icon: LayoutTemplate },
-  { href: "/localize", label: "本地化", icon: Languages },
-  { href: "/costs", label: "资源消耗", icon: CircleDollarSign }
-];
 
 const quickTools: StudioLink[] = [
   { href: "/white-background", label: "白底多角度", icon: Box },
@@ -79,58 +58,10 @@ const quickTools: StudioLink[] = [
 ];
 
 export function GlassHomeStudio() {
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const objectUrlRef = useRef<string | undefined>(undefined);
   const quickScrollerRef = useRef<HTMLDivElement>(null);
-  const { backgroundUrl: presetBackgroundUrl, selectBackground } = useStudioBackground();
-  const {
-    resetSettings: resetGlassSettings,
-    setSettings: setGlassSettings,
-    settings: glassSettings
-  } = useGlassTunerSettings();
-
-  const [customBackgroundUrl, setCustomBackgroundUrl] = useState<string>();
+  const { backgroundUrl } = useStudioBackground();
+  const glass = useGlassTunerSettings();
   const [quickPosition, setQuickPosition] = useState(0);
-  const backgroundUrl = customBackgroundUrl ?? presetBackgroundUrl;
-  const hasCustomBackground = Boolean(customBackgroundUrl);
-
-  useEffect(() => {
-    return () => {
-      if (objectUrlRef.current) {
-        URL.revokeObjectURL(objectUrlRef.current);
-      }
-    };
-  }, []);
-
-  const replaceBackground = (file: File | undefined) => {
-    if (!file || !file.type.startsWith("image/")) {
-      return;
-    }
-
-    if (objectUrlRef.current) {
-      URL.revokeObjectURL(objectUrlRef.current);
-    }
-
-    const nextUrl = URL.createObjectURL(file);
-    objectUrlRef.current = nextUrl;
-    setCustomBackgroundUrl(nextUrl);
-  };
-
-  const restoreBackground = () => {
-    if (objectUrlRef.current) {
-      URL.revokeObjectURL(objectUrlRef.current);
-      objectUrlRef.current = undefined;
-    }
-    setCustomBackgroundUrl(undefined);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
-  };
-
-  const choosePresetBackground = (nextBackground: string) => {
-    restoreBackground();
-    selectBackground(nextBackground);
-  };
 
   const setQuickScroll = (position: number) => {
     setQuickPosition(position);
@@ -152,7 +83,7 @@ export function GlassHomeStudio() {
   };
 
   const stageStyle = {
-    ...getGlassTunerStyle(glassSettings),
+    ...getGlassTunerStyle(glass.settings),
     "--home-background": 'url("' + backgroundUrl + '")'
   } as CSSProperties;
 
@@ -166,22 +97,7 @@ export function GlassHomeStudio() {
             <strong>AI Content Studio</strong>
           </div>
 
-          <nav aria-label="平台导航" className={styles.navigation}>
-            {navigation.map((item) => {
-              const Icon = item.icon;
-              return (
-                <Link
-                  aria-current={item.href === "/studio-home" ? "page" : undefined}
-                  className={styles.navLink + (item.href === "/studio-home" ? " " + styles.navLinkActive : "")}
-                  href={item.href}
-                  key={item.href}
-                >
-                  <Icon size={15} strokeWidth={1.8} />
-                  <span>{item.label}</span>
-                </Link>
-              );
-            })}
-          </nav>
+          <StudioNavigation home className={styles.navigation} />
 
           <div className={styles.sidebarFooter}>
             <span className={styles.onlineDot} />
@@ -201,55 +117,7 @@ export function GlassHomeStudio() {
 
             <div className={styles.topbarSide}>
               <div className={styles.utilityGrid}>
-                <div className={styles.backgroundTile}>
-                  <div aria-label="默认底图" className={styles.backgroundPresets} role="group">
-                    {STUDIO_BACKGROUNDS.map((background) => (
-                      <button
-                        aria-label={"使用" + background.label + "底图"}
-                        aria-pressed={!hasCustomBackground && presetBackgroundUrl === background.url}
-                        className={styles.backgroundPreset}
-                        data-no-optical-highlight="true"
-                        key={background.id}
-                        onClick={() => choosePresetBackground(background.url)}
-                        style={
-                          {
-                            "--preset-background": 'url("' + background.url + '")'
-                          } as CSSProperties
-                        }
-                        title={background.label}
-                        type="button"
-                      />
-                    ))}
-                  </div>
-                  <input
-                    accept="image/*"
-                    aria-label="选择首页背景图片"
-                    className={styles.fileInput}
-                    onChange={(event) => replaceBackground(event.target.files?.[0])}
-                    ref={fileInputRef}
-                    type="file"
-                  />
-                  <button
-                    className={styles.backgroundReplaceButton}
-                    onClick={() => fileInputRef.current?.click()}
-                    title="替换首页底图"
-                    type="button"
-                  >
-                    <ImagePlus size={15} />
-                    <span>替换底图</span>
-                  </button>
-                  {hasCustomBackground ? (
-                    <button
-                      aria-label="恢复默认底图"
-                      className={styles.backgroundRestoreButton}
-                      onClick={restoreBackground}
-                      title="恢复默认底图"
-                      type="button"
-                    >
-                      <RefreshCcw size={14} />
-                    </button>
-                  ) : null}
-                </div>
+                <StudioSettings glass={glass} />
                 <HomeInfoWidgets />
               </div>
             </div>
@@ -347,19 +215,6 @@ export function GlassHomeStudio() {
 
           <footer className={styles.contentFooter}>
             <span>Midea AI Content Studio</span>
-            <div className={styles.tunerActions}>
-              <GlassTuner
-                resetSettings={resetGlassSettings}
-                setSettings={setGlassSettings}
-                settings={glassSettings}
-                triggerClassName={styles.secondaryButton}
-              />
-              <EdgeTuner
-                setSettings={setGlassSettings}
-                settings={glassSettings}
-                triggerClassName={styles.secondaryButton}
-              />
-            </div>
             <Link href="/costs">
               <FileImage size={14} /> 查看生成记录
             </Link>

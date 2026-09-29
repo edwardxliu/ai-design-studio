@@ -23,6 +23,7 @@ import {
 import type { Asset, ProductWithProfile, SellingPoint } from "@/src/domain/types";
 import { PdpCanvas } from "./PdpCanvas";
 import { ImageCropDialog } from "./ImageCropDialog";
+import { SYSTEM_SETTINGS_CHANGED, type StudioMarketSettings } from "@/src/lib/system-settings-events";
 import styles from "./PdpEditor.module.css";
 
 type ExportResponse = {
@@ -63,10 +64,19 @@ export function PdpCanvasEditor({ products }: { products: ProductWithProfile[] }
 
   useEffect(() => {
     let cancelled = false;
+    let updated = false;
+    const handleSettingsChange = (event: Event) => {
+      const market = (event as CustomEvent<StudioMarketSettings>).detail;
+      if (!market?.country || !market?.language) return;
+      updated = true;
+      setCountry(market.country);
+      setLanguage(market.language);
+    };
+    window.addEventListener(SYSTEM_SETTINGS_CHANGED, handleSettingsChange);
     fetch("/api/settings")
       .then((response) => (response.ok ? response.json() : null))
       .then((payload) => {
-        if (!cancelled && payload?.settings) {
+        if (!cancelled && !updated && payload?.settings) {
           setCountry(String(payload.settings.country));
           setLanguage(String(payload.settings.language));
         }
@@ -74,6 +84,7 @@ export function PdpCanvasEditor({ products }: { products: ProductWithProfile[] }
       .catch(() => undefined);
     return () => {
       cancelled = true;
+      window.removeEventListener(SYSTEM_SETTINGS_CHANGED, handleSettingsChange);
     };
   }, []);
   const [assets, setAssets] = useState<Asset[]>([]);
@@ -426,7 +437,7 @@ export function PdpCanvasEditor({ products }: { products: ProductWithProfile[] }
               </option>
             ))}
           </select>
-          <span title="系统语言在「本地化」页设置">{country} / {language}</span>
+          <span title="默认市场可在右上角「用户设置」中修改">{country} / {language}</span>
         </div>
 
         <div className={styles.toolbarActions}>
@@ -781,4 +792,3 @@ function statusLabel(status: EditorStatus): string {
 function byPriority(left: SellingPoint, right: SellingPoint): number {
   return left.priority - right.priority;
 }
-

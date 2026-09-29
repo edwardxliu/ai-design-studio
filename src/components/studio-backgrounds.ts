@@ -27,5 +27,6 @@ export const STUDIO_BACKGROUNDS: StudioBackgroundPreset[] = [
 export const DEFAULT_STUDIO_BACKGROUND = STUDIO_BACKGROUNDS[0].url;
 
 export function isStudioBackgroundUrl(value: string | null): value is string {
-  return STUDIO_BACKGROUNDS.some((background) => background.url === value);
+  return STUDIO_BACKGROUNDS.some((background) => background.url === value) ||
+    (typeof value === "string" && value.length <= 2_800_000 && /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(value));
 }

@@ -13,7 +13,8 @@ export function useStudioBackground() {
   const [backgroundUrl, setBackgroundUrl] = useState(DEFAULT_STUDIO_BACKGROUND);
 
   useEffect(() => {
-    const storedBackground = window.localStorage.getItem(STUDIO_BACKGROUND_STORAGE_KEY);
+    let storedBackground: string | null = null;
+    try { storedBackground = window.localStorage.getItem(STUDIO_BACKGROUND_STORAGE_KEY); } catch { /* Browser storage may be disabled. */ }
     if (isStudioBackgroundUrl(storedBackground)) {
       setBackgroundUrl(storedBackground);
     }
@@ -44,8 +45,8 @@ export function useStudioBackground() {
       return;
     }
 
-    setBackgroundUrl(nextBackground);
     window.localStorage.setItem(STUDIO_BACKGROUND_STORAGE_KEY, nextBackground);
+    setBackgroundUrl(nextBackground);
     window.dispatchEvent(new CustomEvent(BACKGROUND_CHANGE_EVENT, { detail: nextBackground }));
   }, []);
 

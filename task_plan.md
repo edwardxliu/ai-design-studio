@@ -269,3 +269,31 @@
 - [x] Remove the requested studio-home supporting sentence.
 - [x] Add content-width responsive behavior for the background, date, and weather controls.
 - [x] Verify with npm typecheck, focused Vitest coverage, and HTTP 200 checks without opening a browser.
+
+## Stage 23 - Demo modification brief assessment (2026-09-26)
+- [x] Inspect the supplied PDF text and whole-page visual.
+- [x] Inspect the four workflow mockups at readable resolution and map them to current code.
+- [x] Run relevant baseline checks without paid generation or application changes.
+- [x] Prepare recommended scope, dependencies, risks, and effort assumptions for the assessment response.
+- Scope: assessment first; preserve current business code and existing user changes.
+- Status: completed (assessment only; implementation has not started).
+- Diagnostic note: the 3840x3522 PNG could be verified with Pillow but the image viewer rejected it twice; a 2400px JPEG rendered from the same PDF was readable. Use JPEG crops for detailed inspection.
+- Verification note: Vitest initially could not spawn esbuild in the sandbox (EPERM). The authorized elevated local run completed: 12 files, 41 passing tests and one failing pre-existing POP interaction test. TypeScript passed. No production build, live-browser acceptance, or real image generation was performed for this assessment.
+
+## Stage 24 - Approved navigation, settings, and preset style-transfer update
+- User approved the preceding bounded design and requested these three areas be completed; no new subsystem, model training, or changes to the other production workflows.
+- [x] Add failing tests for grouped route access, settings persistence, asset selection/upload, output counts, and retry behavior.
+- [x] Consolidate navigation and personalized controls across homepage and feature pages.
+- [x] Implement brief-aligned preset style transfer with in-page material selection and a complete result flow.
+- [x] Run focused and full regression tests, TypeScript, build, and local visual checks.
+- [x] Review the diff, record limitations, and deliver the changed version.
+- Preserve all pre-existing user files and the known unrelated POP test baseline failure.
+- Status: completed; scoped workflows verified. Existing unrelated tests still have the five reproduced baseline failures.
+
+## Stage 25 - Investigate reported OpenAI multipart 400
+- [x] Trace the failed style-transfer request and validate multipart transport with local parsing and safe non-generation probes if needed.
+- [x] Reproduce any confirmed serializer defect in a focused regression test before making a narrow fix.
+- [x] Verify affected providers, rebuild, and state the remaining live-generation acceptance boundary.
+- Preserve the completed UI changes, user data, credentials, and existing unrelated test failures. No paid generation without a clear need and user direction.
+- Status: completed for the multipart defect. Production-minified regression, rebuilt direct/proxy request parsing, and the authorized invalid-model upstream check passed. Actual valid-model image generation remains untested by explicit scope.
+- Verification: focused 8/8 tests passed; full low-concurrency suite 219/224 passed with exactly the five previously reproduced baseline failures; production build/type validation passed; preview restored on 127.0.0.1:3101 and style-transfer GET returned 200.

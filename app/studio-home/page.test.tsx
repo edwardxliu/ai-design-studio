@@ -16,6 +16,7 @@ describe("HomePage", () => {
   it("keeps the main creation workflows directly accessible", () => {
     render(<HomePage />);
 
+    fireEvent.click(screen.getByRole("button", { name: "资产中心" }));
     expect(screen.getAllByRole("link", { name: /素材库/ })[0]).toHaveAttribute("href", "/assets");
     expect(screen.getAllByRole("link", { name: /产品档案/ })[0]).toHaveAttribute("href", "/products");
     expect(screen.getAllByRole("link", { name: /白底多角度/ })[0]).toHaveAttribute(
@@ -61,6 +62,7 @@ describe("HomePage", () => {
   it("offers three built-in backgrounds and remembers the selected preset", () => {
     render(<HomePage />);
 
+    fireEvent.click(screen.getByRole("button", { name: "用户设置" }));
     const presetGroup = screen.getByRole("group", { name: "\u9ed8\u8ba4\u5e95\u56fe" });
     const presetButtons = within(presetGroup).getAllByRole("button");
     expect(presetButtons).toHaveLength(3);
@@ -74,29 +76,24 @@ describe("HomePage", () => {
     );
   });
 
-  it("lets the user replace and restore the background image", () => {
-    const createObjectURL = vi.fn().mockReturnValue("blob:custom-home-background");
-    const revokeObjectURL = vi.fn();
-    Object.defineProperty(URL, "createObjectURL", { configurable: true, value: createObjectURL });
-    Object.defineProperty(URL, "revokeObjectURL", { configurable: true, value: revokeObjectURL });
+  it("persists a custom background across reload and can restore the default", async () => {
+    const { unmount } = render(<HomePage />);
+    fireEvent.click(screen.getByRole("button", { name: "用户设置" }));
+    fireEvent.change(screen.getByLabelText("选择工作台背景图片"), { target: { files: [new File(["image"], "workspace.jpg", { type: "image/jpeg" })] } });
+    await waitFor(() => expect(window.localStorage.getItem("midea-studio-background")).toMatch(/^data:image\/jpeg;base64,/));
+    const saved = window.localStorage.getItem("midea-studio-background");
+    unmount();
     render(<HomePage />);
-
-    const file = new File(["image"], "workspace.jpg", { type: "image/jpeg" });
-    fireEvent.change(screen.getByLabelText("选择首页背景图片"), {
-      target: { files: [file] }
-    });
-
-    expect(createObjectURL).toHaveBeenCalledWith(file);
-    expect(screen.getByRole("button", { name: "恢复默认底图" })).toBeInTheDocument();
-
+    expect(screen.getByRole("main").style.getPropertyValue("--home-background")).toContain(saved);
+    fireEvent.click(screen.getByRole("button", { name: "用户设置" }));
     fireEvent.click(screen.getByRole("button", { name: "恢复默认底图" }));
-    expect(revokeObjectURL).toHaveBeenCalledWith("blob:custom-home-background");
-    expect(screen.queryByRole("button", { name: "恢复默认底图" })).not.toBeInTheDocument();
+    expect(window.localStorage.getItem("midea-studio-background")).toBe("/home/studio-background-neutral.webp");
   });
   it("tunes and persists homepage glass parameters", async () => {
     const { unmount } = render(<HomePage />);
 
-    fireEvent.click(screen.getByRole("button", { name: "\u73bb\u7483\u53c2\u6570" }));
+    fireEvent.click(screen.getByRole("button", { name: "用户设置" }));
+    fireEvent.click(screen.getByRole("tab", { name: "玻璃与边框" }));
     fireEvent.change(screen.getByLabelText("\u4e3b\u7a97\u900f\u660e\u5ea6"), {
       target: { value: "0.32" }
     });
@@ -141,7 +138,8 @@ describe("HomePage", () => {
   it("tunes and persists workbench and active-menu edge lighting", async () => {
     render(<HomePage />);
 
-    fireEvent.click(screen.getByRole("button", { name: "边框参数" }));
+    fireEvent.click(screen.getByRole("button", { name: "用户设置" }));
+    fireEvent.click(screen.getByRole("tab", { name: "玻璃与边框" }));
     fireEvent.change(screen.getByLabelText("流光亮度"), {
       target: { value: "0.64" }
     });

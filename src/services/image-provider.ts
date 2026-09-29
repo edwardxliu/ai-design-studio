@@ -270,15 +270,11 @@ function appendMultipartFile(
   name: string,
   image: SourceImage
 ): void {
+  // Keep CRLF explicit: the production optimizer can turn array.join("\r\n")
+  // into literal template newlines, which JavaScript normalizes to LF.
   chunks.push(
     Buffer.from(
-      [
-        `--${boundary}`,
-        `Content-Disposition: form-data; name="${escapeMultipartValue(name)}"; filename="${escapeMultipartValue(image.filename)}"`,
-        `Content-Type: ${image.contentType}`,
-        "",
-        ""
-      ].join("\r\n"),
+      `--${boundary}\r\nContent-Disposition: form-data; name="${escapeMultipartValue(name)}"; filename="${escapeMultipartValue(image.filename)}"\r\nContent-Type: ${image.contentType}\r\n\r\n`,
       "utf8"
     )
   );

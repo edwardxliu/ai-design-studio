@@ -1,3 +1,6 @@
+.settingsDock { position: absolute; top: 17px; right: 20px; z-index: 25; }
+.main > h1 { padding-right: 40px; }
+
 .stage {
   min-height: 100dvh;
   display: grid;
