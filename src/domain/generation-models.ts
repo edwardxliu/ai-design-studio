@@ -1,6 +1,6 @@
 export const IMAGE_MODEL_OPTIONS = [
   { id: "openai", label: "OpenAI GPT Image", modelLabel: "GPT Image" },
-  { id: "doubao", label: "豆包 Seedream 5.0 Lite", modelLabel: "Seedream 5.0 Lite" }
+  { id: "doubao", label: "Seedream 5.0 Lite", modelLabel: "Seedream 5.0 Lite" }
 ] as const;
 
 export type ImageModelChoice = (typeof IMAGE_MODEL_OPTIONS)[number]["id"];

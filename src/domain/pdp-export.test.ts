@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { SellingPoint } from "./types";
 import { buildDefaultPdpCanvasLayout, getSellingPointBlockId, movePdpCanvasBlock } from "./pdp-canvas-layout";
 import { buildPdpDocument } from "./pdp";
-import { renderPdpSvg } from "./pdp-export";
+import { buildVerticalPdpExportLayout, renderPdpSvg } from "./pdp-export";
 
 function makePoints(count: number): SellingPoint[] {
   return Array.from({ length: count }, (_, index) => ({
@@ -24,9 +24,10 @@ function makeDocument(pointCount: number, images: Record<string, string> = {}) {
     templateVersion: "pdp-tree-v3",
     cover: {
       title: "Uploaded Product",
-      subtitle: "Demo value proposition",
+      subtitle: "Editable KV supporting copy",
       imageAssetId: "asset-cover"
     },
+    brandMessage: "Demo brand statement",
     sellingPoints: makePoints(pointCount),
     sectionImageBySellingPointId: images
   });
@@ -38,35 +39,86 @@ function svgSize(svg: string): { width: number; height: number } {
   return { width, height };
 }
 
-describe("renderPdpSvg (horizontal tree layout)", () => {
-  it("lays out brand, KV, selling-point columns, features, and specification horizontally", () => {
+describe("renderPdpSvg (vertical long image)", () => {
+  it("stacks brand, KV, selling points, features, and specification vertically", () => {
     const svg = renderPdpSvg(makeDocument(4), "Uploaded Product", {
       specification: [["Capacity", "640L"]]
     });
 
     expect(svg).toContain("<svg");
     expect(svg).toContain("Uploaded Product");
-    expect(svg).toContain("Label 1");
-    expect(svg).toContain("Label 4");
+    expect(svg).toContain("Feature 1");
+    expect(svg).toContain("Feature 4");
     expect(svg).toContain("More Features");
     expect(svg).toContain("Specification");
     expect(svg).toContain("640L");
   });
 
-  it("grows the canvas width as the number of selling points increases", () => {
+  it("uses the supplied brand image and editable brand statement", () => {
+    const brandUri = `data:image/png;base64,${Buffer.from("brand").toString("base64")}`;
+    const svg = renderPdpSvg(makeDocument(2), "Uploaded Product", {
+      brandImageDataUri: brandUri
+    });
+
+    expect(svg).toContain(`href="${brandUri}"`);
+    expect(svg).toContain("Demo brand statement");
+    expect(svg).toContain("Editable KV supporting copy");
+  });
+  it("keeps a fixed export width and grows height with selling-point count", () => {
     const small = svgSize(renderPdpSvg(makeDocument(2), "P"));
     const large = svgSize(renderPdpSvg(makeDocument(8), "P"));
 
-    expect(large.width).toBeGreaterThan(small.width);
-    expect(small.width).toBeGreaterThan(0);
-    expect(small.height).toBeGreaterThan(0);
+    expect(large.width).toBe(small.width);
+    expect(large.height).toBeGreaterThan(small.height);
+    expect(small.width).toBe(920);
   });
 
+  it("uses content-driven heights for summary blocks instead of preserving canvas whitespace", () => {
+    const layout = buildVerticalPdpExportLayout(
+      buildDefaultPdpCanvasLayout(makePoints(7)),
+      { sellingPointCount: 7, specificationCount: 7 }
+    );
+    const brand = layout.blocks.find((block) => block.kind === "brand");
+    const features = layout.blocks.find((block) => block.kind === "features");
+    const specification = layout.blocks.find((block) => block.kind === "specification");
+
+    expect(brand?.height).toBe(895);
+    expect(features?.height).toBe(326);
+    expect(specification?.height).toBe(308);
+    expect(layout.height).toBeLessThan(7_500);
+  });
+
+  it("uses a gray page background and preserves source block aspect ratios", () => {
+    const source = buildDefaultPdpCanvasLayout(makePoints(7));
+    const layout = buildVerticalPdpExportLayout(source, {
+      sellingPointCount: 7,
+      specificationCount: 7
+    });
+    const sourceKv = source.blocks.find((block) => block.kind === "kv")!;
+    const exportKv = layout.blocks.find((block) => block.kind === "kv")!;
+    const sourceSelling = source.blocks.find((block) => block.kind === "selling-point")!;
+    const exportSelling = layout.blocks.find((block) => block.kind === "selling-point")!;
+    const svg = renderPdpSvg(makeDocument(2, { "feature-1": "asset-feature" }), "P", {
+      imageDataUris: { "asset-feature": "data:image/png;base64,c2VjdGlvbg==" }
+    });
+
+    expect(exportKv.width / exportKv.height).toBeCloseTo(
+      sourceKv.width / sourceKv.height,
+      3
+    );
+    expect(exportSelling.width / exportSelling.height).toBeCloseTo(
+      sourceSelling.width / sourceSelling.height,
+      3
+    );
+    expect(svg).toContain('fill="#d3d6da"');
+    expect(svg).toContain('preserveAspectRatio="xMidYMid meet"');
+    expect(svg).not.toMatch(/<rect[^>]+fill="#17202a"/);
+  });
   it("renders every selling point even beyond five", () => {
     const svg = renderPdpSvg(makeDocument(7), "P");
 
     for (let index = 1; index <= 7; index += 1) {
-      expect(svg).toContain(`Label ${index}`);
+      expect(svg).toContain(`Feature ${index}`);
     }
   });
 
@@ -100,7 +152,7 @@ describe("renderPdpSvg (horizontal tree layout)", () => {
     expect(svg).toContain("pdp-tree-v3");
   });
 
-  it("preserves user-adjusted canvas coordinates in the exported SVG", () => {
+  it("normalizes moved canvas blocks into one vertical column", () => {
     const layout = movePdpCanvasBlock(
       buildDefaultPdpCanvasLayout(makePoints(3)),
       getSellingPointBlockId("feature-1"),
@@ -110,6 +162,10 @@ describe("renderPdpSvg (horizontal tree layout)", () => {
     const svg = renderPdpSvg(makeDocument(3), "P", { layout });
 
     expect(svg).toContain('data-block-id="pdp-block-sp-feature-1"');
-    expect(svg).toContain('transform="translate(111 99)"');
+    expect(svg).not.toContain('transform="translate(111 99)"');
+    const xPositions = Array.from(svg.matchAll(/transform="translate\((\d+) (\d+)\)"/g)).map(
+      (match) => Number(match[1])
+    );
+    expect(new Set(xPositions)).toEqual(new Set([44]));
   });
 });

@@ -29,15 +29,6 @@ function installFetchStub() {
       const type = String(form.get("type")) as AssetType;
       return { ok: true, json: async () => ({ assets: [uploadedAsset(type)] }) };
     }
-    if (url.includes("/api/icon-design/template")) {
-      return {
-        ok: true,
-        json: async () => ({
-          template: "Use image 1 colors and image 2 rules. Feature title: {{FEATURE_TITLE}}.",
-          model: "gpt-4o-mini"
-        })
-      };
-    }
     if (url.includes("/api/icon-design/generate")) {
       const body = JSON.parse(String(init?.body));
       return {
@@ -51,12 +42,8 @@ function installFetchStub() {
             size: body.variantId === "layout-horizontal" ? "1536x1024" : "1024x1024",
             url: `/generated/icon/${body.variantId}.png`,
             model: body.imageModel === "doubao" ? "doubao-seedream-5-0-lite" : "gpt-image-1",
-            prompt: body.promptTemplate,
-            sourceAssetIds: [
-              body.viColorAssetId,
-              body.viStyleAssetId,
-              body.sourceIconAssetId
-            ],
+            prompt: "brand-standardized icon",
+            sourceAssetIds: [body.sourceIconAssetId],
             generatedAt: "2026-07-17T00:00:00.000Z"
           }
         })
@@ -80,30 +67,18 @@ afterEach(() => {
 });
 
 describe("IconDesignStudio", () => {
-  it("requires all three reference images before generating", async () => {
+  it("requires only the source icon and hides duplicate VI controls", async () => {
     render(<IconDesignStudio />);
+
     expect(await screen.findByRole("button", { name: "生成全部 6 个版本" })).toBeDisabled();
+    expect(screen.getByLabelText("上传待规范化 Icon")).toBeInTheDocument();
+    expect(screen.queryByText("VI 规范")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "AI 解析 VI 规则" })).not.toBeInTheDocument();
   });
 
-  it("analyzes VI references and generates six variants with the selected image model", async () => {
+  it("generates six variants from one icon with the selected image model", async () => {
     const user = userEvent.setup();
     render(<IconDesignStudio />);
-
-    await user.upload(
-      screen.getByLabelText("上传品牌色彩 VI"),
-      new File(["brand"], "brand.png", { type: "image/png" })
-    );
-    expect(await screen.findByText(/品牌色彩 VI已上传/)).toBeInTheDocument();
-
-    await user.upload(
-      screen.getByLabelText("上传Icon 设计 VI"),
-      new File(["style"], "style.png", { type: "image/png" })
-    );
-    expect(await screen.findByText(/Icon 设计 VI已上传/)).toBeInTheDocument();
-
-    await user.click(screen.getByRole("button", { name: "AI 解析 VI 规则" }));
-    expect(await screen.findByDisplayValue(/Use image 1 colors/)).toBeInTheDocument();
-    expect(screen.getByText(/解析模型：gpt-4o-mini/)).toBeInTheDocument();
 
     await user.upload(
       screen.getByLabelText("上传待规范化 Icon"),
@@ -126,12 +101,13 @@ describe("IconDesignStudio", () => {
     ]);
     for (const call of calls) {
       expect(call).toMatchObject({
-        viColorAssetId: "asset-icon-vi-color",
-        viStyleAssetId: "asset-icon-vi-style",
         sourceIconAssetId: "asset-icon-source",
         featureTitle: "Twin Crispers",
         imageModel: "doubao"
       });
+      expect(call).not.toHaveProperty("viColorAssetId");
+      expect(call).not.toHaveProperty("viStyleAssetId");
+      expect(call).not.toHaveProperty("promptTemplate");
     }
 
     expect(await screen.findByRole("img", { name: "标准黑色" })).toBeInTheDocument();

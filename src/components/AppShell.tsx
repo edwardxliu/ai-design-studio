@@ -1,58 +1,31 @@
-import type { ReactNode } from "react";
+"use client";
 
-const navItems = [
-  { href: "/", label: "工作台" },
-  { href: "/assets", label: "素材库" },
-  { href: "/products", label: "产品档案" },
-  { href: "/white-background", label: "白底多角度" },
-  { href: "/phone-standardize", label: "手机图标准化" },
-  { href: "/sku-variants", label: "SKU 替换" },
-  { href: "/style-transfer", label: "风格迁移" },
-  { href: "/icon-design", label: "Icon Design" },
-  { href: "/motion", label: "视频方向" },
-  { href: "/product-video", label: "产品视频" },
-  { href: "/pop", label: "POP 设计" },
-  { href: "/pdp", label: "PDP 构建" },
-  { href: "/localize", label: "本地化" },
-  { href: "/costs", label: "资源消耗" }
-];
+import type { CSSProperties, ReactNode } from "react";
+import styles from "./AppShell.module.css";
+import { getGlassTunerStyle, useGlassTunerSettings } from "./GlassTuner";
+import { useStudioBackground } from "./useStudioBackground";
+import { StudioNavigation } from "./StudioNavigation";
+import { StudioSettings } from "./StudioSettings";
 
 export function AppShell({ children }: { children: ReactNode }) {
+  const { backgroundUrl } = useStudioBackground();
+  const glass = useGlassTunerSettings();
+  const stageStyle = {
+    ...getGlassTunerStyle(glass.settings),
+    "--studio-background": 'url("' + backgroundUrl + '")'
+  } as CSSProperties;
   return (
-    <div className="app-shell-layout">
-      <aside className="app-shell-sidebar">
-        <div className="app-shell-brand">
-          <div style={{ color: "#057ca2", fontSize: 12, fontWeight: 800 }}>
-            Midea Overseas
-          </div>
-          <h1 style={{ margin: "6px 0 0", fontSize: 22, lineHeight: 1.15 }}>
-            AI Content Studio
-          </h1>
-        </div>
-        <nav aria-label="平台导航" className="app-shell-nav">
-          {navItems.map((item) => (
-            <a
-              href={item.href}
-              key={item.href}
-              style={{
-                border: "1px solid #d9e0e7",
-                borderRadius: 8,
-                color: "#17202a",
-                display: "block",
-                fontWeight: 700,
-                padding: "10px 12px",
-                textDecoration: "none"
-              }}
-            >
-              {item.label}
-            </a>
-          ))}
-        </nav>
-        <p className="app-shell-path">
-          素材库 → 产品档案 → 生成与模板 → 本地化 → 资源台账
-        </p>
-      </aside>
-      <main className="app-shell-main">{children}</main>
-    </div>
+    <main className={styles.stage} style={stageStyle}>
+      <div aria-hidden="true" className={styles.background} />
+      <section aria-label="Midea AI Content Studio 功能工作区" className={styles.workbench}>
+        <aside className={styles.sidebar}>
+          <div className={styles.brand}><span>Midea Overseas</span><strong>AI Content Studio</strong></div>
+          <StudioNavigation className={styles.navigation} />
+          <div className={styles.sidebarFooter}><span className={styles.onlineDot} />在线生成模式</div>
+        </aside>
+        <div className={styles.settingsDock}><StudioSettings glass={glass} /></div>
+        <section className={styles.main}>{children}</section>
+      </section>
+    </main>
   );
 }

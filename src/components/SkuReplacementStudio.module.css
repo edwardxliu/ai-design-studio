@@ -10,12 +10,14 @@
 .emptyState {
   border: 1px solid #d9e0e7;
   border-radius: 8px;
-  background: #ffffff;
+  background: var(--studio-glass-surface, #ffffff);
+  backdrop-filter: blur(14px) saturate(116%);
+  -webkit-backdrop-filter: blur(14px) saturate(116%);
 }
 
 .controlBand {
   display: grid;
-  grid-template-columns: minmax(300px, 1fr) minmax(560px, 1.2fr);
+  grid-template-columns: minmax(0, 1fr) minmax(340px, 0.92fr);
   gap: 20px;
   align-items: end;
   padding: 18px;
@@ -28,17 +30,17 @@
 }
 
 .taskCopy strong {
-  color: #17202a;
+  color: var(--text);
 }
 
 .taskCopy span {
-  color: #5f6c7b;
+  color: var(--muted);
   font-size: 13px;
 }
 
 .controls {
   display: grid;
-  grid-template-columns: minmax(150px, 1fr) minmax(180px, 1fr) minmax(180px, auto);
+  grid-template-columns: minmax(0, 1fr) minmax(146px, max-content);
   gap: 12px;
   align-items: end;
 }
@@ -50,7 +52,7 @@
   display: grid;
   min-width: 0;
   gap: 6px;
-  color: #34404c;
+  color: var(--text);
   font-size: 13px;
   font-weight: 700;
 }
@@ -63,8 +65,8 @@
   min-width: 0;
   border: 1px solid #aeb8c3;
   border-radius: 6px;
-  background: #ffffff;
-  color: #17202a;
+  background: var(--studio-glass-control, #ffffff);
+  color: var(--text);
   font: inherit;
 }
 
@@ -110,8 +112,8 @@
 }
 
 .generateButton {
-  border: 1px solid #057ca2;
-  background: #057ca2;
+  border: 1px solid var(--accent-strong);
+  background: var(--accent-strong);
   color: #ffffff;
   padding: 0 16px;
 }
@@ -132,7 +134,7 @@
   border: 1px solid #cfd7df;
   border-radius: 8px;
   overflow: hidden;
-  background: #ffffff;
+  background: var(--studio-glass-card, #ffffff);
 }
 
 .modeTab,
@@ -142,9 +144,9 @@
   gap: 5px;
   border: 0;
   border-right: 1px solid #dfe4e9;
-  background: #ffffff;
+  background: var(--studio-glass-control, #ffffff);
   padding: 14px 16px;
-  color: #34404c;
+  color: var(--text);
   text-align: left;
   cursor: pointer;
 }
@@ -155,8 +157,8 @@
 }
 
 .modeTabActive {
-  box-shadow: inset 0 -3px 0 #057ca2;
-  background: #eef8fb;
+  box-shadow: inset 0 -3px 0 var(--accent-strong);
+  background: var(--studio-glass-info, rgba(238, 248, 251, 0.46));
   color: #064f67;
 }
 
@@ -167,7 +169,7 @@
 
 .modeTab span,
 .modeTabActive span {
-  color: #687481;
+  color: var(--muted-soft);
   font-size: 12px;
   line-height: 1.45;
 }
@@ -197,12 +199,12 @@
 }
 
 .sectionHeading h2 {
-  color: #17202a;
+  color: var(--text);
   font-size: 19px;
 }
 
 .sectionHeading p {
-  color: #687481;
+  color: var(--muted-soft);
   font-size: 13px;
   line-height: 1.5;
 }
@@ -210,7 +212,7 @@
 .sectionHeading > strong,
 .sectionHeading > span {
   flex: 0 0 auto;
-  color: #057ca2;
+  color: var(--accent-strong);
   font-size: 12px;
 }
 
@@ -218,16 +220,19 @@
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 14px;
+  align-items: stretch;
 }
 
 .uploadSlot {
   display: grid;
   min-width: 0;
+  height: 100%;
+  grid-template-rows: auto auto minmax(38px, auto) auto auto;
   gap: 10px;
   border: 1px solid #d9e0e7;
   border-radius: 8px;
   overflow: hidden;
-  background: #ffffff;
+  background: var(--studio-glass-card, #ffffff);
   padding-bottom: 14px;
 }
 
@@ -249,8 +254,8 @@
 .slotHeader span {
   border: 1px solid #b8d9e4;
   border-radius: 4px;
-  background: #eef8fb;
-  color: #057ca2;
+  background: var(--studio-glass-info, rgba(238, 248, 251, 0.46));
+  color: var(--accent-strong);
   padding: 2px 6px;
   font-size: 11px;
 }
@@ -263,7 +268,7 @@
   overflow: hidden;
   border-top: 1px solid #e3e7eb;
   border-bottom: 1px solid #e3e7eb;
-  background: #eef1f4;
+  background: var(--studio-glass-preview, rgba(238, 241, 244, 0.2));
 }
 
 .slotPreview img {
@@ -284,14 +289,14 @@
   min-height: 38px;
   margin-top: 0;
   margin-bottom: 0;
-  color: #5f6c7b;
+  color: var(--muted);
   font-size: 12px;
   line-height: 1.5;
 }
 
 .uploadSlot > small {
   overflow: hidden;
-  color: #687481;
+  color: var(--muted-soft);
   font-size: 11px;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -306,8 +311,8 @@
 .uploadButton,
 .inlineUpload {
   position: relative;
-  border: 1px solid #057ca2;
-  background: #057ca2;
+  border: 1px solid var(--accent-strong);
+  background: var(--accent-strong);
   color: #ffffff;
   padding: 0 13px;
 }
@@ -324,7 +329,7 @@
 .slotActions button {
   width: 42px;
   border: 1px solid #cfd7df;
-  background: #ffffff;
+  background: var(--studio-glass-control, #ffffff);
   color: #922c2c;
 }
 
@@ -342,7 +347,7 @@
   border: 1px solid #cfd7df;
   border-radius: 8px;
   overflow: hidden;
-  background: #f2f4f6;
+  background: var(--studio-glass-preview, rgba(242, 244, 246, 0.2));
 }
 
 .maskToolbar {
@@ -352,7 +357,7 @@
   align-items: center;
   justify-content: space-between;
   border-bottom: 1px solid #d9e0e7;
-  background: #ffffff;
+  background: var(--studio-glass-card, #ffffff);
   padding: 8px 10px;
 }
 
@@ -367,15 +372,15 @@
 .iconButton {
   min-height: 36px;
   border: 1px solid #cbd4dc;
-  background: #ffffff;
-  color: #34404c;
+  background: var(--studio-glass-control, #ffffff);
+  color: var(--text);
   padding: 0 10px;
   font-size: 12px;
 }
 
 .toolButtonActive {
-  border-color: #057ca2;
-  background: #eaf7fb;
+  border-color: var(--accent-strong);
+  background: var(--studio-glass-info, rgba(234, 247, 251, 0.46));
   color: #056681;
 }
 
@@ -397,11 +402,11 @@
 
 .sliderField input {
   width: 100%;
-  accent-color: #057ca2;
+  accent-color: var(--accent-strong);
 }
 
 .sliderField span {
-  color: #057ca2;
+  color: var(--accent-strong);
   text-align: right;
 }
 
@@ -412,11 +417,11 @@
   width: 100%;
   margin: 0 auto;
   overflow: hidden;
-  background-color: #dfe3e7;
-  background-image: linear-gradient(45deg, #eef0f2 25%, transparent 25%),
-    linear-gradient(-45deg, #eef0f2 25%, transparent 25%),
-    linear-gradient(45deg, transparent 75%, #eef0f2 75%),
-    linear-gradient(-45deg, transparent 75%, #eef0f2 75%);
+  background-color: var(--studio-glass-preview, rgba(223, 227, 231, 0.2));
+  background-image: linear-gradient(45deg, rgba(238, 240, 242, 0.3) 25%, transparent 25%),
+    linear-gradient(-45deg, rgba(238, 240, 242, 0.3) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, rgba(238, 240, 242, 0.3) 75%),
+    linear-gradient(-45deg, transparent 75%, rgba(238, 240, 242, 0.3) 75%);
   background-position: 0 0, 0 8px, 8px -8px, -8px 0;
   background-size: 16px 16px;
 }
@@ -432,10 +437,12 @@
 
 .canvasStage img {
   object-fit: contain;
+  opacity: 0.88;
   user-select: none;
 }
 
 .canvasStage canvas {
+  opacity: 0.94;
   touch-action: none;
 }
 
@@ -451,7 +458,7 @@
   display: grid;
   place-items: center;
   gap: 8px;
-  color: #77828e;
+  color: var(--muted-soft);
 }
 
 .canvasError {
@@ -459,7 +466,7 @@
   inset: auto 12px 12px;
   border: 1px solid #e3b4b4;
   border-radius: 6px;
-  background: #fff0f0;
+  background: var(--studio-glass-error, rgba(255, 240, 240, 0.52));
   color: #8f1f1f;
   padding: 9px 12px;
   font-size: 12px;
@@ -468,8 +475,8 @@
 .canvasStatus {
   margin: 0;
   border-top: 1px solid #d9e0e7;
-  background: #ffffff;
-  color: #5f6c7b;
+  background: var(--studio-glass-control, #ffffff);
+  color: var(--muted);
   padding: 10px 12px;
   font-size: 12px;
 }
@@ -488,10 +495,10 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  border: 1px solid #b9dccf;
+  border: 1px solid #9bc7ff;
   border-radius: 6px;
-  background: #eef9f5;
-  color: #12805c;
+  background: var(--studio-glass-success, rgba(237, 245, 255, 0.5));
+  color: #0049bb;
   padding: 11px 12px;
   font-size: 13px;
   font-weight: 700;
@@ -499,16 +506,16 @@
 
 .selectionMissing {
   border-color: #d7dde3;
-  background: #f3f5f6;
-  color: #687481;
+  background: var(--studio-glass-preview, #f3f5f6);
+  color: var(--muted-soft);
 }
 
 .message {
   margin: 0;
   border: 1px solid #cfd7df;
   border-radius: 6px;
-  background: #f5f8fa;
-  color: #3f5668;
+  background: var(--studio-glass-layer, #f5f8fa);
+  color: var(--muted);
   padding: 11px 14px;
   font-size: 13px;
 }
@@ -527,7 +534,7 @@
   min-height: 360px;
   max-height: 720px;
   overflow: hidden;
-  background: #eef1f4;
+  background: var(--studio-glass-preview, rgba(238, 241, 244, 0.2));
 }
 
 .resultImage img {
@@ -536,6 +543,7 @@
   height: 100%;
   max-height: 720px;
   object-fit: contain;
+  opacity: 0.88;
 }
 
 .resultMeta {
@@ -553,7 +561,7 @@
 }
 
 .resultMeta span {
-  color: #687481;
+  color: var(--muted-soft);
   font-size: 12px;
 }
 
@@ -562,18 +570,18 @@
   width: fit-content;
   align-items: center;
   gap: 6px;
-  color: #057ca2;
+  color: var(--accent-strong);
   font-size: 13px;
   font-weight: 700;
 }
 
 .emptyState {
   padding: 18px;
-  color: #3f4b56;
+  color: var(--muted);
 }
 
 .emptyState a {
-  color: #057ca2;
+  color: var(--accent-strong);
   font-weight: 700;
 }
 
@@ -649,7 +657,7 @@
   .toolButton svg,
   .toolButtonActive svg {
     flex: 0 0 auto;
-    color: #34404c;
+    color: var(--text);
   }
 
   .toolButtonActive svg {
@@ -662,5 +670,50 @@
 
   .uploadButton {
     flex: 1;
+  }
+}
+/* Stage 17 responsive SKU action row. */
+.controlBand,
+.taskCopy,
+.controls,
+.controls > * {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.generateButton {
+  width: min(100%, 190px);
+  max-width: 100%;
+  justify-self: end;
+  overflow: hidden;
+  padding-inline: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.modeTab,
+.modeTabActive {
+  transition: background-color 90ms ease, color 90ms ease;
+  contain: layout paint;
+}
+
+@media (max-width: 1080px) {
+  .controlBand {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .controls {
+    grid-template-columns: minmax(0, 1fr) minmax(146px, 190px);
+  }
+}
+
+@media (max-width: 620px) {
+  .controls {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .generateButton {
+    width: 100%;
+    justify-self: stretch;
   }
 }

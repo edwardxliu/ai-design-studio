@@ -1,33 +1,23 @@
-import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { render, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { describe, expect, it, vi } from "vitest";
 import { AppShell } from "./AppShell";
-
-describe("AppShell", () => {
-  it("renders every capability as its own sidebar entry", () => {
-    render(
-      <AppShell>
-        <div>Workbench content</div>
-      </AppShell>
-    );
-
-    const links = screen.getAllByRole("link").map((link) => link.textContent);
-    expect(links).toEqual([
-      "工作台",
-      "素材库",
-      "产品档案",
-      "白底多角度",
-      "手机图标准化",
-      "SKU 替换",
-      "风格迁移",
-      "Icon Design",
-      "视频方向",
-      "产品视频",
-      "POP 设计",
-      "PDP 构建",
-      "本地化",
-      "资源消耗"
-    ]);
-    expect(screen.queryByText("图像工作室")).not.toBeInTheDocument();
-    expect(screen.getByText("Workbench content")).toBeInTheDocument();
+vi.mock("next/navigation", () => ({ usePathname: () => "/sku-variants" }));
+describe("grouped navigation", () => {
+  it("preserves all routes and exposes the active tool", async () => {
+    const user = userEvent.setup();
+    render(<AppShell><h1>Workbench</h1></AppShell>);
+    const nav = within(screen.getByRole("navigation", { name: "平台导航" }));
+    expect(nav.getByRole("button", { name: "创作中心" })).toHaveAttribute("aria-expanded", "true");
+    expect(nav.getByRole("link", { name: "SKU 替换" })).toHaveAttribute("aria-current", "page");
+    await user.click(nav.getByRole("button", { name: "资产中心" }));
+    await user.click(nav.getByRole("button", { name: "品牌管理" }));
+    expect(new Set(nav.getAllByRole("link").map(link => link.getAttribute("href")))).toEqual(new Set([
+      "/studio-home", "/assets", "/products", "/white-background", "/phone-standardize", "/sku-variants",
+      "/style-transfer", "/icon-design", "/product-video", "/pop", "/pdp", "/localize", "/costs"
+    ]));
+    await user.click(nav.getByRole("button", { name: "创作中心" }));
+    expect(nav.queryByRole("link", { name: "SKU 替换" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "用户设置" })).toBeInTheDocument();
   });
 });

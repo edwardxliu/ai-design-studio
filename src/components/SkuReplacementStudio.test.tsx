@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { demoProducts } from "@/src/domain/test-fixtures";
@@ -47,6 +47,7 @@ describe("SkuReplacementStudio", () => {
 
     render(<SkuReplacementStudio />);
     const generateButton = await screen.findByRole("button", { name: "生成替换结果" });
+    expect(screen.queryByLabelText("目标产品")).not.toBeInTheDocument();
     expect(generateButton).toBeDisabled();
 
     await user.upload(
@@ -68,6 +69,85 @@ describe("SkuReplacementStudio", () => {
       baseAssetId: product.assets[0].id,
       referenceAssetId: referenceAsset.id
     });
+  });
+
+  it("clears the selection between mask modes and can undo canvas edits", async () => {
+    class MockImage {
+      naturalHeight = 2;
+      naturalWidth = 4;
+      onerror: (() => void) | null = null;
+      onload: (() => void) | null = null;
+
+      set src(_value: string) {
+        queueMicrotask(() => this.onload?.());
+      }
+    }
+
+    const createPixels = (width: number, height: number) => {
+      const data = new Uint8ClampedArray(width * height * 4);
+      for (let offset = 0; offset < data.length; offset += 4) {
+        data[offset] = 48;
+        data[offset + 1] = 48;
+        data[offset + 2] = 48;
+        data[offset + 3] = 255;
+      }
+      return data;
+    };
+    const context = {
+      clearRect: vi.fn(),
+      createImageData: vi.fn((width: number, height: number) => ({
+        data: new Uint8ClampedArray(width * height * 4),
+        height,
+        width
+      })),
+      drawImage: vi.fn(),
+      getImageData: vi.fn((_x: number, _y: number, width: number, height: number) => ({
+        data: createPixels(width, height),
+        height,
+        width
+      })),
+      putImageData: vi.fn()
+    } as unknown as CanvasRenderingContext2D;
+
+    vi.stubGlobal("Image", MockImage);
+    vi.stubGlobal("PointerEvent", MouseEvent);
+    vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue(context);
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ products: [demoProducts[0]] }), { status: 200 })
+    ));
+
+    const user = userEvent.setup();
+    render(<SkuReplacementStudio />);
+    await user.click(await screen.findByRole("tab", { name: /配件颜色替换/ }));
+
+    const canvas = await screen.findByLabelText("SKU 部件选区画布");
+    vi.spyOn(canvas, "getBoundingClientRect").mockReturnValue({
+      bottom: 200,
+      height: 200,
+      left: 0,
+      right: 400,
+      toJSON: () => ({}),
+      top: 0,
+      width: 400,
+      x: 0,
+      y: 0
+    });
+    expect(screen.getByRole("button", { name: "撤销上一步" })).toBeDisabled();
+
+    fireEvent.pointerDown(canvas, { clientX: 20, clientY: 20, pointerId: 1 });
+    await screen.findByText("选区已准备");
+    expect(screen.getByRole("button", { name: "撤销上一步" })).toBeEnabled();
+
+    await user.click(screen.getByRole("button", { name: "撤销上一步" }));
+    await screen.findByText("请在左侧画布选择部件");
+    expect(screen.getByRole("button", { name: "撤销上一步" })).toBeDisabled();
+
+    fireEvent.pointerDown(canvas, { clientX: 20, clientY: 20, pointerId: 2 });
+    await screen.findByText("选区已准备");
+    await user.click(screen.getByRole("tab", { name: /配件样式替换/ }));
+
+    await screen.findByText("请在左侧画布选择部件");
+    expect(screen.getByRole("button", { name: "撤销上一步" })).toBeDisabled();
   });
 
   it("exposes color and style mask workflows as separate modes", async () => {

@@ -1,4 +1,4 @@
-export const PRODUCT_VIDEO_MODEL_LABEL = "豆包 Seedance 1.5 Pro";
+export const PRODUCT_VIDEO_MODEL_LABEL = "Seedance 2.0 Fast";
 
 export const PRODUCT_VIDEO_OUTPUT = {
   durationSeconds: 12,

@@ -55,7 +55,7 @@ describe("Doubao image provider", () => {
     const body = JSON.parse(String(fetchMock.mock.calls[0][1].body));
     expect(body).toMatchObject({
       model: "doubao-seedream-5-0-lite-260128",
-      size: "2304x1536",
+      size: "2400x1600",
       response_format: "b64_json",
       watermark: false
     });
@@ -69,9 +69,23 @@ describe("Doubao image provider", () => {
 
   it("uses the official root and reports missing credentials", async () => {
     expect(normalizeArkApiRoot("  ")).toBe("https://ark.cn-beijing.volces.com/api/v3");
-    expect(toDoubaoSize("1024x1536")).toBe("1536x2304");
+    expect(toDoubaoSize("1024x1536")).toBe("1600x2400");
     const provider = createDoubaoImageProvider({ apiKey: "" });
     await expect(provider.generateImage({ taskId: "x", prompt: "p", sourceAssetIds: [] }))
       .rejects.toThrow(/ARK_API_KEY/);
+  });
+
+  it("maps every supported ratio above Seedream's minimum pixel count", () => {
+    const sourceSizes = ["1536x1024", "1024x1536", "1024x1024"] as const;
+
+    expect(sourceSizes.map(toDoubaoSize)).toEqual([
+      "2400x1600",
+      "1600x2400",
+      "2048x2048"
+    ]);
+    for (const sourceSize of sourceSizes) {
+      const [width, height] = toDoubaoSize(sourceSize).split("x").map(Number);
+      expect(width * height).toBeGreaterThanOrEqual(3_686_400);
+    }
   });
 });

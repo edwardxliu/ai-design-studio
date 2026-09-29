@@ -67,9 +67,9 @@
 - Inner Display 蓝条必须从灰图左边开始，宽度约为灰图 60%，且不能覆盖到图片底边。
 - Body B/C 的整体长宽比会直接影响 Canvas 预览，不能只调内部坐标而保留过高的 SVG 画布。
 
-## 2026-07-16 豆包图像与 Seedance 2.0 Fast 接口确认
-- 豆包图像统一使用火山方舟 `POST /api/v3/images/generations`；默认模型为 `doubao-seedream-5-0-lite-260128`，支持文生图、参考图编辑和多图输入。
-- 图片生成接口的 `image` 字段支持 URL 或 Base64，因此本地素材无需部署公网文件服务器即可传入豆包图像模型。
+## 2026-07-16 Seedream 图像与 Seedance 2.0 Fast 接口确认
+- Seedream 图像统一使用火山方舟 `POST /api/v3/images/generations`；默认模型为 `doubao-seedream-5-0-lite-260128`，支持文生图、参考图编辑和多图输入。
+- 图片生成接口的 `image` 字段支持 URL 或 Base64，因此本地素材无需部署公网文件服务器即可传入 Seedream 图像模型。
 - 产品视频使用 `doubao-seedance-2-0-fast-260128`；通过 `POST /api/v3/contents/generations/tasks` 创建异步任务，并通过 `GET /api/v3/contents/generations/tasks/{id}` 轮询。
 - Seedance 成功响应在 `content.video_url` 返回成片地址；任务状态为 `queued`、`running`、`succeeded`、`failed` 或 `cancelled`。
 - 产品视频固定 15 秒、16:9、720p；提示词以用户给出的 Hero Product Film 文案作为单份可编辑默认值，产品参考图作为唯一 `reference_image` 输入。
@@ -79,7 +79,7 @@
 - SKU 功能必须保持上传驱动、产品类型无关；空气炸锅、控制面板、把手和包边只作为默认提示词示例，不能写成固定业务枚举。
 - 参考部件替换要求产品图和部件图缺一不可，二者按 image 1 / image 2 顺序送入图像编辑模型。
 - 颜色与样式替换共用区域选择器：画笔、橡皮、清空和基于像素连通性的点击智能选区；选区必须导出真实 PNG alpha 蒙版并传入服务端。
-- OpenAI 图像编辑使用原生 multipart `mask` 字段；豆包 Seedream 当前接口无独立 mask 字段，因此将蒙版作为额外参考图，并在提示词中明确蒙版语义。
+- OpenAI 图像编辑使用原生 multipart `mask` 字段；Seedream 当前接口无独立 mask 字段，因此将蒙版作为额外参考图，并在提示词中明确蒙版语义。
 ## 2026-07-17 SKU Canvas 长宽比问题
 - 当前 SKU 产品图 `图片1.png` 的原始尺寸为 355×334，宽高比约 1.063。
 - `.canvasStage` 同时使用 `width: 100%`、动态 `aspect-ratio` 和固定 `max-height: 680px`；容器宽度大于按比例允许的宽度时，高度被单独截断，CSS 最终尺寸不再遵循原图比例。
@@ -105,3 +105,120 @@
 - 北欧住宅关键词页只有 2 张独立有效参考图，日式明场有 4 张；模型输入保留 PPT 实际有效资产数量，不复制图片凑数。
 - 生成服务的参考顺序必须可追溯：用户产品素材 ID 在前，`style-reference:*` 资产 ID 在后；成本台账同步记录两类来源。
 - 用户 Keywords 优先于预设默认词，匹配词只负责选择底层 PPT 风格系统，不覆盖用户输入。
+## 2026-07-21 首页紧凑玻璃工作台
+- 参考图的主窗比例约为视口宽 72%、高 76%，桌面端采用 72vw × 76dvh，并分别限制最大 1180×720px。
+- 指定的绿色、橙色和浅蓝视觉图已作为项目静态资产，分别用于前两个主功能卡和日期/天气卡。
+- 顺德天气由服务端 /api/weather 调用 Open-Meteo，坐标为 22.8057, 113.2934，前端每 10 分钟刷新且失败时显示 Unavailable。
+- 底部十个工具卡使用原生横向滚动；黑色 range 滑点和滚动位置双向同步。
+- 所有卡片继续继承首页玻璃颜色、透明度、模糊和饱和度 CSS 变量。
+## 2026-07-21 全站紧凑玻璃外壳
+- 首页和功能页现在共用 72vw × 76dvh、最大 1180×720px 的桌面工作台，以及 190px 的侧栏尺寸。
+- 子页导航根据 usePathname 高亮当前入口，品牌上标统一为 9px 常规字重，导航统一为 11px。
+- 两条窄线性流光沿左上至右下轨迹循环，错开半个周期；减少动态效果偏好下停止动画。
+- 子页文字元素上限统一为 11px，表单和按钮为 10px；网格与表单采用 16px 列距和 18px 行距。
+- 普通玻璃按钮改为鼠尾草半透明底和深色文字；主操作、删除和选中状态分别使用深绿、浅红和暖色规则，避免浅灰底白字。
+
+## 阶段 16 定位补充（2026-07-21）
+- 风格迁移末项误选来自 `matchStyleTransferPreset` 的关键词计分：两个日式预设共享词较多，显式点击后仍可能按排序回到较早的暗场预设。
+- 风格迁移的 `minmax(680px, ...)`、七列最小宽度和三列工作区最小宽度按浏览器宽度响应，而不是按 AppShell 内容宽度响应，导致壳层缩小后内部横向溢出。
+- POP Canvas 每次内容变化会重新生成并加载全部方案的 SVG 预览；图片替换还会预取所有方案素材，这是整块画布卡顿的直接原因。
+- PDP Canvas 已采用居中裁切绘制，导出仍保留横向树布局；需把交互布局与纵向导出布局分离。
+- 共享图片编辑器可在上传前输出已居中裁切的 PNG，使 POP/PDP 后续渲染只消费处理后的文件。
+- 定位时曾使用与 PowerShell `Invoke-History` 冲突的 `R` 函数名，并误查不存在的 `PdpCanvasEditor.module.css`；现已改用实际的 `PdpEditor.module.css` 与 `PdpEditor.test.tsx`。
+## 2026-07-21 阶段 16 实现结论
+- AppShell 对所有 source/result/output/preview 图像卡统一拉伸和内部行轨道，上传图与三视角结果不再因内容高度不同而错位；全部 `select` 被约束在父容器内并使用左侧垂直居中、单行省略。
+- 风格迁移显式点击预设时以预设 ID 为准，只有用户手工修改 Keywords 后才重新匹配，避免“日式明亮展厅”被共享关键词回退为暗场。
+- POP 预览改用按模板 ID 和内容签名缓存，只重建当前选中且内容变化的方案；其他方案沿用缓存图，避免替换图片时整板重绘。
+- POP/PDP 共用上传前裁切弹窗：默认居中 cover，支持拖动、缩放、重置和按目标灰框比例输出 PNG。
+- PDP 交互画布品牌块固定使用 `public/pdp/midea-brand-no1.png`，品牌说明在检查器中可编辑；服务端导出将品牌、KV、卖点、More Features 和 Specification 统一转为 920px 宽的纵向长图。
+- Icon Design 仅保留两张紧凑 VI 预览，提示词模板继续内部使用但不再向用户开放编辑。
+## 2026-07-22 新一轮界面与 POP 调整
+- 用户要求恢复中性文字色，蓝色仅保留在生成按钮的实心视觉层次中。
+- 外框默认边框改为灰白三段渐变，主窗与当前菜单分别使用用户给定的透明度、角度、宽度和白色流光。
+- 首页临时玻璃/边框参数入口需要隐藏，但底层设置与持久化能力保留。
+- POP 不再调用 AI 生成写实贴装图；改为在指定冰箱产品图上直接叠加当前 Sticker，并让用户拖动与缩放后导出。
+- 按既有要求，本轮不打开或控制本地浏览器。
+## 2026-07-22 Stage 17 live findings
+- Homepage still renders GlassTuner and EdgeTuner in the top-right action row; hide both triggers while preserving the shared settings hook/CSS variables.
+- Homepage structure already separates hero, three feature cards, and quick-tool scroller, so requested 4:3 and 3:4 geometry can be handled in CSS without changing navigation data.
+- SKU generation overflow is caused by the top control band keeping the model select and long generation button in one rigid row; use a shrinkable grid/minmax layout and cap the action width.
+- POP still submits to /api/pop/generate-scene; replace that result flow with an in-browser refrigerator sticker compositor and PNG export.
+- Existing edge defaults are blue and stored under the original localStorage key; use the requested neutral defaults and a versioned key so old blue defaults do not override them.
+
+## 2026-07-22 CreativeStudio AI 封面页迁移
+- 源目录 `E:\workspace\nato-studio\CreativeStudio-AI` 是独立 Next.js 项目。
+- 可迁移代码集中在 `components/JobyInspiredHero.tsx`、`components/MideaAIDraft.tsx`、`app/midea-ai/*`。
+- 必要静态素材位于 `public/midea-ai/`；源项目的 `.next`、`node_modules`、缓存与日志不得复制。
+- 目标路由结构暂定为 `/` 封面页、`/studio-home` 现有工作台；Start now 使用 Next.js 客户端导航进入工作台。
+
+- 分支确认：`codex/cover-page` 已创建并已切换；工作区原有未提交改动继续保留。
+- 当前根路由 `app/page.tsx` 仅作为 `GlassHomeStudio` 的轻量入口，适合将原工作台迁到 `/studio-home`，再由根路由承载封面。
+
+- 源封面是四段完整滚动体验：视频首屏、16 张视觉拼贴、三步工作流、末尾 Start now。
+- 可移植素材共 20 个文件、约 55.3 MiB，其中视频约 39.1 MiB，单文件低于 GitHub 100 MiB 限制；只复制实际引用素材，不复制缓存、node_modules、.DS_Store 或 extra 图片。
+- 源 CSS 类名均使用 midea-/joby-/brand- 前缀，与当前业务组件无命名碰撞；保留独立路由样式即可。
+
+## 2026-07-22 封面边界 AI 聊天入口
+- 聊天框应放在 `CoverHero` 与 `brand-platform` 之间，用零高度边界锚点和负向位移覆盖蓝/白分界；不使用 fixed/sticky，因此继续下滚会自然离场。
+- 普通聊天复用 `OPENAI_API_KEY`、`OPENAI_TEXT_MODEL`、`OPENAI_BASE_URL` 与现有 `createProxyDispatcher/fetchOpenAi` 网络实现。
+- 页面跳转采用服务端白名单映射；带“打开/进入/跳转/我要做”等动作意图时直接返回目标路由，避免模型生成任意 URL。
+- 快捷入口采用 POP、PDP、风格迁移、产品视频四个高频页面，第五个省略号按钮仅作视觉占位。
+
+## 2026-07-22 Brand source-code section
+- The supplied `hero video.mp4` is 1920x1080, 30 fps, 38 seconds, and 3,760,588 bytes, so a native 16:9 frame avoids crop distortion.
+- The new section remains at `id="workflow"`, preserving existing anchor behavior while replacing the old three-card content completely.
+- Both Start Now entry points resolve to `/studio-home`; the new video is served from `/midea-ai/brand-source-hero.mp4`.
+
+## 2026-07-22 Alternating execution demos
+- All three supplied demos use a 4:3 frame, allowing one stable visual-card geometry without cropping or per-row layout exceptions.
+- The new section preserves the requested order: demo1 left, demo2 right, demo3 left; the surrounding text alternates accordingly.
+- The three copied assets total 49,955,517 bytes and each source/target SHA-256 hash matches.
+- Runtime HTML confirms the section occurs after `Where ideas become the work` and before `Start with a signal.`.
+## 2026-07-22 POP transparency and studio-home header
+- The visible white sticker box came from both the SVG root rectangle and the PNG rasterizer background fill; both layers must preserve alpha.
+- White text, logos, strokes, and image-slot content remain unchanged because only the full-canvas root rectangles were made transparent.
+- The studio workbench can be much narrower than the viewport, so a CSS container query is more reliable than a viewport-only media query for the top-right controls.
+- The focused POP template and studio-home tests pass. One older PopCanvasStudio test still expects a removed image-model selector and fails before reaching generation; this is unrelated to the transparency change.
+
+## 2026-09-26 Demo brief assessment
+- Source: `需求/demo修改brief.pdf`, one page, 1920x1761 points. PDF text and rendered visual inspected; mockup labels still need detailed crops.
+- The brief prioritizes one-click style transfer; white-background angles, localization, and POP can be phased by available time.
+- It asks for consolidated left navigation, personalized tools behind the upper-right user-settings icon, and retention of current demo typography, spacing, and dashboard size.
+- Current code uses a flat 13-entry AppShell navigation. Style transfer chooses an existing product asset and one preset, then launches three client-side parallel output requests; its API fixes size to 1536x1024.
+- Mockups appear to add variable output quantity, contextual material selection, selectable white-background angles and output sizes. Detailed labels will be verified before final assessment.
+- No paid generation, app-code edits, or assumptions about live model quality have been made.
+- Detailed visual review completed for all four mockups. Style transfer adds library/local upload, 1/2/3 output selection, preset/style-learning tabs, a read-only scene summary, and an all-presets entry. Current presets number six, not the older memory's seven; mockup names (including technology/future) do not map exactly to current IDs.
+- White-background mockup uses up to three same-product references, selectable front/left-45/right-45/right-90/back-180/top views, background controls, and 1:1/4:5/16:9/custom pixel sizes. Current domain only supports open/closed source states and three fixed views per source, with fixed white background and natural shadow in its prompt.
+- Localization already supports batch local uploads (20 images, 30 MB each) and model-based text replacement. Missing from that workflow: material-library/bundle selection and explicit pairing of clean base images; image contents are not separated into editable OCR/text layers in the inspected flow.
+- POP already has refrigerator/oven template sets, grouped variants, text/image editing, and local sticker placement/export. Current selection is one global template, not one variant per group for a full output bundle. Legacy AI-scene code remains but no visible model/generate control is rendered in its toolbar. A local compositor uses a fixed demonstration refrigerator image, so an oven showcase must not be assumed to use the selected oven as its placement base.
+- Homepage and subpages define their own navigation separately. Personalization controls currently live on the homepage; country/language settings live in LocalizePanel. Consolidation needs shared navigation/settings components, not merely moving one icon.
+- Product-identity locking is implemented as prompt instructions, not a deterministic geometric guarantee. Back/top views and image-wide text rewriting require sample-based acceptance tests; do not promise exact identity or typography from static code review.
+- Fresh baseline: TypeScript `--noEmit --incremental false` exited 0. The 12 selected test files ran 42 tests: 41 passed, one failed at `PopCanvasStudio.test.tsx:239` because it expects the non-rendered image-model selector. This was reproduced without any business-code edits.
+- Recommended phase 1: shared grouped navigation and user settings plus a complete preset-based style-transfer workflow (asset selection/upload, output quantity, scene summary, results/download and failure handling). Preserve non-priority functionality and current frame/type scale.
+- Scope boundaries: style learning is not defined beyond a tab in the brief; reference-image style extraction/storage is distinct from model training. Brand-management and task-record headings are not specifications for full new enterprise subsystems. Scene output/result/error views are absent from the brief and need to be completed as part of an operable workflow.
+- Rough planning estimate, not a delivery commitment: 3-5 person-days for the prioritized shell plus preset-style workflow; another 6-10 person-days for the other three workflows and regression work, assuming existing provider interfaces, prepared sample assets, and no model training or production-grade DAM. Style-learning details require a separate estimate.
+
+## 2026-09-26 Approved implementation direction
+- Reuse existing routes and APIs. Navigation groups: creation tools, assets/products, brand tools (existing Icon Design), and records (existing cost/output ledger). Do not create dead brand-management/task-system links.
+- The compact glass dashboard is the visual reference: charcoal #24282c, secondary #50575d, pale glass #f0f5f7/#ffffff, selected preset accent #d8b46a, existing generation-action styling. Preserve current font stacks and shell geometry; use a five-card image rail with an all-presets dialog, not the old three-column technical control workspace.
+- User settings owns background selection/upload, existing glass/edge controls, and default market/language; operation-specific product/model/count remain on the work page. Custom wallpapers should survive route changes and reload without server uploads.
+- One-click transfer uses the current six real presets, supports 1/2/3 outputs, locks inputs while running, snapshots request parameters, and retries only failed outputs. Advanced keywords refine the explicitly chosen preset instead of silently rematching another style.
+- Local upload reuses product creation and upload APIs with explicit product/category fields. No paid recognition/generation is triggered by selecting or uploading a file.
+- Shared settings created a new same-page market update path. PDP previously read settings only on mount, while export read current server settings; the implementation now broadcasts successful saves and updates only the displayed market, preserving the draft. It ignores stale initial reads after a successful update.
+- Existing AppShell CSS uses broad important rules for buttons and typography. The new style-transfer page has scoped overrides for its title, selected count/preset and dark generation action; shared navigation owns its edge/glow variables so the existing user controls continue to work.
+- Verification boundary: UI and API request construction are verified with mocked providers. Real image quality, product-identity fidelity, provider availability, and charges have not been exercised. Style learning remains explicitly unavailable; other production workflows retain their existing scope.
+
+## 2026-09-26 Multipart 400 evidence
+- Official image-edit examples still use repeated `image[]` parts: https://developers.openai.com/api/docs/guides/image-generation . The failing pipeline uses that supported field name.
+- Runtime is Node 24; actual provider targets api.openai.com through the configured local HTTP proxy and uses gpt-image-2. Credentials were never printed or changed.
+- Both ASCII and Chinese filenames in the existing hand-built multipart decode correctly in a local standard parser. Tiny-image upstream validation accepted both the manual ASCII body and the standard FormData body and returned the intended invalid-model error. The standard Unicode body also reached model validation; manual Unicode probes encountered proxy TLS resets, so they do not establish a filename defect.
+- Current product PNG is valid, 4096x4096, about 4.8 MB. The premium style references are valid JPEGs totaling about 315 KB. Two old probe assets contain non-image bytes, but these are not the active product reference.
+- An attempted real-material validation was rejected before execution by automatic safety review because the current message did not explicitly authorize uploading these assets to OpenAI. No actual material was sent by that attempt. Requested permission separately; continue synthetic-only probes meanwhile.
+- User subsequently authorized the bounded real-material probe. Manual Unicode, standard FormData Unicode, and manual ASCII requests using the actual 4 files all returned the intended invalid-model error; no image was generated. These source-level probes did not exercise the production bundle.
+- The production Next.js route was then run against a loopback-only stub with a fake key and invalid model. Its exact 5,133,846-byte body failed standard multipart parsing locally even though the first and final boundaries were correct. No external request was made in this reproduction.
+- Root cause: in `.next/server/chunks/5676.js`, the SWC optimizer folded the file-header array's `.join("\r\n")` into a template containing LF-only newlines. JavaScript normalized these literal line endings, corrupting the required multipart CRLF framing. Text-field framing remained correct.
+- A regression test compiles and minifies the real provider with the installed Next.js SWC pipeline, then parses its output and compares binary files/mask. Before the fix it failed with `TypeError: expected CRLF`, matching the production-route failure.
+- The bounded fix replaces only the file-header array/join with an explicit CRLF template, preserving fields, image bytes, filenames, model, proxy, and provider behavior.
+- After rebuilding, the exact Next.js route request parsed correctly via both direct fetch and the bundled undici HTTP-proxy path. All four file hashes matched the originals; model, 2337-character preset prompt, and 1536x1024 size were preserved. The body grew by exactly 16 CR bytes, restoring the four lost CR characters in each of four file-part headers.
+- The same rebuilt request, with the deliberately nonexistent diagnostic model, was sent once to the configured OpenAI endpoint under the user's authorization. It returned `invalid_value`, `param: model`, and `The model '__codex_multipart_validation_only__' does not exist.` (request ID `req_9a4be048dd4a473583f83dc336bf3efc`), not `invalid_multipart_form_data`. This confirms the format boundary, not actual generation quality or valid-model success.
+- The rebuilt loopback/upstream format harness exited 0 and verified all existing data JSON files were unchanged. No image-generation request using a valid model was initiated by the assistant.

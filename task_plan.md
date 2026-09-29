@@ -115,10 +115,10 @@
 - [x] 完成 SVG 坐标回归、全量测试、类型检查、生产构建与 HTTP 健康检查
 - **状态：** completed
 
-## 2026-07-16 豆包与产品视频扩展
+## 2026-07-16 Seedream 与产品视频扩展
 
-- [x] 为白底多角度、手机图标准化、SKU 替换、风格迁移、POP 和本地化加入 OpenAI / 豆包图片模型选择。
-- [x] 接入豆包 Seedream 5.0 Lite 方舟图片 API，并保持本地输出与成本台账逻辑。
+- [x] 为白底多角度、手机图标准化、SKU 替换、风格迁移、POP 和本地化加入 OpenAI / Seedream 图片模型选择。
+- [x] 接入 Seedream 5.0 Lite 方舟图片 API，并保持本地输出与成本台账逻辑。
 - [x] 新增即梦 Seedance 2.0 Fast 产品视频页面、任务创建/轮询、15 秒 Hero Film 默认提示词和本地 MP4 缓存。
 - [x] 增加侧边栏与首页入口，补充 `.env.local` 配置说明。
 - [x] 通过 139 项全量测试、类型检查、生产构建与 localhost HTTP 冒烟验证。
@@ -150,7 +150,7 @@
 ### 阶段 12：Icon Design VI 模板应用工作区
 - [x] 建立 VI 色彩规范、Icon 规范、源 Icon 三类专用素材与六个固定输出规格
 - [x] 实现视觉模型解析 VI 并生成可编辑提示词模板的 API
-- [x] 实现 OpenAI / 豆包可选的 4 种颜色版本与 2 种图文版式批量生成
+- [x] 实现 OpenAI / Seedream 可选的 4 种颜色版本与 2 种图文版式批量生成
 - [x] 增加独立页面、侧边栏和首页入口，并持久化上传素材
 - [x] 补齐领域、服务、组件和导航测试，完成类型检查、构建与 HTTP 验证
 - **状态：** completed
@@ -169,7 +169,7 @@
 - [x] 解析三份 PPT 的幻灯片文本、图片关系与视频页边界
 - [x] 建立 7 套风格 Keywords、提示词模板与 PPT 原始代表性参考图资产
 - [x] 实现专用风格迁移页面、关键词匹配、产品选择和每风格 3 张输出
-- [x] 接入 OpenAI / 豆包多参考图生成 API 与成本台账
+- [x] 接入 OpenAI / Seedream 多参考图生成 API 与成本台账
 - [x] 补齐领域、服务、组件测试，完成类型检查、构建和 HTTP 验证
 - **状态：** completed
 
@@ -181,3 +181,119 @@
 | montage 工具临时目录权限失败 | 2 | 放弃 montage，改为压缩单页缩略图逐页视觉检查 |
 | `apply_patch` 更新既有文件时被 Windows 受限沙箱拒绝 | 2 | 新文件继续使用 `apply_patch`，既有文件按用户授权改用工作区内 PowerShell/.NET UTF-8 精确替换 |
 | Vitest / Next 构建工作进程在受限沙箱中 `spawn EPERM` | 2 | 使用获批的项目级 `pnpm test` 与 `pnpm build` 执行完整验证 |
+### 阶段 14：首页紧凑玻璃工作台重构（2026-07-21）
+- [x] 将主工作台缩小到参考图约 72vw × 76vh 的占比并保持响应式
+- [x] 首页问候与说明改为 Gotham 英文文案
+- [x] 中部改为三个等宽玻璃功能块并接入指定视觉素材和缓慢流动效果
+- [x] 右上角增加动态日期与顺德实时天气玻璃块
+- [x] 底部改为更多小型工具块和黑色滑块控制的横向轨道
+- [x] 左侧栏增加持续流动的底光
+- [x] 完成首页测试、类型检查与构建验证
+- **状态：** completed
+
+#### 阶段 14 错误记录
+| 错误 | 次数 | 处理 |
+|---|---:|---|
+| Next.js Route 额外导出天气映射函数导致生产构建类型失败 | 1 | 将映射函数移动到 src/domain/weather.ts，Route 仅保留允许的 HTTP 导出 |
+| 后台 next dev 受旧 Node 进程与 .next 状态干扰，持续停在 Starting | 2 | 结束本次创建的进程，重新完成生产构建并改用 next start 验证 |
+| Codex 命令结束后回收后台预览进程 | 3 | 不再重复启动；记录 HTTP 200 验证结果，由用户终端长期运行服务 |
+### 阶段 15：全站紧凑玻璃外壳与可读性统一（2026-07-21）
+- [x] 核对首页与功能页工作台、侧栏、按钮和字号差异
+- [x] 将首页与全部功能页统一为相同工作台和侧栏尺寸
+- [x] 将侧栏底光改为两条左上至右下循环流光并统一当前页高亮
+- [x] 修正全站浅灰按钮文字对比度，压缩子页字号并放宽内容间距
+- [x] 完成定向测试、类型检查与生产构建
+- **状态：** completed
+### 阶段 16：全站视觉细节与 POP/PDP 图片工作流（2026-07-21）
+- [x] 定位流光、图框、下拉框、风格预设状态和 Canvas 数据流
+- [x] 加宽双流光并统一图像框、下拉框和首页滑杆样式
+- [x] 压缩风格迁移页面并修复日式明亮展厅选择状态
+- [x] 压缩 Icon Design VI 预览并隐藏提示词模板编辑
+- [x] 实现 POP/PDP 共用的图片缩放、居中和裁切编辑器
+- [x] 优化 POP 选中方案图片替换的局部刷新
+- [x] 更新 PDP Brand、可编辑文案和纵向长图导出
+- [x] 完成定向测试、全量测试、类型检查与生产构建
+- **状态：** completed
+
+#### 阶段 16 错误记录
+| 错误 | 次数 | 处理 |
+|---|---:|---|
+| PowerShell 多行锚点混用 LF/CRLF，首次 CSS 精确替换未命中 | 2 | 改用换行兼容的正则单次替换，并在写入后执行类型检查与生产构建 |
+| 新增 PDP 品牌图缓存时只读元组与可写元组类型不兼容 | 1 | 将缓存入口显式统一为 `[string, string | undefined]` 后过滤为 `[string, string]` |
+| 旧 POP 上传测试未确认新增裁切弹窗 | 1 | 增加 Canvas `toBlob` 模拟并点击“应用裁切”，验证裁切后资产写回 |
+### 阶段 17：玻璃主题收口、首页重排与 POP 本地贴装编辑器（2026-07-22）
+- [ ] 核对首页、AppShell、SKU、风格迁移与 POP 当前结构
+- [ ] 恢复中性文字色并应用用户指定灰白边框/流光默认值
+- [ ] 压缩全站外壳高度并统一普通按钮、菜单和首页卡片边框
+- [ ] 重排首页信息区、4:3 功能卡和 3:4 快捷卡，隐藏参数调节器
+- [ ] 修复 SKU 生成按钮在窄宽度/Mac 下溢出
+- [ ] 优化菜单、风格预设和 SKU 模式切换性能
+- [ ] 将 POP 从 AI 写实生成改为指定产品底图上的拖动/缩放本地贴装
+- [ ] 更新测试并完成类型、CSS 与定向回归验证
+- **状态：** in_progress
+
+### 阶段 18：CreativeStudio AI 封面页迁移（2026-07-22）
+- [x] 创建独立功能分支 `codex/cover-page`
+- [x] 核对源封面页面组件、样式、动效和静态素材依赖
+- [x] 将现有工作台首页迁移到独立路由并保持所有入口可用
+- [x] 将封面页迁入根路由，Start now 导航到工作台
+- [x] 复制最小必要素材并补充路由/交互测试
+- [x] 使用 npm 完成类型检查、定向测试和生产构建
+- **状态：** completed
+
+### 阶段 19：封面边界 AI 聊天入口（2026-07-22）
+- [x] 核对 Luma 风格参考、封面边界结构和现有文本模型网络链路
+- [x] 定义聊天消息协议、页面意图映射和服务端模型调用
+- [x] 在蓝/白页面交界处加入随页面自然滚走的悬浮聊天框
+- [x] 加入 4 个常用页面直达入口与 1 个省略号按钮
+- [x] 补充聊天、跳转和错误状态测试
+- [x] 使用 npm 完成类型检查、定向测试和生产构建
+- **状态：** completed
+
+## Stage 20 - Brand.ai-style video section (completed)
+- [x] Replace the complete Imagine / Shape / Share workflow section.
+- [x] Add the requested headline, supporting copy, and Start Now route to `/studio-home`.
+- [x] Copy and verify the supplied 1920x1080 hero video under `public/midea-ai/`.
+- [x] Match the warm off-white, centered black typography, compact dark CTA, and rounded video composition.
+- [x] Verify with npm typecheck, a focused Vitest test, and HTTP checks without opening a browser.
+
+## Stage 21 - Alternating execution video showcase (completed)
+- [x] Insert a new section between the Brand hero video and the final city section.
+- [x] Build three alternating rows with video positions left, right, and left.
+- [x] Use the supplied demo1, demo2, and demo3 videos with the exact requested copy.
+- [x] Match the reference with spacious two-column composition, dotted media canvases, thin borders, and restrained typography.
+- [x] Verify with npm typecheck, focused Vitest coverage, HTTP order checks, and video asset responses.
+## Stage 22 - POP transparency and compact homepage header (completed)
+- [x] Remove the full-canvas white background from every refrigerator and oven POP SVG.
+- [x] Preserve alpha while rasterizing POP artwork to PNG.
+- [x] Remove the requested studio-home supporting sentence.
+- [x] Add content-width responsive behavior for the background, date, and weather controls.
+- [x] Verify with npm typecheck, focused Vitest coverage, and HTTP 200 checks without opening a browser.
+
+## Stage 23 - Demo modification brief assessment (2026-09-26)
+- [x] Inspect the supplied PDF text and whole-page visual.
+- [x] Inspect the four workflow mockups at readable resolution and map them to current code.
+- [x] Run relevant baseline checks without paid generation or application changes.
+- [x] Prepare recommended scope, dependencies, risks, and effort assumptions for the assessment response.
+- Scope: assessment first; preserve current business code and existing user changes.
+- Status: completed (assessment only; implementation has not started).
+- Diagnostic note: the 3840x3522 PNG could be verified with Pillow but the image viewer rejected it twice; a 2400px JPEG rendered from the same PDF was readable. Use JPEG crops for detailed inspection.
+- Verification note: Vitest initially could not spawn esbuild in the sandbox (EPERM). The authorized elevated local run completed: 12 files, 41 passing tests and one failing pre-existing POP interaction test. TypeScript passed. No production build, live-browser acceptance, or real image generation was performed for this assessment.
+
+## Stage 24 - Approved navigation, settings, and preset style-transfer update
+- User approved the preceding bounded design and requested these three areas be completed; no new subsystem, model training, or changes to the other production workflows.
+- [x] Add failing tests for grouped route access, settings persistence, asset selection/upload, output counts, and retry behavior.
+- [x] Consolidate navigation and personalized controls across homepage and feature pages.
+- [x] Implement brief-aligned preset style transfer with in-page material selection and a complete result flow.
+- [x] Run focused and full regression tests, TypeScript, build, and local visual checks.
+- [x] Review the diff, record limitations, and deliver the changed version.
+- Preserve all pre-existing user files and the known unrelated POP test baseline failure.
+- Status: completed; scoped workflows verified. Existing unrelated tests still have the five reproduced baseline failures.
+
+## Stage 25 - Investigate reported OpenAI multipart 400
+- [x] Trace the failed style-transfer request and validate multipart transport with local parsing and safe non-generation probes if needed.
+- [x] Reproduce any confirmed serializer defect in a focused regression test before making a narrow fix.
+- [x] Verify affected providers, rebuild, and state the remaining live-generation acceptance boundary.
+- Preserve the completed UI changes, user data, credentials, and existing unrelated test failures. No paid generation without a clear need and user direction.
+- Status: completed for the multipart defect. Production-minified regression, rebuilt direct/proxy request parsing, and the authorized invalid-model upstream check passed. Actual valid-model image generation remains untested by explicit scope.
+- Verification: focused 8/8 tests passed; full low-concurrency suite 219/224 passed with exactly the five previously reproduced baseline failures; production build/type validation passed; preview restored on 127.0.0.1:3101 and style-transfer GET returned 200.

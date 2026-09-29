@@ -22,6 +22,8 @@ import {
 } from "@/src/domain/pdp-canvas-layout";
 import type { Asset, ProductWithProfile, SellingPoint } from "@/src/domain/types";
 import { PdpCanvas } from "./PdpCanvas";
+import { ImageCropDialog } from "./ImageCropDialog";
+import { SYSTEM_SETTINGS_CHANGED, type StudioMarketSettings } from "@/src/lib/system-settings-events";
 import styles from "./PdpEditor.module.css";
 
 type ExportResponse = {
@@ -34,6 +36,7 @@ type ExportResponse = {
 };
 
 type EditablePoint = SellingPoint & { custom?: boolean };
+type PendingCrop = { file: File; blockId: string; aspectRatio: number };
 type EditorStatus = "idle" | "uploading" | "exporting" | "done" | "failed";
 
 
@@ -52,13 +55,28 @@ export function PdpCanvasEditor({ products }: { products: ProductWithProfile[] }
   const [coverAssetId, setCoverAssetId] = useState("");
   const [country, setCountry] = useState("Mexico");
   const [language, setLanguage] = useState("Spanish");
+  const [coverTitle, setCoverTitle] = useState(
+    initialProduct?.displayName ?? initialProduct?.id ?? "Product key visual"
+  );
+  const [coverSubtitle, setCoverSubtitle] = useState(
+    initialProduct?.profile.category ?? "Product overview"
+  );
 
   useEffect(() => {
     let cancelled = false;
+    let updated = false;
+    const handleSettingsChange = (event: Event) => {
+      const market = (event as CustomEvent<StudioMarketSettings>).detail;
+      if (!market?.country || !market?.language) return;
+      updated = true;
+      setCountry(market.country);
+      setLanguage(market.language);
+    };
+    window.addEventListener(SYSTEM_SETTINGS_CHANGED, handleSettingsChange);
     fetch("/api/settings")
       .then((response) => (response.ok ? response.json() : null))
       .then((payload) => {
-        if (!cancelled && payload?.settings) {
+        if (!cancelled && !updated && payload?.settings) {
           setCountry(String(payload.settings.country));
           setLanguage(String(payload.settings.language));
         }
@@ -66,6 +84,7 @@ export function PdpCanvasEditor({ products }: { products: ProductWithProfile[] }
       .catch(() => undefined);
     return () => {
       cancelled = true;
+      window.removeEventListener(SYSTEM_SETTINGS_CHANGED, handleSettingsChange);
     };
   }, []);
   const [assets, setAssets] = useState<Asset[]>([]);
@@ -74,6 +93,7 @@ export function PdpCanvasEditor({ products }: { products: ProductWithProfile[] }
   const [error, setError] = useState("");
   const [result, setResult] = useState<ExportResponse | null>(null);
   const [uploadTargetBlockId, setUploadTargetBlockId] = useState("");
+  const [pendingCrop, setPendingCrop] = useState<PendingCrop | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const product = products.find((item) => item.id === productId) ?? initialProduct;
@@ -149,6 +169,8 @@ export function PdpCanvasEditor({ products }: { products: ProductWithProfile[] }
     );
     setSectionImages({});
     setCoverAssetId("");
+    setCoverTitle(nextProduct?.displayName ?? nextProduct?.id ?? "Product key visual");
+    setCoverSubtitle(nextProduct?.profile.category ?? "Product overview");
     setResult(null);
     setError("");
     setStatus("idle");
@@ -255,11 +277,23 @@ export function PdpCanvasEditor({ products }: { products: ProductWithProfile[] }
     fileInputRef.current?.click();
   }
 
-  async function uploadImage(event: ChangeEvent<HTMLInputElement>) {
+  function uploadImage(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     const blockId = uploadTargetBlockId || selectedBlockId;
     event.target.value = "";
     if (!file || !product) {
+      return;
+    }
+    const block = layout.blocks.find((item) => item.id === blockId);
+    if (!block) {
+      return;
+    }
+    setPendingCrop({ file, blockId, aspectRatio: getPdpImageAspectRatio(block) });
+  }
+
+  async function uploadCroppedImage(file: File) {
+    const pending = pendingCrop;
+    if (!pending || !product) {
       return;
     }
 
@@ -283,14 +317,20 @@ export function PdpCanvasEditor({ products }: { products: ProductWithProfile[] }
         ...current.filter((asset) => asset.id !== uploaded.id),
         uploaded
       ]);
-      assignAssetToBlock(blockId, uploaded.id);
+      assignAssetToBlock(pending.blockId, uploaded.id);
       setStatus("idle");
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "图片上传失败");
       setStatus("failed");
     } finally {
+      setPendingCrop(null);
       setUploadTargetBlockId("");
     }
+  }
+
+  function cancelImageCrop() {
+    setPendingCrop(null);
+    setUploadTargetBlockId("");
   }
 
   async function exportPdp() {
@@ -322,6 +362,8 @@ export function PdpCanvasEditor({ products }: { products: ProductWithProfile[] }
           language,
           templateVersion: "pdp-canvas-v4",
           coverAssetId: effectiveCoverAssetId || undefined,
+          coverTitle,
+          coverSubtitle,
           sectionImages,
           layout,
           sellingPoints: exportPoints.map((point) => ({
@@ -395,7 +437,7 @@ export function PdpCanvasEditor({ products }: { products: ProductWithProfile[] }
               </option>
             ))}
           </select>
-          <span title="系统语言在「本地化」页设置">{country} / {language}</span>
+          <span title="默认市场可在右上角「用户设置」中修改">{country} / {language}</span>
         </div>
 
         <div className={styles.toolbarActions}>
@@ -456,6 +498,8 @@ export function PdpCanvasEditor({ products }: { products: ProductWithProfile[] }
         <div className={styles.canvasPane}>
           <PdpCanvas
             brandName={product.brand ?? "Midea"}
+            coverTitle={coverTitle}
+            coverSubtitle={coverSubtitle}
             country={country}
             imageUrlByBlockId={imageUrlByBlockId}
             language={language}
@@ -505,12 +549,9 @@ export function PdpCanvasEditor({ products }: { products: ProductWithProfile[] }
                   <input
                     aria-label="卖点标题"
                     onChange={(event) =>
-                      updateSelectedPoint({
-                        title: event.target.value,
-                        shortLabel: event.target.value
-                      })
+                      updateSelectedPoint({ title: event.target.value })
                     }
-                    value={selectedPoint.shortLabel || selectedPoint.title}
+                    value={selectedPoint.title}
                   />
                 </label>
                 <label className={styles.field}>
@@ -518,12 +559,9 @@ export function PdpCanvasEditor({ products }: { products: ProductWithProfile[] }
                   <textarea
                     aria-label="卖点说明"
                     onChange={(event) =>
-                      updateSelectedPoint({
-                        benefit: event.target.value,
-                        technicalProof: event.target.value
-                      })
+                      updateSelectedPoint({ benefit: event.target.value })
                     }
-                    value={selectedPoint.technicalProof || selectedPoint.benefit}
+                    value={selectedPoint.benefit}
                   />
                 </label>
                 <ImageAssetField
@@ -546,6 +584,30 @@ export function PdpCanvasEditor({ products }: { products: ProductWithProfile[] }
               </>
             ) : selectedBlock?.kind === "kv" ? (
               <>
+                <label className={styles.field}>
+                  KV 标题
+                  <input
+                    aria-label="KV 标题"
+                    maxLength={160}
+                    onChange={(event) => {
+                      setCoverTitle(event.target.value);
+                      markDirty();
+                    }}
+                    value={coverTitle}
+                  />
+                </label>
+                <label className={styles.field}>
+                  KV 说明
+                  <textarea
+                    aria-label="KV 说明"
+                    maxLength={320}
+                    onChange={(event) => {
+                      setCoverSubtitle(event.target.value);
+                      markDirty();
+                    }}
+                    value={coverSubtitle}
+                  />
+                </label>
                 <ImageAssetField
                   assetId={selectedAssetId}
                   assets={imageAssets}
@@ -553,10 +615,6 @@ export function PdpCanvasEditor({ products }: { products: ProductWithProfile[] }
                   onUpload={() => requestImage(selectedBlock.id)}
                 />
                 <AssetPreview asset={selectedAsset} />
-                <div className={styles.inspectorSummary}>
-                  <strong>{product.displayName ?? product.id}</strong>
-                  <p>{country} / {language}</p>
-                </div>
               </>
             ) : (
               <div className={styles.inspectorSummary}>
@@ -575,6 +633,15 @@ export function PdpCanvasEditor({ products }: { products: ProductWithProfile[] }
         ref={fileInputRef}
         type="file"
       />
+      {pendingCrop ? (
+        <ImageCropDialog
+          aspectRatio={pendingCrop.aspectRatio}
+          file={pendingCrop.file}
+          onCancel={cancelImageCrop}
+          onConfirm={uploadCroppedImage}
+          title="裁切 PDP 配图"
+        />
+      ) : null}
 
       {error ? <div className={styles.errorBar}>{error}</div> : null}
       {result ? (
@@ -647,6 +714,21 @@ function AssetPreview({ asset }: { asset: Asset | undefined }) {
   );
 }
 
+function getPdpImageAspectRatio(block: PdpCanvasBlock): number {
+  if (block.kind === "kv") {
+    return block.width / Math.max(1, block.height - 94);
+  }
+  if (block.kind === "selling-point") {
+    if ((block.level ?? 1) >= 3) {
+      return (block.width / 2) / Math.max(1, block.height);
+    }
+    const titleHeight = Math.min(54, Math.max(34, Math.round(block.height * 0.21)));
+    const descriptionHeight = Math.min(50, Math.max(32, Math.round(block.height * 0.19)));
+    return block.width / Math.max(1, block.height - titleHeight - descriptionHeight);
+  }
+  return block.width / Math.max(1, block.height);
+}
+
 function toEditablePoints(product: ProductWithProfile | undefined): EditablePoint[] {
   return (product?.profile.detectedFeatures ?? []).map((point) => ({
     ...point,
@@ -657,7 +739,7 @@ function toEditablePoints(product: ProductWithProfile | undefined): EditablePoin
 function blockOptionLabel(block: PdpCanvasBlock, points: EditablePoint[]): string {
   if (block.kind === "selling-point") {
     const point = points.find((item) => item.id === block.sellingPointId);
-    return `SP${block.level ?? 1} · ${point?.shortLabel || point?.title || "Selling point"}`;
+    return `SP${block.level ?? 1} · ${point?.title || "Selling point"}`;
   }
   return getPdpCanvasColumnLabel(block);
 }
@@ -670,7 +752,7 @@ function blockTitle(
     return "未选择";
   }
   if (block.kind === "selling-point") {
-    return point?.shortLabel || point?.title || "Selling point";
+    return point?.title || "Selling point";
   }
   return getPdpCanvasColumnLabel(block);
 }
@@ -680,7 +762,7 @@ function generatedBlockSummary(
   sellingPointCount: number
 ): string {
   if (block?.kind === "brand") {
-    return "品牌头图、产品名称与品牌资产入口。";
+    return "固定品牌头图，使用系统品牌素材。";
   }
   if (block?.kind === "features") {
     return `根据 ${sellingPointCount} 个卖点自动生成图标索引。`;
@@ -710,4 +792,3 @@ function statusLabel(status: EditorStatus): string {
 function byPriority(left: SellingPoint, right: SellingPoint): number {
   return left.priority - right.priority;
 }
-

@@ -1,8 +1,11 @@
 import { describe, expect, it } from "vitest";
 import type { SellingPoint } from "./types";
 import {
+  PDP_BRAND_ASPECT_RATIO,
+  PDP_BRAND_BLOCK_ID,
   PDP_CANVAS_TOP,
   PDP_KV_BLOCK_ID,
+  PDP_WIDE_SELLING_POINT_WIDTH,
   buildDefaultPdpCanvasLayout,
   getSellingPointBlockId,
   movePdpCanvasBlock,
@@ -32,19 +35,22 @@ describe("buildDefaultPdpCanvasLayout", () => {
     expect(sellingBlocks.filter((block) => block.level === 3)).toHaveLength(4);
   });
 
-  it("top-aligns every priority column and makes later levels smaller", () => {
+  it("matches the Brand artwork ratio and widens P3 for alternating image-copy rows", () => {
     const layout = buildDefaultPdpCanvasLayout(makePoints(9));
+    const brand = layout.blocks.find((block) => block.id === PDP_BRAND_BLOCK_ID)!;
     const firstByLevel = [1, 2, 3].map((level) =>
       layout.blocks.find(
         (block) => block.kind === "selling-point" && block.level === level
-      )
+      )!
     );
 
-    expect(firstByLevel.every((block) => block?.y === PDP_CANVAS_TOP)).toBe(true);
-    expect(firstByLevel[0]!.width).toBeGreaterThan(firstByLevel[1]!.width);
-    expect(firstByLevel[1]!.width).toBeGreaterThan(firstByLevel[2]!.width);
-    expect(firstByLevel[0]!.height).toBeGreaterThan(firstByLevel[1]!.height);
-    expect(firstByLevel[1]!.height).toBeGreaterThan(firstByLevel[2]!.height);
+    expect(brand.width / brand.height).toBeCloseTo(PDP_BRAND_ASPECT_RATIO, 2);
+    expect(firstByLevel.every((block) => block.y === PDP_CANVAS_TOP)).toBe(true);
+    expect(firstByLevel[0].width).toBeGreaterThan(firstByLevel[1].width);
+    expect(firstByLevel[2].width).toBe(PDP_WIDE_SELLING_POINT_WIDTH);
+    expect(firstByLevel[2].width).toBeGreaterThan(firstByLevel[1].width);
+    expect(firstByLevel[0].height).toBeGreaterThan(firstByLevel[1].height);
+    expect(firstByLevel[1].height).toBeGreaterThan(firstByLevel[2].height);
   });
 
   it("ranks selling points by their visual left-to-right and top-to-bottom position", () => {

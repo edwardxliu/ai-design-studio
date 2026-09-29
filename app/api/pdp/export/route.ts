@@ -39,6 +39,9 @@ export async function POST(request: Request) {
       sellingPoints: parseSellingPoints(body.sellingPoints),
       sectionImages: parseStringRecord(body.sectionImages),
       coverAssetId: body.coverAssetId ? String(body.coverAssetId) : undefined,
+      coverTitle: body.coverTitle ? String(body.coverTitle).slice(0, 160) : undefined,
+      coverSubtitle: body.coverSubtitle ? String(body.coverSubtitle).slice(0, 320) : undefined,
+      brandMessage: body.brandMessage ? String(body.brandMessage).slice(0, 420) : undefined,
       layout: parsePdpCanvasLayout(body.layout),
       imageStore,
       costLedger: createDefaultCostLedger()

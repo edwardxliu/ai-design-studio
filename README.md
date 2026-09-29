@@ -11,7 +11,7 @@ Local Next.js demo for a product-marketing AI assistant workflow:
 
 ## Local Setup
 
-Node.js `>=18.18.0` is supported. Node `22.19.0` and pnpm `11.7.0` are pinned for consistent Windows/macOS installs.
+Node.js `24.13.0` is pinned in `.nvmrc` so Windows and macOS use the same runtime. pnpm `11.7.0` remains the lockfile package manager.
 
 ```bash
 nvm install
@@ -23,7 +23,7 @@ pnpm install --frozen-lockfile
 pnpm dev
 ```
 
-On Windows PowerShell, use the same Node and pnpm versions, then run `pnpm install --frozen-lockfile` and `pnpm dev`.
+On Windows, if pnpm reports `EPERM` while renaming package `_tmp_` directories, use Node 24 with `npm install --no-package-lock --cache=.npm-cache` and start with `npm run dev`. On macOS, continue using `pnpm install --frozen-lockfile` and `pnpm dev`.
 
 Open `http://127.0.0.1:3000`.
 
@@ -39,6 +39,23 @@ DEMO_USE_MOCK=false
 
 When `DEMO_USE_MOCK=true` or no API key is configured, the image provider returns deterministic mock outputs so the live demo remains stable. When OpenAI returns base64 image data, the app saves it under `public/generated/` and returns a local URL.
 
+## macOS Network Troubleshooting
+
+`fetch failed` means the request did not reach an HTTP response. Check whether the selected provider is OpenAI or Doubao, then verify its proxy setting.
+
+```bash
+# Show project proxy/base URL settings without printing API keys.
+grep -E '^(OPENAI_BASE_URL|OPENAI_PROXY_URL|ARK_BASE_URL|ARK_PROXY_URL)=' .env.local
+
+# Show proxy variables inherited from the shell.
+env | grep -Ei '^(http_proxy|https_proxy|all_proxy)='
+
+# Replace 10808 with the configured local HTTP or mixed proxy port.
+lsof -nP -iTCP:10808 -sTCP:LISTEN
+curl -x http://127.0.0.1:10808 -I https://api.openai.com/v1/models
+```
+
+An HTTP `401` from the last command proves that the network path is working; the test intentionally sends no API key. `127.0.0.1` always means the current Mac, so a proxy URL copied from Windows only works when the Mac proxy application listens on the same port. The app accepts HTTP/HTTPS proxy endpoints, not SOCKS-only endpoints. Leave `OPENAI_PROXY_URL=` blank for a direct OpenAI connection, or set it to the Mac proxy application's HTTP/mixed port. Use `ARK_PROXY_URL` independently for Doubao. Restart `pnpm dev` after changing `.env.local`.
 ## Demo Flow
 
 1. `/intake`: upload product photos, brand rules, POP/PDP references, and feature images.

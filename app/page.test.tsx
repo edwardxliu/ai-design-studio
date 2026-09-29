@@ -1,26 +1,81 @@
-import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { render, screen, within } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
 import HomePage from "./page";
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: vi.fn() })
+}));
 
-describe("HomePage", () => {
-  it("presents the platform pipeline in workflow order", () => {
-    render(<HomePage />);
 
-    expect(screen.getByRole("link", { name: /素材库/ })).toHaveAttribute("href", "/assets");
-    expect(screen.getByRole("link", { name: /^02 · 产品档案/ })).toHaveAttribute("href", "/products");
-    expect(screen.getByRole("link", { name: /图像生成/ })).toHaveAttribute("href", "/white-background");
-    expect(screen.getByRole("link", { name: /Icon Design/ })).toHaveAttribute("href", "/icon-design");
-    expect(screen.getByRole("link", { name: /产品视频/ })).toHaveAttribute("href", "/product-video");
-    expect(screen.getByRole("link", { name: /POP 设计/ })).toHaveAttribute("href", "/pop");
-    expect(screen.getByRole("link", { name: /PDP 构建/ })).toHaveAttribute("href", "/pdp");
-    expect(screen.getByRole("link", { name: /本地化/ })).toHaveAttribute("href", "/localize");
-    expect(screen.getByRole("link", { name: /资源消耗/ })).toHaveAttribute("href", "/costs");
-    expect(document.body.textContent).not.toMatch(/任务[一二三]/);
-  });
+describe("Cover HomePage", () => {
+  it("presents the cover story and enters the existing studio homepage", () => {
+    const { container } = render(<HomePage />);
 
-  it("states the category-agnostic principle", () => {
-    render(<HomePage />);
-
-    expect(screen.getByText(/不限品类/)).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: /Skip the noise\.\s*Time to make\./i })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "Where ideas become the work" })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Learn more about how to use this platform. Start creating excellence in the palm of your hand"
+      )
+    ).toBeInTheDocument();
+    screen.getAllByRole("link", { name: /Start now/i }).forEach((link) => {
+      expect(link).toHaveAttribute("href", "/studio-home");
+    });
+    expect(screen.getByRole("link", { name: /^Enter$/i })).toHaveAttribute(
+      "href",
+      "/studio-home"
+    );
+    expect(container.querySelector('source[src="/midea-ai/midea-scroll-new.mp4"]')).not.toBeNull();
+    expect(
+      container.querySelector('source[src="/midea-ai/brand-source-hero.mp4"]')
+    ).not.toBeNull();
+    expect(screen.getByRole("region", { name: "Workflow execution demos" })).toBeInTheDocument();
+    [
+      "Eliminate Production Friction",
+      "Instant Ideas Execution",
+      "Deliver with Continuity at Scale"
+    ].forEach((heading) => {
+      expect(screen.getByRole("heading", { name: heading })).toBeInTheDocument();
+    });
+    [
+      "/midea-ai/execution-demo-01.mp4",
+      "/midea-ai/execution-demo-02.mp4",
+      "/midea-ai/execution-demo-03.mp4"
+    ].forEach((src) => {
+      expect(container.querySelector(`source[src="${src}"]`)).not.toBeNull();
+    });
+    const landingNav = screen.getByRole("navigation", { name: "Landing page sections" });
+    expect(within(landingNav).getByRole("link", { name: "Agent" })).toHaveAttribute(
+      "href",
+      "#agent"
+    );
+    expect(within(landingNav).getByRole("link", { name: "Tutorial" })).toHaveAttribute(
+      "href",
+      "#tutorial"
+    );
+    expect(within(landingNav).getByRole("link", { name: "More Details" })).toHaveAttribute(
+      "href",
+      "#details"
+    );
+    expect(within(landingNav).getByRole("link", { name: "Enter Studio" })).toHaveAttribute(
+      "href",
+      "/studio-home"
+    );
+    expect(container.querySelector(".brand-collage-logo")).toBeNull();
+    const finaleButton = container.querySelector(".midea-finale .midea-start-button");
+    expect(finaleButton?.textContent?.trim()).toBe("Start now");
+    expect(finaleButton?.querySelector("span")).toBeNull();
+    expect(
+      container.querySelector(".brand-floating-collage > .cover-chat-boundary")
+    ).not.toBeNull();
+    expect(container.querySelector("#agent")).not.toBeNull();
+    expect(container.querySelector("#tutorial")).not.toBeNull();
+    expect(container.querySelector("#details")).not.toBeNull();
+    expect(
+      screen.getByLabelText("brand.ai floating reference collage").querySelectorAll("img")
+    ).toHaveLength(16);
   });
 });

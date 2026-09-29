@@ -8,7 +8,8 @@ export default defineConfig({
     environment: "jsdom",
     globals: true,
     setupFiles: ["./vitest.setup.ts"],
-    include: ["**/*.test.ts", "**/*.test.tsx"]
+    include: ["**/*.test.ts", "**/*.test.tsx"],
+    exclude: ["node_modules/**", ".pnpm-store/**", ".npm-cache/**", ".next/**"]
   },
   resolve: {
     alias: {

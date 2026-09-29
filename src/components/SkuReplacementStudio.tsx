@@ -19,7 +19,7 @@ import {
   MousePointer2,
   Play,
   RefreshCcw,
-  RotateCcw,
+  Undo2,
   Trash2
 } from "lucide-react";
 import {
@@ -48,6 +48,7 @@ import styles from "./SkuReplacementStudio.module.css";
 const ACCEPTED_IMAGES = "image/png,image/jpeg,image/webp";
 const MAX_WORK_WIDTH = 960;
 const MAX_WORK_HEIGHT = 680;
+const MAX_MASK_HISTORY = 20;
 
 type SkuOutput = {
   id: string;
@@ -69,7 +70,7 @@ type MaskTool = "brush" | "smart" | "eraser";
 export function SkuReplacementStudio() {
   const [products, setProducts] = useState<ProductWithProfile[]>([]);
   const [productsLoaded, setProductsLoaded] = useState(false);
-  const [productId, setProductId] = useState("");
+
   const [mode, setMode] = useState<SkuReplacementMode>("reference-part");
   const [imageModel, setImageModel] = useState<ImageModelChoice>(DEFAULT_IMAGE_MODEL_CHOICE);
   const [instructions, setInstructions] = useState(DEFAULT_SKU_PROMPTS);
@@ -94,9 +95,6 @@ export function SkuReplacementStudio() {
         }
         setProducts(payload.products);
         setProductsLoaded(true);
-        if (payload.products[0]) {
-          setProductId((current) => current || payload.products[0].id);
-        }
       })
       .catch(() => setProductsLoaded(true));
     return () => {
@@ -104,7 +102,7 @@ export function SkuReplacementStudio() {
     };
   }, []);
 
-  const selectedProduct = products.find((product) => product.id === productId);
+  const selectedProduct = products[0];
   const baseAsset = useMemo(() => findBaseAsset(selectedProduct), [selectedProduct]);
   const referenceAsset = useMemo(
     () => findLatestAsset(selectedProduct, "sku-reference-part"),
@@ -260,25 +258,6 @@ export function SkuReplacementStudio() {
           <span>产品与部件类型由上传素材决定，空气炸锅仅作为默认提示词示例。</span>
         </div>
         <div className={styles.controls}>
-          <label className={styles.field}>
-            目标产品
-            <select
-              disabled={generating || Boolean(uploadingType)}
-              onChange={(event) => {
-                setProductId(event.target.value);
-                setOutput(null);
-                setHasSelection(false);
-                setMessage("");
-              }}
-              value={productId}
-            >
-              {products.map((product) => (
-                <option key={product.id} value={product.id}>
-                  {product.displayName ?? product.id}
-                </option>
-              ))}
-            </select>
-          </label>
           <ImageModelSelector
             className={styles.field}
             disabled={generating}
@@ -287,6 +266,7 @@ export function SkuReplacementStudio() {
           />
           <button
             className={styles.generateButton}
+            data-generate-action="true"
             disabled={!canGenerate || generating || Boolean(uploadingType)}
             onClick={generate}
             type="button"
@@ -311,6 +291,11 @@ export function SkuReplacementStudio() {
             disabled={generating}
             key={item.id}
             onClick={() => {
+              if (item.id === mode) {
+                return;
+              }
+              maskEditorRef.current?.clear();
+              setHasSelection(false);
               setMode(item.id);
               setOutput(null);
               setMessage("");
@@ -448,7 +433,7 @@ export function SkuReplacementStudio() {
               <img alt="SKU 局部替换结果" src={output.url} />
             </div>
             <div className={styles.resultMeta}>
-              <CheckCircle2 aria-hidden color="#12805c" size={20} />
+              <CheckCircle2 aria-hidden color="#0049bb" size={20} />
               <strong>AI 图像编辑完成</strong>
               <span>{new Date(output.generatedAt).toLocaleString()}</span>
               <a href={output.url} target="_blank">
@@ -563,6 +548,7 @@ const SkuMaskEditor = forwardRef<MaskEditorHandle, {
   const [canvasSize, setCanvasSize] = useState({ width: 960, height: 640 });
   const [naturalSize, setNaturalSize] = useState({ width: 960, height: 640 });
   const [loadError, setLoadError] = useState("");
+  const [historyDepth, setHistoryDepth] = useState(0);
   const canvasDisplayMaxWidth = getAspectConstrainedWidth(
     canvasSize.width,
     canvasSize.height,
@@ -572,6 +558,7 @@ const SkuMaskEditor = forwardRef<MaskEditorHandle, {
   const sourcePixelsRef = useRef<Uint8ClampedArray | null>(null);
   const drawingRef = useRef(false);
   const lastPointRef = useRef<{ x: number; y: number } | null>(null);
+  const historyRef = useRef<EditableMask[]>([]);
 
   useEffect(() => {
     onSelectionChange(mask ? hasMaskSelection(mask) : false);
@@ -579,6 +566,8 @@ const SkuMaskEditor = forwardRef<MaskEditorHandle, {
 
   useEffect(() => {
     setMask(null);
+    historyRef.current = [];
+    setHistoryDepth(0);
     sourcePixelsRef.current = null;
     setLoadError("");
     if (!asset) {
@@ -634,6 +623,8 @@ const SkuMaskEditor = forwardRef<MaskEditorHandle, {
 
   useImperativeHandle(ref, () => ({
     clear() {
+      historyRef.current = [];
+      setHistoryDepth(0);
       setMask((current) => (current ? clearEditableMask(current) : current));
     },
     async exportMaskFile() {
@@ -688,14 +679,39 @@ const SkuMaskEditor = forwardRef<MaskEditorHandle, {
     if (tool === "smart") {
       const pixels = sourcePixelsRef.current;
       if (pixels) {
-        setMask(floodSelectRegion(mask, pixels, point.x, point.y, tolerance));
+        applyMaskOperation((current) =>
+          floodSelectRegion(current, pixels, point.x, point.y, tolerance)
+        );
       }
       return;
     }
     event.currentTarget.setPointerCapture(event.pointerId);
     drawingRef.current = true;
     lastPointRef.current = point;
+    rememberMask(mask);
     setMask(paintMaskCircle(mask, point.x, point.y, brushSize / 2, tool === "brush"));
+  }
+
+  function rememberMask(current: EditableMask) {
+    historyRef.current = [...historyRef.current.slice(-(MAX_MASK_HISTORY - 1)), current];
+    setHistoryDepth(historyRef.current.length);
+  }
+
+  function applyMaskOperation(operation: (current: EditableMask) => EditableMask) {
+    if (!mask) {
+      return;
+    }
+    rememberMask(mask);
+    setMask(operation(mask));
+  }
+
+  function undoMaskOperation() {
+    const previous = historyRef.current.pop();
+    if (!previous) {
+      return;
+    }
+    setHistoryDepth(historyRef.current.length);
+    setMask(previous);
   }
 
   function handlePointerMove(event: ReactPointerEvent<HTMLCanvasElement>) {
@@ -736,14 +752,24 @@ const SkuMaskEditor = forwardRef<MaskEditorHandle, {
           <ToolButton active={tool === "brush"} icon={<Brush size={17} />} label="画笔" onClick={() => setTool("brush")} />
           <ToolButton active={tool === "eraser"} icon={<Eraser size={17} />} label="橡皮" onClick={() => setTool("eraser")} />
           <button
+            aria-label="撤销上一步"
+            className={styles.iconButton}
+            disabled={disabled || historyDepth === 0}
+            onClick={undoMaskOperation}
+            title="撤销上一步"
+            type="button"
+          >
+            <Undo2 aria-hidden size={17} />
+          </button>
+          <button
             aria-label="清空选区"
             className={styles.iconButton}
             disabled={disabled || !mask || !hasMaskSelection(mask)}
-            onClick={() => setMask((current) => (current ? clearEditableMask(current) : current))}
+            onClick={() => applyMaskOperation(clearEditableMask)}
             title="清空选区"
             type="button"
           >
-            <RotateCcw aria-hidden size={17} />
+            <Trash2 aria-hidden size={17} />
           </button>
         </div>
         {tool === "smart" ? (

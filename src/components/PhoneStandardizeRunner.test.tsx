@@ -103,6 +103,7 @@ describe("PhoneStandardizeRunner", () => {
     render(<PhoneStandardizeRunner />);
 
     expect(await screen.findByRole("button", { name: "生成 3 张标准图" })).toBeDisabled();
+    expect(screen.queryByLabelText("目标产品")).not.toBeInTheDocument();
     expect(screen.getByText("等待上传")).toBeInTheDocument();
   });
 

@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from "react";
 import {
   CheckCircle2,
   ExternalLink,
-  FileSearch,
   ImagePlus,
   Loader2,
   Play,
@@ -13,7 +12,6 @@ import {
   Trash2
 } from "lucide-react";
 import {
-  DEFAULT_ICON_VI_PROMPT_TEMPLATE,
   ICON_DESIGN_VARIANTS,
   type IconDesignVariant,
   type IconDesignVariantId
@@ -31,7 +29,7 @@ const PROJECT_ID = "project-icon-design";
 const PRODUCT_ID = "icon-design-workspace";
 const CLIENT_CONCURRENCY = 3;
 
-type UploadSlotId = "viColor" | "viStyle" | "sourceIcon";
+type UploadSlotId = "sourceIcon";
 
 type UploadSlot = {
   id: UploadSlotId;
@@ -42,21 +40,9 @@ type UploadSlot = {
 
 const UPLOAD_SLOTS: UploadSlot[] = [
   {
-    id: "viColor",
-    label: "品牌色彩 VI",
-    caption: "Image 1",
-    assetType: "icon-vi-color"
-  },
-  {
-    id: "viStyle",
-    label: "Icon 设计 VI",
-    caption: "Image 2",
-    assetType: "icon-vi-style"
-  },
-  {
     id: "sourceIcon",
     label: "待规范化 Icon",
-    caption: "Image 3",
+    caption: "Image 1",
     assetType: "icon-source"
   }
 ];
@@ -93,11 +79,9 @@ export function IconDesignStudio() {
   const [assets, setAssets] = useState<Partial<Record<UploadSlotId, Asset>>>({});
   const [assetsLoaded, setAssetsLoaded] = useState(false);
   const [uploading, setUploading] = useState<UploadSlotId | null>(null);
-  const [parsingVi, setParsingVi] = useState(false);
-  const [analysisModel, setAnalysisModel] = useState("");
+
   const [imageModel, setImageModel] = useState<ImageModelChoice>(DEFAULT_IMAGE_MODEL_CHOICE);
   const [featureTitle, setFeatureTitle] = useState("Twin Crispers");
-  const [promptTemplate, setPromptTemplate] = useState(DEFAULT_ICON_VI_PROMPT_TEMPLATE);
   const [message, setMessage] = useState("");
   const [run, setRun] = useState<RunState>(initialRunState);
 
@@ -128,9 +112,8 @@ export function IconDesignStudio() {
     };
   }, []);
 
-  const ready = Boolean(assets.viColor && assets.viStyle && assets.sourceIcon && featureTitle.trim());
-  const viReady = Boolean(assets.viColor && assets.viStyle);
-  const isBusy = uploading !== null || parsingVi || run.state === "running";
+  const ready = Boolean(assets.sourceIcon && featureTitle.trim());
+  const isBusy = uploading !== null || run.state === "running";
   const progressPercent = run.total ? Math.round((run.completed / run.total) * 100) : 0;
   const outputsByVariant = useMemo(
     () => new Map(run.outputs.map((output) => [output.variantId, output])),
@@ -158,7 +141,6 @@ export function IconDesignStudio() {
         await fetch(`/api/assets?id=${encodeURIComponent(previous.id)}`, { method: "DELETE" });
       }
       setAssets((current) => ({ ...current, [slot.id]: uploaded }));
-      setAnalysisModel("");
       setRun(initialRunState);
       setMessage(`${slot.label}已上传：${uploaded.filename}`);
     } catch (error) {
@@ -184,7 +166,6 @@ export function IconDesignStudio() {
         throw new Error(payload.error ?? "删除素材失败");
       }
       setAssets((current) => ({ ...current, [slot.id]: undefined }));
-      setAnalysisModel("");
       setRun(initialRunState);
       setMessage(`${slot.label}已移除`);
     } catch (error) {
@@ -194,40 +175,11 @@ export function IconDesignStudio() {
     }
   }
 
-  async function analyzeVi() {
-    if (!assets.viColor || !assets.viStyle) {
-      return;
-    }
-    setParsingVi(true);
-    setMessage("");
-    try {
-      const response = await fetch("/api/icon-design/template", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          viColorAssetId: assets.viColor.id,
-          viStyleAssetId: assets.viStyle.id
-        })
-      });
-      const payload = await response.json();
-      if (!response.ok || payload.error || !payload.template) {
-        throw new Error(payload.error ?? "VI 规范解析失败");
-      }
-      setPromptTemplate(payload.template);
-      setAnalysisModel(String(payload.model ?? ""));
-      setRun(initialRunState);
-      setMessage("VI 规范已解析，提示词模板可以继续编辑。");
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : "VI 规范解析失败");
-    } finally {
-      setParsingVi(false);
-    }
-  }
-
   async function generateAll() {
-    if (!ready || !assets.viColor || !assets.viStyle || !assets.sourceIcon) {
+    if (!ready || !assets.sourceIcon) {
       return;
     }
+    const sourceIcon = assets.sourceIcon;
 
     setRun({ state: "running", completed: 0, total: ICON_DESIGN_VARIANTS.length, outputs: [] });
     setMessage("");
@@ -240,11 +192,8 @@ export function IconDesignStudio() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             variantId: variant.id,
-            viColorAssetId: assets.viColor!.id,
-            viStyleAssetId: assets.viStyle!.id,
-            sourceIconAssetId: assets.sourceIcon!.id,
+            sourceIconAssetId: sourceIcon.id,
             featureTitle: featureTitle.trim(),
-            promptTemplate,
             imageModel
           })
         });
@@ -274,8 +223,8 @@ export function IconDesignStudio() {
     <div className={styles.studio}>
       <section className={styles.controlBand}>
         <div className={styles.controlCopy}>
-          <span>VI TEMPLATE APPLICATION</span>
-          <strong>4 种官方颜色 · 2 种官方版式</strong>
+          <span>BRAND ICON STANDARDIZATION</span>
+          <strong>上传 Icon · 输出 4 种官方颜色与 2 种版式</strong>
         </div>
         <div className={styles.controls}>
           <ImageModelSelector
@@ -286,6 +235,7 @@ export function IconDesignStudio() {
           />
           <button
             className={styles.primaryButton}
+            data-generate-action="true"
             disabled={!ready || isBusy}
             onClick={generateAll}
             type="button"
@@ -304,62 +254,11 @@ export function IconDesignStudio() {
         </div>
       </section>
 
-      <section className={styles.section} aria-labelledby="vi-heading">
-        <div className={styles.sectionHeader}>
-          <div>
-            <span className={styles.step}>01</span>
-            <h2 id="vi-heading">VI 规范</h2>
-          </div>
-          <button
-            className={styles.secondaryButton}
-            disabled={!viReady || isBusy}
-            onClick={analyzeVi}
-            type="button"
-          >
-            {parsingVi ? (
-              <Loader2 aria-hidden className={styles.spinner} size={16} />
-            ) : (
-              <FileSearch aria-hidden size={16} />
-            )}
-            {parsingVi ? "解析中" : "AI 解析 VI 规则"}
-          </button>
-        </div>
-        <div className={styles.viGrid}>
-          {UPLOAD_SLOTS.slice(0, 2).map((slot) => (
-            <UploadAssetSlot
-              asset={assets[slot.id]}
-              busy={isBusy}
-              key={slot.id}
-              loading={uploading === slot.id}
-              onRemove={() => removeAsset(slot)}
-              onUpload={(file) => uploadAsset(slot, file)}
-              slot={slot}
-            />
-          ))}
-        </div>
-        <label className={styles.promptField}>
-          <span>
-            VI 提示词模板
-            {analysisModel ? <small>解析模型：{analysisModel}</small> : null}
-          </span>
-          <textarea
-            aria-label="VI 提示词模板"
-            disabled={isBusy}
-            onChange={(event) => {
-              setPromptTemplate(event.target.value);
-              setRun(initialRunState);
-            }}
-            spellCheck={false}
-            value={promptTemplate}
-          />
-        </label>
-      </section>
-
       <section className={styles.section} aria-labelledby="content-heading">
         <div className={styles.sectionHeader}>
           <div>
-            <span className={styles.step}>02</span>
-            <h2 id="content-heading">Icon 与卖点</h2>
+            <span className={styles.step}>01</span>
+            <h2 id="content-heading">待规范化 Icon 与卖点</h2>
           </div>
         </div>
         <div className={styles.contentGrid}>
@@ -367,9 +266,9 @@ export function IconDesignStudio() {
             asset={assets.sourceIcon}
             busy={isBusy}
             loading={uploading === "sourceIcon"}
-            onRemove={() => removeAsset(UPLOAD_SLOTS[2])}
-            onUpload={(file) => uploadAsset(UPLOAD_SLOTS[2], file)}
-            slot={UPLOAD_SLOTS[2]}
+            onRemove={() => removeAsset(UPLOAD_SLOTS[0])}
+            onUpload={(file) => uploadAsset(UPLOAD_SLOTS[0], file)}
+            slot={UPLOAD_SLOTS[0]}
           />
           <label className={styles.titleField}>
             卖点标题
@@ -408,7 +307,7 @@ export function IconDesignStudio() {
       <section className={styles.results} aria-labelledby="result-heading">
         <div className={styles.sectionHeader}>
           <div>
-            <span className={styles.step}>03</span>
+            <span className={styles.step}>02</span>
             <h2 id="result-heading">规范化输出</h2>
           </div>
           <span className={styles.resultCount}>{run.outputs.length}/6 已生成</span>
@@ -541,7 +440,7 @@ function OutputCard({
       </div>
       <div className={styles.outputMeta}>
         <div>
-          {output ? <CheckCircle2 aria-hidden color="#12805c" size={16} /> : null}
+          {output ? <CheckCircle2 aria-hidden color="#0049bb" size={16} /> : null}
           <strong>{variant.label}</strong>
         </div>
         <p>{variant.description}</p>

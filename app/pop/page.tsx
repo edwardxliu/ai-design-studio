@@ -12,7 +12,7 @@ export default async function PopPage() {
   return (
     <AppShell>
       <h1 style={{ fontSize: 30, marginBottom: 8 }}>POP 设计</h1>
-      <p style={{ color: "#5f6c7b" }}>冰箱 / 烤箱产品类型模板</p>
+      <p style={{ color: "var(--muted)" }}>冰箱 / 烤箱产品类型模板</p>
       <PopCanvasStudio products={products} />
     </AppShell>
   );

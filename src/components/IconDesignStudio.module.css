@@ -8,7 +8,9 @@
 .progressBand,
 .results {
   border: 1px solid #d9e0e7;
-  background: #ffffff;
+  background: var(--studio-glass-surface, #ffffff);
+  backdrop-filter: blur(14px) saturate(116%);
+  -webkit-backdrop-filter: blur(14px) saturate(116%);
 }
 
 .controlBand {
@@ -25,13 +27,13 @@
 }
 
 .controlCopy span {
-  color: #057ca2;
+  color: var(--accent-strong);
   font-size: 11px;
   font-weight: 800;
 }
 
 .controlCopy strong {
-  color: #17202a;
+  color: var(--text);
   font-size: 19px;
 }
 
@@ -47,8 +49,8 @@
 .promptField textarea {
   width: 100%;
   border: 1px solid #bbc6d0;
-  background: #ffffff;
-  color: #17202a;
+  background: var(--studio-glass-control, #ffffff);
+  color: var(--text);
 }
 
 .modelField select,
@@ -71,17 +73,17 @@
 
 .primaryButton {
   min-height: 40px;
-  border: 1px solid #057ca2;
-  background: #057ca2;
+  border: 1px solid var(--accent-strong);
+  background: var(--accent-strong);
   color: #ffffff;
   padding: 0 16px;
 }
 
 .secondaryButton {
   min-height: 38px;
-  border: 1px solid #057ca2;
-  background: #ffffff;
-  color: #057ca2;
+  border: 1px solid var(--accent-strong);
+  background: var(--studio-glass-control, #ffffff);
+  color: var(--accent-strong);
   padding: 0 13px;
 }
 
@@ -131,7 +133,7 @@
 }
 
 .step {
-  color: #057ca2;
+  color: var(--accent-strong);
   font-size: 12px;
   font-weight: 900;
 }
@@ -143,7 +145,31 @@
 }
 
 .viGrid {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(180px, 260px));
+  justify-content: start;
+}
+
+.viGrid .uploadSlot {
+  display: grid;
+  grid-template-rows: auto 92px auto;
+}
+
+.viGrid .assetPreview {
+  height: 92px;
+  aspect-ratio: auto;
+}
+
+.viGrid .uploadSlot header,
+.viGrid .uploadSlot footer {
+  padding: 7px 9px;
+}
+
+.viGrid .uploadSlot header strong {
+  font-size: 11px;
+}
+
+.viGrid .uploadSlot footer > span {
+  font-size: 9px;
 }
 
 .contentGrid {
@@ -157,7 +183,7 @@
   overflow: hidden;
   border: 1px solid #d9e0e7;
   border-radius: 8px;
-  background: #ffffff;
+  background: var(--studio-glass-card, #ffffff);
 }
 
 .uploadSlot header,
@@ -177,7 +203,7 @@
 }
 
 .uploadSlot header span {
-  color: #057ca2;
+  color: var(--accent-strong);
   font-size: 10px;
   font-weight: 900;
   text-transform: uppercase;
@@ -192,7 +218,7 @@
   height: 34px;
   flex: 0 0 34px;
   border: 1px solid #d5dce3;
-  background: #ffffff;
+  background: var(--studio-glass-control, #ffffff);
   color: #9b2c2c;
 }
 
@@ -202,18 +228,19 @@
   aspect-ratio: 16 / 8;
   place-items: center;
   overflow: hidden;
-  background-color: #eef1f4;
+  background-color: var(--studio-glass-preview, rgba(238, 241, 244, 0.2));
   background-image:
-    linear-gradient(45deg, #e4e8ec 25%, transparent 25%),
-    linear-gradient(-45deg, #e4e8ec 25%, transparent 25%),
-    linear-gradient(45deg, transparent 75%, #e4e8ec 75%),
-    linear-gradient(-45deg, transparent 75%, #e4e8ec 75%);
+    linear-gradient(45deg, rgba(228, 232, 236, 0.34) 25%, transparent 25%),
+    linear-gradient(-45deg, rgba(228, 232, 236, 0.34) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, rgba(228, 232, 236, 0.34) 75%),
+    linear-gradient(-45deg, transparent 75%, rgba(228, 232, 236, 0.34) 75%);
   background-position: 0 0, 0 6px, 6px -6px, -6px 0;
   background-size: 12px 12px;
 }
 
 .assetPreview img,
 .outputPreview img {
+  opacity: 0.88;
   display: block;
   width: 100%;
   height: 100%;
@@ -225,7 +252,7 @@
   display: grid;
   place-items: center;
   gap: 8px;
-  color: #74808b;
+  color: var(--muted-soft);
   font-size: 12px;
 }
 
@@ -236,7 +263,7 @@
 .uploadSlot footer > span {
   min-width: 0;
   overflow: hidden;
-  color: #64717c;
+  color: var(--muted-soft);
   font-size: 12px;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -246,9 +273,9 @@
   position: relative;
   flex: 0 0 auto;
   min-height: 32px;
-  border: 1px solid #057ca2;
-  background: #ffffff;
-  color: #057ca2;
+  border: 1px solid var(--accent-strong);
+  background: var(--studio-glass-control, #ffffff);
+  color: var(--accent-strong);
   font-size: 12px;
   padding: 0 10px;
 }
@@ -281,7 +308,7 @@
 
 .promptField small,
 .titleField span {
-  color: #687481;
+  color: var(--muted-soft);
   font-size: 11px;
   font-weight: 600;
 }
@@ -295,9 +322,9 @@
 
 .titleField {
   align-content: start;
-  border-left: 3px solid #057ca2;
+  border-left: 3px solid var(--accent-strong);
   padding: 18px;
-  background: #f4f6f7;
+  background: var(--studio-glass-layer, #f4f6f7);
 }
 
 .titleField span {
@@ -307,7 +334,7 @@
 .message {
   margin: -6px 0 0;
   padding: 0 2px;
-  color: #3f5668;
+  color: var(--muted);
   font-size: 13px;
 }
 
@@ -319,31 +346,31 @@
 
 .progressBand > div:first-child {
   gap: 8px;
-  color: #057ca2;
+  color: var(--accent-strong);
 }
 
 .progressTrack {
   height: 8px;
   overflow: hidden;
   border-radius: 4px;
-  background: #e5e8ec;
+  background: var(--studio-glass-subtle, rgba(229, 232, 236, 0.28));
 }
 
 .progressTrack div {
   height: 100%;
-  background: #057ca2;
+  background: var(--accent-strong);
   transition: width 0.3s;
 }
 
 .error {
   border-left: 3px solid #b42318;
-  background: #fdecec;
+  background: var(--studio-glass-error, rgba(253, 236, 236, 0.52));
   color: #8f1f1f;
   padding: 14px 16px;
 }
 
 .resultCount {
-  color: #687481;
+  color: var(--muted-soft);
   font-size: 12px;
   font-weight: 800;
 }
@@ -382,7 +409,7 @@
   width: 100%;
   place-items: center;
   overflow: hidden;
-  background: #f2f4f5;
+  background: var(--studio-glass-preview, #f2f4f5);
 }
 
 .outputPreview[data-aspect="square"] {
@@ -394,7 +421,7 @@
 }
 
 .outputPlaceholder span {
-  color: #8a949d;
+  color: var(--muted-soft);
   font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
   font-size: 10px;
   text-transform: uppercase;
@@ -414,19 +441,19 @@
 .outputMeta p {
   grid-column: 1 / -1;
   margin: 0;
-  color: #64717c;
+  color: var(--muted-soft);
   font-size: 11px;
   line-height: 1.45;
 }
 
 .outputMeta > span {
-  color: #5d6975;
+  color: var(--muted-soft);
   font-size: 10px;
 }
 
 .outputMeta a {
   gap: 5px;
-  color: #057ca2;
+  color: var(--accent-strong);
   font-size: 11px;
   font-weight: 800;
   text-decoration: none;

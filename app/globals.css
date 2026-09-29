@@ -1,14 +1,19 @@
-﻿:root {
+:root {
   color-scheme: light;
   --background: #f6f7f9;
   --surface: #ffffff;
   --surface-subtle: #eef2f6;
-  --text: #17202a;
-  --muted: #5f6c7b;
+  --text: #24282c;
+  --muted: #50575d;
+  --muted-soft: #737a80;
   --line: #d9e0e7;
-  --accent: #00a6d6;
-  --accent-strong: #057ca2;
-  --success: #12805c;
+  --accent: #8b9196;
+  --accent-strong: #464c51;
+  --accent-deep: #2f3438;
+  --accent-warm: #62686d;
+  --accent-soft: rgba(105, 105, 105, 0.18);
+  --accent-border: rgba(105, 105, 105, 0.42);
+  --success: #4d555b;
   --warning: #b36b00;
   --font-ui:
     var(--font-gotham),
@@ -101,9 +106,9 @@ h2 {
 
 .status-pill {
   flex: 0 0 auto;
-  border: 1px solid #bfe7f2;
+  border: 1px solid rgba(0, 73, 187, 0.38);
   border-radius: 999px;
-  background: #e6f8fc;
+  background: rgba(79, 153, 255, 0.18);
   color: var(--accent-strong);
   padding: 8px 12px;
   font-size: 13px;
@@ -184,7 +189,7 @@ h2 {
 .feature-link:hover,
 .feature-link:focus-visible {
   border-color: var(--accent);
-  outline: 2px solid #bfe7f2;
+  outline: 2px solid rgba(169, 142, 93, 0.34);
   outline-offset: 2px;
 }
 
@@ -235,7 +240,7 @@ h2 {
 
 .app-shell-path {
   margin-top: 24px;
-  color: #9aa7b4;
+  color: var(--muted-soft);
   font-size: 12px;
   line-height: 1.6;
 }
@@ -280,4 +285,48 @@ h2 {
   .app-shell-main {
     padding: 18px;
   }
+}
+
+/* Keep every native select indicator centered inside its control. */
+select {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  box-sizing: border-box !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1.5 1.5 6 6l4.5-4.5' fill='none' stroke='%23464c51' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") !important;
+  background-position-x: calc(100% - 11px) !important;
+  background-position-y: 50% !important;
+  background-repeat: no-repeat !important;
+  background-size: 12px 8px !important;
+  padding-right: 34px !important;
+  line-height: normal !important;
+}
+/* Only AI generation actions use the solid optical treatment. */
+button[data-generate-action="true"] {
+  border-color: rgba(157, 222, 247, 0.88) !important;
+  background-color: #005ab0 !important;
+  background-image:
+    radial-gradient(ellipse 72% 150% at 2% 50%, rgba(15, 123, 225, 0.98) 0%, rgba(79, 153, 255, 0.58) 42%, rgba(79, 153, 255, 0) 74%),
+    radial-gradient(ellipse 64% 140% at 98% 50%, rgba(255, 221, 183, 0.72) 0%, rgba(255, 239, 226, 0.38) 42%, rgba(255, 221, 183, 0) 76%),
+    radial-gradient(ellipse 48% 76% at 50% 114%, rgba(243, 251, 255, 1) 0%, rgba(157, 222, 247, 0.82) 44%, rgba(157, 222, 247, 0) 80%),
+    linear-gradient(180deg, #0f7be1 0%, #005ab0 56%, #04498b 100%) !important;
+  background-blend-mode: screen, screen, screen, normal !important;
+  color: #f3fbff !important;
+  text-shadow: 0 1px 1px rgba(0, 26, 66, 0.34);
+  box-shadow:
+    inset 0 1px 0 rgba(243, 251, 255, 0.94),
+    inset 0 0 30px rgba(222, 254, 255, 0.8),
+    inset 0 0 60px rgba(189, 212, 255, 0.72),
+    0 5px 12px rgba(0, 26, 66, 0.24) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+button[data-generate-action="true"]:hover:not(:disabled) {
+  border-color: #f3fbff !important;
+  filter: brightness(1.06) saturate(1.05);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 1),
+    inset 0 0 34px rgba(222, 254, 255, 0.9),
+    inset 0 0 66px rgba(189, 212, 255, 0.82),
+    0 7px 16px rgba(0, 26, 66, 0.3) !important;
 }

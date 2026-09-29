@@ -29,7 +29,7 @@ class DoubaoImageProvider implements ImageProvider {
 
   async generateImage(input: ImageProviderInput): Promise<ImageProviderResult> {
     if (!this.apiKey) {
-      throw new Error("未配置 ARK_API_KEY，无法调用豆包 Seedream 图像模型。");
+      throw new Error("未配置 ARK_API_KEY，无法调用 Seedream 图像模型。");
     }
 
     const sourceImages = [
@@ -68,7 +68,7 @@ class DoubaoImageProvider implements ImageProvider {
     const output = payload.data?.[0];
     const url = await this.resolveOutputUrl(input.taskId, output);
     if (!url) {
-      throw new Error("豆包 Seedream 响应中没有可用的图像数据。");
+      throw new Error("Seedream 响应中没有可用的图像数据。");
     }
 
     return {
@@ -113,12 +113,12 @@ type DoubaoImageResponse = ImageGenerationResponse & { model?: string };
 async function parseDoubaoResponse(response: Response): Promise<DoubaoImageResponse> {
   const text = await response.text();
   if (!response.ok) {
-    throw new Error(`豆包 Seedream API ${response.status}: ${text.slice(0, 400)}`);
+    throw new Error(`Seedream API ${response.status}: ${text.slice(0, 400)}`);
   }
   try {
     return JSON.parse(text) as DoubaoImageResponse;
   } catch {
-    throw new Error("豆包 Seedream API 返回了无法解析的响应。");
+    throw new Error("Seedream API 返回了无法解析的响应。");
   }
 }
 
@@ -137,10 +137,10 @@ export function normalizeArkApiRoot(value: string | undefined): string {
 
 export function toDoubaoSize(size: NonNullable<ImageProviderInput["size"]>): string {
   if (size === "1536x1024") {
-    return "2304x1536";
+    return "2400x1600";
   }
   if (size === "1024x1536") {
-    return "1536x2304";
+    return "1600x2400";
   }
   return "2048x2048";
 }

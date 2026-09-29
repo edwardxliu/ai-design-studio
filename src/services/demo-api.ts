@@ -1,3 +1,5 @@
+import { readFile } from "node:fs/promises";
+import path from "node:path";
 import { buildPopScenePrompt, getPopTemplate, renderPopFlatSvg } from "@/src/domain/pop";
 import { buildPdpDocument, getMissingPdpImageSlots, type PdpDocument } from "@/src/domain/pdp";
 import type { PdpCanvasLayout } from "@/src/domain/pdp-canvas-layout";
@@ -300,6 +302,9 @@ export type ExportDemoPdpInput = {
   sellingPoints?: SellingPoint[];
   sectionImages?: Record<string, string>;
   coverAssetId?: string;
+  coverTitle?: string;
+  coverSubtitle?: string;
+  brandMessage?: string;
   layout?: PdpCanvasLayout;
   imageStore?: LocalAssetStore;
   costLedger?: CostLedger;
@@ -335,10 +340,11 @@ export async function exportDemoPdp(input: ExportDemoPdpInput): Promise<ExportDe
     language: input.language,
     templateVersion,
     cover: {
-      title: productName,
-      subtitle: product.profile.valueProposition,
+      title: input.coverTitle || productName,
+      subtitle: input.coverSubtitle || `${input.country} / ${input.language}`,
       imageAssetId: coverAssetId
     },
+    brandMessage: input.brandMessage || product.profile.valueProposition,
     sellingPoints,
     sectionImageBySellingPointId: sectionImages
   });
@@ -360,12 +366,21 @@ export async function exportDemoPdp(input: ExportDemoPdpInput): Promise<ExportDe
 
   const specification: Array<[string, string]> = sellingPoints
     .filter((point) => point.enabled !== false)
-    .map((point) => [point.shortLabel || point.title, point.technicalProof ?? point.benefit]);
+    .map((point) => [point.title, point.benefit]);
+
+  let brandImageDataUri: string | undefined;
+  try {
+    const brandImage = await readFile(path.join(process.cwd(), "public", "pdp", "midea-brand-no1.png"));
+    brandImageDataUri = `data:image/png;base64,${brandImage.toString("base64")}`;
+  } catch {
+    brandImageDataUri = undefined;
+  }
 
   const svg = renderPdpSvg(document, productName, {
     imageDataUris,
     specification,
-    layout: input.layout
+    layout: input.layout,
+    brandImageDataUri
   });
 
   const saved = await input.imageStore?.saveGeneratedImage({
@@ -405,6 +420,8 @@ export type LocalizeImageInput = {
   country: string;
   language: string;
   size?: "1024x1024" | "1536x1024" | "1024x1536";
+  sourceWidth?: number;
+  sourceHeight?: number;
   imageModel?: ImageModelChoice;
   imageStore?: LocalAssetStore;
   costLedger?: CostLedger;
@@ -425,6 +442,9 @@ export async function localizeGeneratedImage(
     `Take the provided marketing image and replace ALL visible text with ${input.language}`,
     `translations appropriate for the ${input.country} market.`,
     "Keep the product appearance, layout, composition, colors, logo, and branding exactly the same.",
+    input.sourceWidth && input.sourceHeight
+      ? `Preserve the original ${input.sourceWidth}x${input.sourceHeight} canvas ratio and keep every text block and key object inside the safe area.`
+      : "Preserve the original canvas ratio and safe area.",
     "Only the text language changes; do not add or remove any graphic elements."
   ].join(" ");
 

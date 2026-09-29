@@ -84,6 +84,12 @@ describe("POP product template sets", () => {
 
         expect(svg, templateId).toContain("<svg");
         expect(svg, templateId).toContain("popBlue");
+        expect(svg, templateId).toMatch(
+          /<rect width="\d+" height="\d+" fill="none"\/>/
+        );
+        expect(svg, templateId).not.toMatch(
+          /<rect width="\d+" height="\d+" fill="#ffffff"\/>/
+        );
       }
     }
   });

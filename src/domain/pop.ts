@@ -210,7 +210,7 @@ function renderUspSticker(text: TextResolver, images: Record<string, string>): s
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
   ${GRADIENT_DEFS}
-  <rect width="${width}" height="${height}" fill="#ffffff"/>
+  <rect width="${width}" height="${height}" fill="none"/>
   ${imageBlock(images.uspImage, "USP Image", 24, 24, 752, 918, 0, 34)}
   <path d="${rightRoundedBandPath(bandX, bandY, bandWidth, bandHeight)}" fill="url(#popBlue)"/>
   <text x="58" y="${bandY + 50}" font-family="Arial, sans-serif" font-size="40" font-weight="800" fill="#ffffff">${escapeXml(text("headline"))}</text>
@@ -243,7 +243,7 @@ function renderFeatureSticker(text: TextResolver, images: Record<string, string>
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
   ${GRADIENT_DEFS}
-  <rect width="${width}" height="${height}" fill="#ffffff"/>
+  <rect width="${width}" height="${height}" fill="none"/>
   <rect x="10" y="10" width="${width - 20}" height="${height - 20}" fill="none" stroke="#bfe0f2" stroke-width="3"/>
   <line x1="${margin}" y1="${lineY}" x2="${width / 2 - 130}" y2="${lineY}" stroke="#1B5FAA" stroke-width="2"/>
   <line x1="${width / 2 + 130}" y1="${lineY}" x2="${width - margin}" y2="${lineY}" stroke="#1B5FAA" stroke-width="2"/>
@@ -261,7 +261,7 @@ function renderInnerSticker(text: TextResolver, images: Record<string, string>):
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
   ${GRADIENT_DEFS}
-  <rect width="${width}" height="${height}" fill="#ffffff"/>
+  <rect width="${width}" height="${height}" fill="none"/>
   ${imageBlock(images.featureImage, "Feature Image", 24, 24, 1018, 552, 0, 40)}
   <path d="${rightRoundedBandPath(bandX, bandY, bandWidth, bandHeight)}" fill="url(#popBlue)"/>
   <text x="58" y="${bandY + 43}" font-family="Arial, sans-serif" font-size="34" font-weight="800" fill="#ffffff">${escapeXml(text("headline"))}</text>
@@ -280,7 +280,7 @@ function renderSideSticker(text: TextResolver, images: Record<string, string>): 
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
   ${GRADIENT_DEFS}
-  <rect width="${width}" height="${height}" fill="#ffffff"/>
+  <rect width="${width}" height="${height}" fill="none"/>
   ${imageBlock(images.featureImage, "Feature Image", imageX, blockY, imageWidth, blockHeight, 0, 28)}
   <path d="${rightRoundedBandPath(textX, blockY, textWidth, blockHeight)}" fill="#d9d9d9"/>
   <text x="${textX + 30}" y="${blockY + blockHeight / 2 + 12}" font-family="Arial, sans-serif" font-size="38" font-weight="700" fill="#ffffff">${escapeXml(text("headline"))}</text>

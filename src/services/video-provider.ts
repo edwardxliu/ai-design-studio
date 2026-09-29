@@ -2,7 +2,7 @@ import { PRODUCT_VIDEO_OUTPUT } from "@/src/domain/product-video";
 import { DEFAULT_ARK_API_ROOT, normalizeArkApiRoot } from "@/src/services/doubao-image-provider";
 import { createProxyDispatcher, fetchOpenAi } from "@/src/services/image-provider";
 
-export const DEFAULT_SEEDANCE_VIDEO_MODEL = "doubao-seedance-1-5-pro-251215";
+export const DEFAULT_SEEDANCE_VIDEO_MODEL = "doubao-seedance-2-0-fast-260128";
 export const DEFAULT_SEEDANCE_FALLBACK_MODELS = ["doubao-seedance-1-0-pro-250528"];
 
 export type SeedanceTaskStatus =

@@ -304,6 +304,7 @@ export function WhiteBackgroundRunner() {
           />
           <button
             className={styles.generateButton}
+            data-generate-action="true"
             disabled={!selectedProduct || outputCount === 0 || run.state === "running" || uploading !== null}
             onClick={generate}
             type="button"
@@ -470,7 +471,7 @@ function OutputCard({ output }: { output: CompetitionOutputArtifact }) {
       </div>
       <div className={styles.outputMeta}>
         <div>
-          <CheckCircle2 aria-hidden color="#12805c" size={16} />
+          <CheckCircle2 aria-hidden color="#0049bb" size={16} />
           <strong>{angleLabel(output.spec.angle)}</strong>
         </div>
         <span>{output.provenance.model}</span>

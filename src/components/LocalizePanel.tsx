@@ -1,23 +1,27 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   DEFAULT_IMAGE_MODEL_CHOICE,
   type ImageModelChoice
 } from "@/src/domain/generation-models";
 import { mapWithConcurrency } from "@/src/lib/concurrency";
-import type { RuntimeImageEntry } from "@/src/services/runtime-files";
 import { ImageModelSelector } from "./ImageModelSelector";
 
 type LocalizeResult = {
   url: string;
   model: string;
   sourceUrl: string;
+  width?: number;
+  height?: number;
   error?: string;
 };
 
-type BatchItem = {
-  sourceUrl: string;
+type UploadItem = {
+  id: string;
+  file: File;
+  originalName: string;
+  previewUrl: string;
   state: "pending" | "running" | "done" | "failed";
   resultUrl?: string;
   error?: string;
@@ -26,117 +30,138 @@ type BatchItem = {
 const countries = ["Mexico", "Brazil", "Saudi Arabia", "United States"];
 const languages = ["Spanish", "Portuguese", "English", "Arabic"];
 const BATCH_CONCURRENCY = 3;
+const MAX_UPLOAD_BYTES = 30 * 1024 * 1024;
+const MAX_UPLOAD_COUNT = 20;
+const SVG_RASTER_MAX_DIMENSION = 2048;
+const SUPPORTED_IMAGE_TYPES = new Set([
+  "image/png",
+  "image/jpeg",
+  "image/webp",
+  "image/svg+xml"
+]);
 
 export function LocalizePanel() {
-  const [settings, setSettings] = useState({ country: "Mexico", language: "Spanish" });
   const [imageModel, setImageModel] = useState<ImageModelChoice>(DEFAULT_IMAGE_MODEL_CHOICE);
-  const [settingsStatus, setSettingsStatus] = useState("");
-  const [outputs, setOutputs] = useState<RuntimeImageEntry[]>([]);
-  const [selectedUrls, setSelectedUrls] = useState<Set<string>>(new Set());
   const [targetCountry, setTargetCountry] = useState(countries[1]);
   const [targetLanguage, setTargetLanguage] = useState(languages[1]);
-  const [items, setItems] = useState<BatchItem[]>([]);
+  const [items, setItems] = useState<UploadItem[]>([]);
   const [running, setRunning] = useState(false);
   const [error, setError] = useState("");
+  const previewUrls = useRef(new Set<string>());
 
   useEffect(() => {
-    let cancelled = false;
-    Promise.all([fetch("/api/settings"), fetch("/api/outputs")])
-      .then(async ([settingsResponse, outputsResponse]) => {
-        const settingsPayload = settingsResponse.ok ? await settingsResponse.json() : null;
-        const outputsPayload = outputsResponse.ok ? await outputsResponse.json() : { outputs: [] };
-        if (cancelled) {
-          return;
-        }
-        if (settingsPayload?.settings) {
-          setSettings(settingsPayload.settings);
-        }
-        if (Array.isArray(outputsPayload.outputs)) {
-          setOutputs(outputsPayload.outputs);
-        }
-      })
-      .catch(() => undefined);
     return () => {
-      cancelled = true;
+      for (const url of previewUrls.current) {
+        revokeObjectUrl(url);
+      }
+      previewUrls.current.clear();
     };
   }, []);
 
-  async function saveSettings() {
-    setSettingsStatus("保存中…");
-    try {
-      const response = await fetch("/api/settings", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(settings)
-      });
-      const payload = await response.json();
-      if (!response.ok || payload.error) {
-        throw new Error(payload.error ?? "保存失败");
+  async function addFiles(fileList: FileList | null) {
+    if (!fileList?.length) {
+      return;
+    }
+
+    setError("");
+    const remaining = Math.max(0, MAX_UPLOAD_COUNT - items.length);
+    const selected = Array.from(fileList).slice(0, remaining);
+    if (!selected.length) {
+      setError(`一次最多处理 ${MAX_UPLOAD_COUNT} 张图片。`);
+      return;
+    }
+
+    const nextItems: UploadItem[] = [];
+    const failures: string[] = [];
+    for (const sourceFile of selected) {
+      try {
+        const file = await normalizeUploadFile(sourceFile);
+        const previewUrl = URL.createObjectURL(file);
+        previewUrls.current.add(previewUrl);
+        nextItems.push({
+          id: createUploadId(),
+          file,
+          originalName: sourceFile.name,
+          previewUrl,
+          state: "pending"
+        });
+      } catch (cause) {
+        failures.push(
+          `${sourceFile.name}: ${cause instanceof Error ? cause.message : "无法读取图片"}`
+        );
       }
-      setSettings(payload.settings);
-      setSettingsStatus("已保存。POP / PDP / 图像生成的输出标注将使用该市场语言。");
-    } catch (cause) {
-      setSettingsStatus(cause instanceof Error ? cause.message : "保存失败");
+    }
+
+    if (nextItems.length) {
+      setItems((current) => [...current, ...nextItems]);
+    }
+    if (failures.length) {
+      setError(failures.join("；"));
     }
   }
 
-  function toggleSelected(url: string) {
-    setSelectedUrls((current) => {
-      const next = new Set(current);
-      if (next.has(url)) {
-        next.delete(url);
-      } else {
-        next.add(url);
+  function removeItem(id: string) {
+    setItems((current) => {
+      const target = current.find((item) => item.id === id);
+      if (target) {
+        revokeObjectUrl(target.previewUrl);
+        previewUrls.current.delete(target.previewUrl);
       }
-      return next;
+      return current.filter((item) => item.id !== id);
     });
   }
 
-  function selectAllOutputs() {
-    setSelectedUrls(new Set(outputs.map((output) => output.url)));
-  }
-
-  function clearSelection() {
-    setSelectedUrls(new Set());
+  function clearItems() {
+    for (const item of items) {
+      revokeObjectUrl(item.previewUrl);
+      previewUrls.current.delete(item.previewUrl);
+    }
+    setItems([]);
+    setError("");
   }
 
   async function convertBatch() {
-    const urls = Array.from(selectedUrls);
-    if (!urls.length) {
-      setError("请先勾选要转换的图片。");
+    if (!items.length) {
+      setError("请先上传需要转换文字语言的图片。");
       return;
     }
+
     setError("");
     setRunning(true);
-    setItems(urls.map((sourceUrl) => ({ sourceUrl, state: "pending" })));
+    setItems((current) =>
+      current.map((item) => ({
+        ...item,
+        state: "pending",
+        resultUrl: undefined,
+        error: undefined
+      }))
+    );
 
-    const update = (sourceUrl: string, patch: Partial<BatchItem>) =>
+    const update = (id: string, patch: Partial<UploadItem>) =>
       setItems((current) =>
-        current.map((item) => (item.sourceUrl === sourceUrl ? { ...item, ...patch } : item))
+        current.map((item) => (item.id === id ? { ...item, ...patch } : item))
       );
 
-    await mapWithConcurrency(urls, BATCH_CONCURRENCY, async (sourceUrl) => {
-      update(sourceUrl, { state: "running" });
+    await mapWithConcurrency(items, BATCH_CONCURRENCY, async (item) => {
+      update(item.id, { state: "running" });
       try {
-        const sourcePayload = await prepareSourcePayload(sourceUrl);
+        const formData = new FormData();
+        formData.append("image", item.file, item.file.name);
+        formData.append("country", targetCountry);
+        formData.append("language", targetLanguage);
+        formData.append("imageModel", imageModel);
+
         const response = await fetch("/api/localize", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            outputUrl: sourceUrl,
-            country: targetCountry,
-            language: targetLanguage,
-            imageModel,
-            ...sourcePayload
-          })
+          body: formData
         });
         const payload: LocalizeResult = await response.json();
         if (!response.ok || payload.error) {
           throw new Error(payload.error ?? `Request failed with ${response.status}`);
         }
-        update(sourceUrl, { state: "done", resultUrl: payload.url });
+        update(item.id, { state: "done", resultUrl: payload.url });
       } catch (cause) {
-        update(sourceUrl, {
+        update(item.id, {
           state: "failed",
           error: cause instanceof Error ? cause.message : "转换失败"
         });
@@ -146,157 +171,127 @@ export function LocalizePanel() {
     setRunning(false);
   }
 
-  const completed = items.filter((item) => item.state === "done" || item.state === "failed").length;
+  const completed = items.filter((item) => item.state === "done").length;
 
   return (
-    <section style={{ display: "grid", gap: 16 }}>
+    <section style={{ display: "grid", gap: 20 }}>
       <div style={panelStyle}>
-        <h2 style={{ fontSize: 16, margin: "0 0 8px" }}>系统语言设置</h2>
-        <p style={{ color: "#5f6c7b", margin: "0 0 12px" }}>
-          你只需要用自己的语言设计;各功能页生成的输出会按这里设置的目标市场进行标注。
-        </p>
-        <div style={{ alignItems: "end", display: "flex", flexWrap: "wrap", gap: 12 }}>
-          <label style={fieldStyle}>
-            系统国家
-            <select
-              value={settings.country}
-              onChange={(event) => setSettings((c) => ({ ...c, country: event.target.value }))}
-            >
-              {countries.map((item) => (
-                <option key={item} value={item}>{item}</option>
-              ))}
-            </select>
-          </label>
-          <label style={fieldStyle}>
-            系统语言
-            <select
-              value={settings.language}
-              onChange={(event) => setSettings((c) => ({ ...c, language: event.target.value }))}
-            >
-              {languages.map((item) => (
-                <option key={item} value={item}>{item}</option>
-              ))}
-            </select>
-          </label>
-          <button onClick={saveSettings} style={primaryButtonStyle} type="button">
-            保存系统语言
-          </button>
-          {settingsStatus ? <span style={{ color: "#12805c" }}>{settingsStatus}</span> : null}
+        <div style={{ display: "flex", justifyContent: "space-between", gap: 16, alignItems: "start", flexWrap: "wrap" }}>
+          <div style={{ display: "grid", gap: 4 }}>
+            <strong>批量转换图片文字语言</strong>
+            <span style={mutedStyle}>
+              上传设计完成的图片，系统会识别并翻译其中的文字，同时保持原图像素尺寸。
+            </span>
+          </div>
+          <span style={{ ...mutedStyle, fontWeight: 700 }}>{completed}/{items.length} 已完成</span>
         </div>
-      </div>
 
-      <div style={panelStyle}>
-        <h2 style={{ fontSize: 16, margin: "0 0 8px" }}>批量转换图像文字语言</h2>
-        <p style={{ color: "#5f6c7b", margin: "0 0 12px" }}>
-          勾选已生成的图片,选择目标市场后批量转换:系统保持产品与构图不变,
-          把图中的所有文字(包括你输入的文案)翻译成目标语言——你不需要会写目标语言。
-        </p>
-        <div style={{ alignItems: "end", display: "flex", flexWrap: "wrap", gap: 12, marginBottom: 12 }}>
+        <div style={controlGridStyle}>
           <label style={fieldStyle}>
             目标国家
-            <select value={targetCountry} onChange={(event) => setTargetCountry(event.target.value)}>
-              {countries.map((item) => (
-                <option key={item} value={item}>{item}</option>
-              ))}
+            <select
+              aria-label="目标国家"
+              disabled={running}
+              onChange={(event) => setTargetCountry(event.target.value)}
+              value={targetCountry}
+            >
+              {countries.map((country) => <option key={country}>{country}</option>)}
             </select>
           </label>
           <label style={fieldStyle}>
             目标语言
-            <select value={targetLanguage} onChange={(event) => setTargetLanguage(event.target.value)}>
-              {languages.map((item) => (
-                <option key={item} value={item}>{item}</option>
-              ))}
+            <select
+              aria-label="目标语言"
+              disabled={running}
+              onChange={(event) => setTargetLanguage(event.target.value)}
+              value={targetLanguage}
+            >
+              {languages.map((language) => <option key={language}>{language}</option>)}
             </select>
           </label>
-          <ImageModelSelector
-            disabled={running}
-            onChange={setImageModel}
-            value={imageModel}
-          />
-          <button disabled={running || outputs.length === 0} onClick={selectAllOutputs} style={secondaryButtonStyle} type="button">
-            全选
-          </button>
-          <button disabled={running || selectedUrls.size === 0} onClick={clearSelection} style={secondaryButtonStyle} type="button">
-            清空
-          </button>
-          <button disabled={running} onClick={convertBatch} style={primaryButtonStyle} type="button">
-            {running ? `转换中 ${completed}/${items.length}…` : `批量转换所选(${selectedUrls.size})`}
-          </button>
-          {error ? <span style={{ color: "#8f1f1f" }}>{error}</span> : null}
+          <ImageModelSelector disabled={running} onChange={setImageModel} value={imageModel} />
         </div>
 
-        {outputs.length === 0 ? (
-          <p style={{ color: "#9aa7b4", margin: 0 }}>
-            还没有生成记录。先在各功能页生成一些内容。
-          </p>
-        ) : null}
-        <div style={{ display: "grid", gap: 10, gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))" }}>
-          {outputs.map((output) => {
-            const checked = selectedUrls.has(output.url);
-            return (
-              <label
-                key={output.url}
-                style={{
-                  background: "#ffffff",
-                  border: checked ? "2px solid #057ca2" : "1px solid #e5e8ec",
-                  borderRadius: 8,
-                  cursor: "pointer",
-                  display: "grid",
-                  gap: 6,
-                  padding: 8
-                }}
-              >
-                <input
-                  aria-label={`选择 ${output.filename}`}
-                  checked={checked}
-                  onChange={() => toggleSelected(output.url)}
-                  type="checkbox"
-                />
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  alt={output.filename}
-                  src={output.url}
-                  style={{ background: "#f6f7f9", height: 110, objectFit: "contain", width: "100%" }}
-                />
-                <span style={{ color: "#5f6c7b", fontSize: 11, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                  {output.taskId}
-                </span>
-              </label>
-            );
-          })}
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center" }}>
+          <label style={secondaryButtonStyle}>
+            选择图片
+            <input
+              accept="image/png,image/jpeg,image/webp,image/svg+xml"
+              aria-label="上传待转换图片"
+              disabled={running}
+              multiple
+              onChange={(event) => {
+                void addFiles(event.currentTarget.files);
+                event.currentTarget.value = "";
+              }}
+              style={{ display: "none" }}
+              type="file"
+            />
+          </label>
+          <button disabled={running || !items.length} onClick={clearItems} style={secondaryButtonStyle} type="button">
+            清空
+          </button>
+          <button
+            data-generate-action="true"
+            disabled={running || !items.length}
+            onClick={convertBatch}
+            style={primaryButtonStyle}
+            type="button"
+          >
+            {running ? "正在转换..." : `转换上传图片（${items.length}）`}
+          </button>
         </div>
+        <p style={{ ...mutedStyle, margin: 0 }}>
+          支持 PNG、JPEG、WebP 和 SVG。SVG 会先在浏览器中转换为受控尺寸的 PNG，避免超大矢量文件解析失败。
+        </p>
+        {error ? <p role="alert" style={{ color: "#9b2c2c", margin: 0 }}>{error}</p> : null}
       </div>
 
       {items.length ? (
-        <div style={panelStyle}>
-          <h2 style={{ fontSize: 16, margin: "0 0 10px" }}>
-            转换结果({targetCountry} / {targetLanguage})
-          </h2>
-          <div style={{ display: "grid", gap: 14 }}>
-            {items.map((item) => (
-              <div key={item.sourceUrl} style={{ borderTop: "1px solid #eef1f4", paddingTop: 10 }}>
-                <p style={{ color: "#5f6c7b", fontSize: 12, margin: "0 0 6px" }}>
-                  {item.sourceUrl}
-                  {" — "}
-                  {item.state === "running"
-                    ? "转换中…"
-                    : item.state === "done"
-                      ? "完成"
-                      : item.state === "failed"
-                        ? `失败:${item.error}`
-                        : "等待中"}
-                </p>
+        <div style={{ display: "grid", gap: 14 }}>
+          {items.map((item) => (
+            <article key={item.id} style={panelStyle}>
+              <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center" }}>
+                <div style={{ minWidth: 0 }}>
+                  <strong style={{ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {item.originalName}
+                  </strong>
+                  <span style={mutedStyle}>
+                    {item.state === "running"
+                      ? "正在识别并转换文字..."
+                      : item.state === "done"
+                        ? "转换完成"
+                        : item.state === "failed"
+                          ? `转换失败：${item.error}`
+                          : "等待转换"}
+                  </span>
+                </div>
+                <button
+                  aria-label={`移除 ${item.originalName}`}
+                  disabled={running}
+                  onClick={() => removeItem(item.id)}
+                  style={secondaryButtonStyle}
+                  type="button"
+                >
+                  移除
+                </button>
+              </div>
+              <div style={{ display: "grid", gap: 12, gridTemplateColumns: item.resultUrl ? "repeat(2, minmax(0, 1fr))" : "minmax(0, 1fr)", maxWidth: 980 }}>
+                <figure style={figureStyle}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img alt={`原图 ${item.originalName}`} src={item.previewUrl} style={imageStyle} />
+                  <figcaption style={captionStyle}>原图</figcaption>
+                </figure>
                 {item.resultUrl ? (
-                  <div style={{ display: "grid", gap: 12, gridTemplateColumns: "1fr 1fr", maxWidth: 860 }}>
+                  <figure style={figureStyle}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img alt="原图" src={item.sourceUrl} style={imageStyle} />
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img alt="本地化结果" src={item.resultUrl} style={imageStyle} />
-                  </div>
+                    <img alt={`本地化结果 ${item.originalName}`} src={item.resultUrl} style={imageStyle} />
+                    <figcaption style={captionStyle}>{targetLanguage}</figcaption>
+                  </figure>
                 ) : null}
               </div>
-            ))}
-          </div>
+            </article>
+          ))}
         </div>
       ) : null}
     </section>
@@ -304,95 +299,133 @@ export function LocalizePanel() {
 }
 
 const panelStyle = {
-  background: "#ffffff",
-  border: "1px solid #d9e0e7",
+  background: "var(--studio-glass-card, rgba(255, 255, 255, 0.42))",
+  border: "1px solid rgba(255, 255, 255, 0.72)",
   borderRadius: 8,
+  display: "grid",
+  gap: 16,
   padding: 16
 } as const;
 
-const fieldStyle = { display: "grid", gap: 6 } as const;
+const controlGridStyle = {
+  alignItems: "end",
+  display: "grid",
+  gap: 14,
+  gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))"
+} as const;
+
+const fieldStyle = { display: "grid", gap: 6, fontWeight: 700 } as const;
+const mutedStyle = { color: "var(--text-muted, #4b5b67)", fontSize: 13 } as const;
 
 const primaryButtonStyle = {
-  background: "#057ca2",
-  border: "1px solid #057ca2",
+  background: "#0f7be1",
+  border: "1px solid #005ab0",
   borderRadius: 8,
   color: "#ffffff",
   cursor: "pointer",
   fontWeight: 800,
-  padding: "10px 14px"
+  padding: "10px 16px"
 } as const;
 
 const secondaryButtonStyle = {
-  background: "#ffffff",
-  border: "1px solid #aeb8c3",
+  alignItems: "center",
+  background: "var(--studio-glass-card, rgba(255, 255, 255, 0.45))",
+  border: "1px solid rgba(255, 255, 255, 0.82)",
   borderRadius: 8,
   color: "#26313d",
   cursor: "pointer",
+  display: "inline-flex",
   fontWeight: 700,
-  padding: "10px 12px"
+  justifyContent: "center",
+  minHeight: 40,
+  padding: "9px 13px"
+} as const;
+
+const figureStyle = {
+  background: "rgba(255, 255, 255, 0.22)",
+  border: "1px solid rgba(255, 255, 255, 0.58)",
+  borderRadius: 8,
+  display: "grid",
+  margin: 0,
+  overflow: "hidden"
 } as const;
 
 const imageStyle = {
-  border: "1px solid #e5e8ec",
-  maxWidth: "100%"
+  display: "block",
+  height: "min(34vh, 360px)",
+  objectFit: "contain",
+  width: "100%"
 } as const;
 
-async function prepareSourcePayload(sourceUrl: string): Promise<{
-  imageBase64?: string;
-  imageContentType?: string;
-  size?: "1024x1024" | "1536x1024" | "1024x1536";
-}> {
-  if (!/\.svg(?:$|[?#])/i.test(sourceUrl)) {
-    return {};
+const captionStyle = {
+  borderTop: "1px solid rgba(255, 255, 255, 0.52)",
+  color: "#33424d",
+  fontSize: 12,
+  padding: "8px 10px"
+} as const;
+
+async function normalizeUploadFile(file: File): Promise<File> {
+  const isSvg = file.type === "image/svg+xml" || /\.svg$/i.test(file.name);
+  if (!SUPPORTED_IMAGE_TYPES.has(file.type) && !isSvg) {
+    throw new Error("仅支持 PNG、JPEG、WebP 或 SVG 图片");
   }
-
-  const response = await fetch(sourceUrl);
-  if (!response.ok) {
-    throw new Error("SVG 原图读取失败。");
+  if (!file.size) {
+    throw new Error("文件为空");
   }
+  if (file.size > MAX_UPLOAD_BYTES) {
+    throw new Error("文件不能超过 30 MB");
+  }
+  return isSvg ? rasterizeSvgFile(file) : file;
+}
 
-  const svg = await response.text();
-  const blobUrl = URL.createObjectURL(
-    new Blob([svg], { type: "image/svg+xml;charset=utf-8" })
-  );
-
+async function rasterizeSvgFile(file: File): Promise<File> {
+  const sourceUrl = URL.createObjectURL(file);
   try {
     const image = new Image();
     await new Promise<void>((resolve, reject) => {
       image.onload = () => resolve();
-      image.onerror = () => reject(new Error("SVG 栅格化失败。"));
-      image.src = blobUrl;
+      image.onerror = () => reject(new Error("SVG 栅格化失败"));
+      image.src = sourceUrl;
     });
 
     const sourceWidth = image.naturalWidth || image.width || 1024;
     const sourceHeight = image.naturalHeight || image.height || 1024;
-    const maximumDimension = 2048;
-    const scale = Math.min(1, maximumDimension / Math.max(sourceWidth, sourceHeight));
+    const scale = Math.min(
+      1,
+      SVG_RASTER_MAX_DIMENSION / Math.max(sourceWidth, sourceHeight)
+    );
     const canvas = document.createElement("canvas");
     canvas.width = Math.max(1, Math.round(sourceWidth * scale));
     canvas.height = Math.max(1, Math.round(sourceHeight * scale));
     const context = canvas.getContext("2d");
     if (!context) {
-      throw new Error("浏览器不支持 SVG 栅格化。");
+      throw new Error("浏览器不支持 SVG 栅格化");
     }
     context.fillStyle = "#ffffff";
     context.fillRect(0, 0, canvas.width, canvas.height);
     context.drawImage(image, 0, 0, canvas.width, canvas.height);
 
-    const ratio = sourceWidth / sourceHeight;
-    const size =
-      ratio > 1.15
-        ? "1536x1024"
-        : ratio < 0.87
-          ? "1024x1536"
-          : "1024x1024";
-
-    return {
-      imageBase64: canvas.toDataURL("image/png").split(",")[1],
-      imageContentType: "image/png",
-      size
-    };
+    const blob = await new Promise<Blob>((resolve, reject) => {
+      canvas.toBlob(
+        (value) => (value ? resolve(value) : reject(new Error("SVG 栅格化失败"))),
+        "image/png"
+      );
+    });
+    const filename = file.name.replace(/\.svg$/i, "") || "localized-source";
+    return new File([blob], `${filename}.png`, { type: "image/png" });
   } finally {
-    URL.revokeObjectURL(blobUrl);
+    revokeObjectUrl(sourceUrl);
   }
+}
+
+function revokeObjectUrl(url: string): void {
+  if (typeof URL.revokeObjectURL === "function") {
+    URL.revokeObjectURL(url);
+  }
+}
+
+function createUploadId(): string {
+  return typeof crypto !== "undefined" && "randomUUID" in crypto
+    ? crypto.randomUUID()
+    : `upload-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }

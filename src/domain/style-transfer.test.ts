@@ -8,16 +8,27 @@ import {
 } from "./style-transfer";
 
 describe("style transfer domain", () => {
-  it("exposes seven PPT-derived image styles and three static outputs", () => {
-    expect(STYLE_TRANSFER_PRESETS).toHaveLength(7);
+  it("exposes six PPT-derived image styles and three static outputs", () => {
+    expect(STYLE_TRANSFER_PRESETS).toHaveLength(6);
     expect(STYLE_TRANSFER_VARIANTS).toHaveLength(3);
+    expect(STYLE_TRANSFER_PRESETS.map((preset) => preset.label)).toEqual([
+      "拉美热带美学",
+      "银色旗舰",
+      "国际化现代高端",
+      "时尚杂志式家电",
+      "北欧Hygge风格",
+      "日式美学风格"
+    ]);
     expect(STYLE_TRANSFER_PRESETS.every((preset) => preset.references.length >= 2)).toBe(true);
+    expect(getStyleTransferPreset("lab").references[0].url).toBe("/style-references/lab/ref-1.png");
+    expect(getStyleTransferPreset("nordic-home").references).toHaveLength(3);
+    expect(getStyleTransferPreset("japanese-aesthetic").references).toHaveLength(4);
   });
 
   it("matches user keywords to the closest style", () => {
     expect(matchStyleTransferPreset("石墨灰 黑色金属 建筑实验室").id).toBe("lab");
     expect(matchStyleTransferPreset("丹麦住宅 浅橡木 冬季雪景").id).toBe("nordic-home");
-    expect(matchStyleTransferPreset("纯黑空间 障子 仪式感").id).toBe("japanese-dark");
+    expect(matchStyleTransferPreset("暖木 障子 庭院 日式美学").id).toBe("japanese-aesthetic");
   });
 
   it("keeps product and style references separated and excludes video output", () => {
