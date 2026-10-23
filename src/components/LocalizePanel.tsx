@@ -1,431 +1,258 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import {
-  DEFAULT_IMAGE_MODEL_CHOICE,
-  type ImageModelChoice
-} from "@/src/domain/generation-models";
+import { Download, FolderOpen, ImagePlus, Languages, Upload, WandSparkles } from "lucide-react";
+import { DEFAULT_IMAGE_MODEL_CHOICE, type ImageModelChoice } from "@/src/domain/generation-models";
+import type { Asset, ProductWithProfile } from "@/src/domain/types";
 import { mapWithConcurrency } from "@/src/lib/concurrency";
 import { ImageModelSelector } from "./ImageModelSelector";
+import styles from "./LocalizePanel.module.css";
 
-type LocalizeResult = {
-  url: string;
-  model: string;
-  sourceUrl: string;
-  width?: number;
-  height?: number;
-  error?: string;
-};
-
-type UploadItem = {
-  id: string;
-  file: File;
-  originalName: string;
-  previewUrl: string;
-  state: "pending" | "running" | "done" | "failed";
-  resultUrl?: string;
-  error?: string;
-};
-
+type Material = { id: string; file: File; originalName: string; previewUrl: string; assetId?: string; base?: { file: File; previewUrl: string } };
+type Job = Material & { state: "pending" | "running" | "done" | "failed"; resultUrl?: string; error?: string; width?: number; height?: number };
+type Batch = { country: string; language: string; imageModel: ImageModelChoice; jobs: Job[] };
 const countries = ["Mexico", "Brazil", "Saudi Arabia", "United States"];
 const languages = ["Spanish", "Portuguese", "English", "Arabic"];
-const BATCH_CONCURRENCY = 3;
+const languageLabels: Record<string, string> = { Spanish: "西班牙语 · Español", Portuguese: "葡萄牙语 · Português", English: "英语 · English", Arabic: "阿拉伯语 · العربية" };
 const MAX_UPLOAD_BYTES = 30 * 1024 * 1024;
 const MAX_UPLOAD_COUNT = 20;
 const SVG_RASTER_MAX_DIMENSION = 2048;
-const SUPPORTED_IMAGE_TYPES = new Set([
-  "image/png",
-  "image/jpeg",
-  "image/webp",
-  "image/svg+xml"
-]);
+const SUPPORTED_IMAGE_TYPES = new Set(["image/png", "image/jpeg", "image/webp", "image/svg+xml"]);
 
 export function LocalizePanel() {
+  const [mode, setMode] = useState<"single" | "bundle">("single");
   const [imageModel, setImageModel] = useState<ImageModelChoice>(DEFAULT_IMAGE_MODEL_CHOICE);
-  const [targetCountry, setTargetCountry] = useState(countries[1]);
-  const [targetLanguage, setTargetLanguage] = useState(languages[1]);
-  const [items, setItems] = useState<UploadItem[]>([]);
+  const [targetCountry, setTargetCountry] = useState("Mexico");
+  const [targetLanguage, setTargetLanguage] = useState("Spanish");
+  const [settingsLoaded, setSettingsLoaded] = useState(false);
+  const [settingsError, setSettingsError] = useState("");
+  const [items, setItems] = useState<Material[]>([]);
+  const [assets, setAssets] = useState<Asset[]>([]);
+  const [libraryOpen, setLibraryOpen] = useState(false);
+  const [libraryLoaded, setLibraryLoaded] = useState(false);
+  const [libraryError, setLibraryError] = useState("");
+  const [libraryVersion, setLibraryVersion] = useState(0);
+  const [run, setRun] = useState<Batch | null>(null);
   const [running, setRunning] = useState(false);
+  const [preparing, setPreparing] = useState(false);
   const [error, setError] = useState("");
+  const active = useRef(false);
+  const preparingRef = useRef(false);
+  const marketEdited = useRef(false);
   const previewUrls = useRef(new Set<string>());
+  const controller = useRef<AbortController | null>(null);
+  const blocked = running || preparing;
 
   useEffect(() => {
-    return () => {
-      for (const url of previewUrls.current) {
-        revokeObjectUrl(url);
-      }
-      previewUrls.current.clear();
-    };
+    const abort = new AbortController();
+    fetch("/api/settings", { signal: abort.signal }).then(async response => {
+      const payload = await response.json();
+      if (!response.ok || !payload.settings?.country || !payload.settings?.language) throw new Error("无法读取默认市场，当前使用 Mexico / Spanish。");
+      if (!abort.signal.aborted && !marketEdited.current) { setTargetCountry(payload.settings.country); setTargetLanguage(payload.settings.language); }
+    }).catch(cause => { if (!abort.signal.aborted) setSettingsError(cause instanceof Error ? cause.message : "无法读取默认市场。"); }).finally(() => { if (!abort.signal.aborted) setSettingsLoaded(true); });
+    return () => abort.abort();
   }, []);
 
-  async function addFiles(fileList: FileList | null) {
-    if (!fileList?.length) {
-      return;
-    }
+  useEffect(() => {
+    const abort = new AbortController();
+    setLibraryLoaded(false); setLibraryError("");
+    Promise.all([fetch("/api/upload", { signal: abort.signal }), fetch("/api/products", { signal: abort.signal })]).then(async ([uploadResponse, productsResponse]) => {
+      const uploaded = await uploadResponse.json();
+      const products = await productsResponse.json();
+      if (!uploadResponse.ok || !Array.isArray(uploaded.assets)) throw new Error("素材库加载失败，请重试。");
+      const combined: Asset[] = [...uploaded.assets, ...(Array.isArray(products.products) ? products.products.flatMap((product: ProductWithProfile) => product.assets ?? []) : [])];
+      const images = combined.filter(asset => /\.(png|jpe?g|webp|svg)(?:\?|$)/i.test(asset.filename || asset.url));
+      if (!abort.signal.aborted) setAssets([...new Map(images.map(asset => [asset.id, asset])).values()]);
+    }).catch(cause => { if (!abort.signal.aborted) setLibraryError(cause instanceof Error ? cause.message : "素材库加载失败，请重试。"); }).finally(() => { if (!abort.signal.aborted) setLibraryLoaded(true); });
+    return () => abort.abort();
+  }, [libraryVersion]);
 
-    setError("");
-    const remaining = Math.max(0, MAX_UPLOAD_COUNT - items.length);
-    const selected = Array.from(fileList).slice(0, remaining);
-    if (!selected.length) {
-      setError(`一次最多处理 ${MAX_UPLOAD_COUNT} 张图片。`);
-      return;
-    }
+  useEffect(() => () => {
+    controller.current?.abort();
+    for (const url of previewUrls.current) revokeObjectUrl(url);
+    previewUrls.current.clear();
+  }, []);
 
-    const nextItems: UploadItem[] = [];
-    const failures: string[] = [];
-    for (const sourceFile of selected) {
-      try {
-        const file = await normalizeUploadFile(sourceFile);
-        const previewUrl = URL.createObjectURL(file);
-        previewUrls.current.add(previewUrl);
-        nextItems.push({
-          id: createUploadId(),
-          file,
-          originalName: sourceFile.name,
-          previewUrl,
-          state: "pending"
-        });
-      } catch (cause) {
-        failures.push(
-          `${sourceFile.name}: ${cause instanceof Error ? cause.message : "无法读取图片"}`
-        );
+  useEffect(() => {
+    // Sweep after material/run commits, never on unrelated preparation renders.
+    // Retained jobs own their original and base previews until the run is replaced.
+    const referenced = new Set<string>();
+    for (const item of [...items, ...(run?.jobs ?? [])]) {
+      referenced.add(item.previewUrl);
+      if (item.base) referenced.add(item.base.previewUrl);
+    }
+    for (const url of previewUrls.current) {
+      if (!referenced.has(url)) { revokeObjectUrl(url); previewUrls.current.delete(url); }
+    }
+  }, [items, run]);
+
+  function preview(file: File) { const url = URL.createObjectURL(file); previewUrls.current.add(url); return url; }
+
+  async function addFiles(files: File[], assetId?: string) {
+    if (active.current || preparingRef.current || !files.length) return;
+    preparingRef.current = true; setPreparing(true); setError("");
+    try {
+      const limit = mode === "single" ? 1 : MAX_UPLOAD_COUNT - items.length;
+      const selected = files.slice(0, Math.max(0, limit));
+      const failures = files.length > selected.length ? [`${mode === "single" ? "单张模式仅选择 1 张" : "一次最多处理 20 张图片"}。`] : [];
+      const next: Material[] = [];
+      for (const source of selected) {
+        try {
+          const file = await normalizeUploadFile(source);
+          next.push({ id: createUploadId(), file, originalName: source.name, previewUrl: preview(file), assetId });
+        } catch (cause) { failures.push(`${source.name}: ${cause instanceof Error ? cause.message : "无法读取图片"}`); }
       }
-    }
-
-    if (nextItems.length) {
-      setItems((current) => [...current, ...nextItems]);
-    }
-    if (failures.length) {
-      setError(failures.join("；"));
-    }
+      if (next.length) setItems(current => mode === "single" ? next : [...current, ...next]);
+      if (failures.length) setError(failures.join("；"));
+    } finally { preparingRef.current = false; setPreparing(false); }
   }
 
-  function removeItem(id: string) {
-    setItems((current) => {
-      const target = current.find((item) => item.id === id);
-      if (target) {
-        revokeObjectUrl(target.previewUrl);
-        previewUrls.current.delete(target.previewUrl);
-      }
-      return current.filter((item) => item.id !== id);
-    });
+  async function addAsset(asset: Asset) {
+    if (active.current || preparingRef.current) return;
+    preparingRef.current = true; setPreparing(true); setError("");
+    let file: File;
+    try {
+      const response = await fetch(asset.url);
+      if (!response.ok) throw new Error("无法读取所选素材，请重新选择或本地上传。");
+      const blob = await response.blob();
+      file = new File([blob], asset.filename, { type: blob.type || imageTypeFromName(asset.filename) });
+    } catch (cause) { setError(cause instanceof Error ? cause.message : "无法读取素材"); return; }
+    finally { preparingRef.current = false; setPreparing(false); }
+    await addFiles([file], asset.id);
   }
 
-  function clearItems() {
-    for (const item of items) {
-      revokeObjectUrl(item.previewUrl);
-      previewUrls.current.delete(item.previewUrl);
-    }
-    setItems([]);
-    setError("");
+  async function pairBase(id: string, file?: File) {
+    if (!file || active.current || preparingRef.current) return;
+    preparingRef.current = true; setPreparing(true); setError("");
+    try {
+      const normalized = await normalizeUploadFile(file);
+      const material = items.find(item => item.id === id);
+      if (!material) return;
+      const [originalSize, baseSize] = await Promise.all([imageSize(material.file), imageSize(normalized)]);
+      if (originalSize.width !== baseSize.width || originalSize.height !== baseSize.height) throw new Error(`底图尺寸必须与 ${material.originalName} 完全一致（${originalSize.width} × ${originalSize.height}），请检查配对。`);
+      const base = { file: normalized, previewUrl: preview(normalized) };
+      setItems(current => current.map(item => item.id === id ? { ...item, base } : item));
+    } catch (cause) { setError(cause instanceof Error ? cause.message : "底图读取失败"); }
+    finally { preparingRef.current = false; setPreparing(false); }
   }
 
-  async function convertBatch() {
-    if (!items.length) {
-      setError("请先上传需要转换文字语言的图片。");
-      return;
-    }
-
-    setError("");
-    setRunning(true);
-    setItems((current) =>
-      current.map((item) => ({
-        ...item,
-        state: "pending",
-        resultUrl: undefined,
-        error: undefined
-      }))
-    );
-
-    const update = (id: string, patch: Partial<UploadItem>) =>
-      setItems((current) =>
-        current.map((item) => (item.id === id ? { ...item, ...patch } : item))
-      );
-
-    await mapWithConcurrency(items, BATCH_CONCURRENCY, async (item) => {
-      update(item.id, { state: "running" });
-      try {
-        const formData = new FormData();
-        formData.append("image", item.file, item.file.name);
-        formData.append("country", targetCountry);
-        formData.append("language", targetLanguage);
-        formData.append("imageModel", imageModel);
-
-        const response = await fetch("/api/localize", {
-          method: "POST",
-          body: formData
-        });
-        const payload: LocalizeResult = await response.json();
-        if (!response.ok || payload.error) {
-          throw new Error(payload.error ?? `Request failed with ${response.status}`);
-        }
-        update(item.id, { state: "done", resultUrl: payload.url });
-      } catch (cause) {
-        update(item.id, {
-          state: "failed",
-          error: cause instanceof Error ? cause.message : "转换失败"
-        });
-      }
-    });
-
-    setRunning(false);
+  async function execute(batch: Batch, retry = false) {
+    if (active.current || preparingRef.current) return;
+    const pending = batch.jobs.filter(job => !retry || job.state === "failed");
+    if (!pending.length) return;
+    active.current = true; setRunning(true); setError("");
+    const abort = new AbortController(); controller.current = abort;
+    setRun({ ...batch, jobs: batch.jobs.map(job => pending.some(item => item.id === job.id) ? { ...job, state: "pending", error: undefined } : job) });
+    const update = (id: string, patch: Partial<Job>) => { if (!abort.signal.aborted) setRun(current => current ? { ...current, jobs: current.jobs.map(job => job.id === id ? { ...job, ...patch } : job) } : current); };
+    try {
+      await mapWithConcurrency(pending, 3, async item => {
+        update(item.id, { state: "running" });
+        try {
+          const form = new FormData();
+          form.append("image", item.file, item.file.name);
+          if (item.base) form.append("baseImage", item.base.file, item.base.file.name);
+          form.append("country", batch.country); form.append("language", batch.language); form.append("imageModel", batch.imageModel);
+          const response = await fetch("/api/localize", { method: "POST", body: form, signal: abort.signal });
+          const payload = await response.json();
+          if (!response.ok || payload.error || !payload.url) throw new Error(payload.error ?? `生成失败：${response.status}`);
+          update(item.id, { state: "done", resultUrl: payload.url, width: payload.width, height: payload.height, error: undefined });
+        } catch (cause) { update(item.id, { state: "failed", error: cause instanceof Error ? cause.message : "生成失败，请重试" }); }
+      });
+    } finally { active.current = false; if (!abort.signal.aborted) setRunning(false); }
   }
 
-  const completed = items.filter((item) => item.state === "done").length;
-
-  return (
-    <section style={{ display: "grid", gap: 20 }}>
-      <div style={panelStyle}>
-        <div style={{ display: "flex", justifyContent: "space-between", gap: 16, alignItems: "start", flexWrap: "wrap" }}>
-          <div style={{ display: "grid", gap: 4 }}>
-            <strong>批量转换图片文字语言</strong>
-            <span style={mutedStyle}>
-              上传设计完成的图片，系统会识别并翻译其中的文字，同时保持原图像素尺寸。
-            </span>
-          </div>
-          <span style={{ ...mutedStyle, fontWeight: 700 }}>{completed}/{items.length} 已完成</span>
+  const completed = run?.jobs.filter(job => job.state === "done").length ?? 0;
+  const failed = run?.jobs.filter(job => job.state === "failed").length ?? 0;
+  return <section className={styles.studio}>
+    <header className={styles.heading}><h1>多语言环境自适应</h1><p>自动替换画面文字，生成适合目标语言环境的图片。</p></header>
+    <div className={styles.topRow}>
+      <section className={styles.panel}>
+        <div className={styles.sectionHeading}><h2>选择原始素材</h2><div className={styles.segment} aria-label="素材模式">
+          <button type="button" disabled={blocked} aria-pressed={mode === "single"} onClick={() => { if (active.current || preparingRef.current) return; if (items.length > 1) { setError("请先移除多余物料，再切换到单张素材。"); return; } setMode("single"); }}>单张素材</button>
+          <button type="button" disabled={blocked} aria-pressed={mode === "bundle"} onClick={() => { if (!active.current && !preparingRef.current) setMode("bundle"); }}>物料组合包</button>
+        </div></div>
+        <div className={styles.materials}>
+          {items.length ? items.map(item => <div className={styles.material} key={item.id}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}<img src={item.previewUrl} alt={`原图 ${item.originalName}`} />
+            <span title={item.originalName}>{item.originalName}</span><button type="button" disabled={blocked} aria-label={`移除 ${item.originalName}`} onClick={() => { if (!active.current && !preparingRef.current) setItems(current => current.filter(value => value.id !== item.id)); }}>移除</button>
+          </div>) : <div className={styles.empty}><ImagePlus size={26} aria-hidden /><span>选择已完成设计的图片</span><small>从素材库选择，或添加本地图片</small></div>}
         </div>
-
-        <div style={controlGridStyle}>
-          <label style={fieldStyle}>
-            目标国家
-            <select
-              aria-label="目标国家"
-              disabled={running}
-              onChange={(event) => setTargetCountry(event.target.value)}
-              value={targetCountry}
-            >
-              {countries.map((country) => <option key={country}>{country}</option>)}
-            </select>
-          </label>
-          <label style={fieldStyle}>
-            目标语言
-            <select
-              aria-label="目标语言"
-              disabled={running}
-              onChange={(event) => setTargetLanguage(event.target.value)}
-              value={targetLanguage}
-            >
-              {languages.map((language) => <option key={language}>{language}</option>)}
-            </select>
-          </label>
-          <ImageModelSelector disabled={running} onChange={setImageModel} value={imageModel} />
+        <div className={styles.actions}>
+          <button type="button" className={styles.secondary} disabled={blocked} onClick={() => setLibraryOpen(value => !value)}><FolderOpen size={14} aria-hidden />从素材库选择</button>
+          <label className={styles.secondary}><Upload size={14} aria-hidden />本地上传<input type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" aria-label="上传待转换图片" disabled={blocked} multiple={mode === "bundle"} onChange={event => { void addFiles(Array.from(event.currentTarget.files ?? [])); event.currentTarget.value = ""; }} /></label>
+          {items.length ? <button className={styles.textButton} type="button" disabled={blocked} onClick={() => { if (!active.current && !preparingRef.current) { setItems([]); setError(""); } }}>清空</button> : null}
         </div>
-
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center" }}>
-          <label style={secondaryButtonStyle}>
-            选择图片
-            <input
-              accept="image/png,image/jpeg,image/webp,image/svg+xml"
-              aria-label="上传待转换图片"
-              disabled={running}
-              multiple
-              onChange={(event) => {
-                void addFiles(event.currentTarget.files);
-                event.currentTarget.value = "";
-              }}
-              style={{ display: "none" }}
-              type="file"
-            />
-          </label>
-          <button disabled={running || !items.length} onClick={clearItems} style={secondaryButtonStyle} type="button">
-            清空
-          </button>
-          <button
-            data-generate-action="true"
-            disabled={running || !items.length}
-            onClick={convertBatch}
-            style={primaryButtonStyle}
-            type="button"
-          >
-            {running ? "正在转换..." : `转换上传图片（${items.length}）`}
-          </button>
-        </div>
-        <p style={{ ...mutedStyle, margin: 0 }}>
-          支持 PNG、JPEG、WebP 和 SVG。SVG 会先在浏览器中转换为受控尺寸的 PNG，避免超大矢量文件解析失败。
-        </p>
-        {error ? <p role="alert" style={{ color: "#9b2c2c", margin: 0 }}>{error}</p> : null}
-      </div>
-
-      {items.length ? (
-        <div style={{ display: "grid", gap: 14 }}>
-          {items.map((item) => (
-            <article key={item.id} style={panelStyle}>
-              <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center" }}>
-                <div style={{ minWidth: 0 }}>
-                  <strong style={{ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    {item.originalName}
-                  </strong>
-                  <span style={mutedStyle}>
-                    {item.state === "running"
-                      ? "正在识别并转换文字..."
-                      : item.state === "done"
-                        ? "转换完成"
-                        : item.state === "failed"
-                          ? `转换失败：${item.error}`
-                          : "等待转换"}
-                  </span>
-                </div>
-                <button
-                  aria-label={`移除 ${item.originalName}`}
-                  disabled={running}
-                  onClick={() => removeItem(item.id)}
-                  style={secondaryButtonStyle}
-                  type="button"
-                >
-                  移除
-                </button>
-              </div>
-              <div style={{ display: "grid", gap: 12, gridTemplateColumns: item.resultUrl ? "repeat(2, minmax(0, 1fr))" : "minmax(0, 1fr)", maxWidth: 980 }}>
-                <figure style={figureStyle}>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img alt={`原图 ${item.originalName}`} src={item.previewUrl} style={imageStyle} />
-                  <figcaption style={captionStyle}>原图</figcaption>
-                </figure>
-                {item.resultUrl ? (
-                  <figure style={figureStyle}>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img alt={`本地化结果 ${item.originalName}`} src={item.resultUrl} style={imageStyle} />
-                    <figcaption style={captionStyle}>{targetLanguage}</figcaption>
-                  </figure>
-                ) : null}
-              </div>
-            </article>
-          ))}
-        </div>
-      ) : null}
-    </section>
-  );
+        <p className={styles.hint}>{mode === "bundle" ? `当前组合包 · ${items.length} 项真实物料，统一适配目标语言。` : "单张适配 · 每次处理一项素材。"} 支持 PNG、JPEG、WebP、SVG；每张不超过 30 MB，组合包最多 20 项。</p>
+        {libraryOpen ? <div className={styles.library} aria-label="素材库">
+          <div className={styles.sectionHeading}><strong>现有素材</strong><button type="button" className={styles.textButton} disabled={blocked} onClick={() => setLibraryOpen(false)}>收起</button></div>
+          {!libraryLoaded ? <p className={styles.hint}>正在读取素材库…</p> : null}
+          {libraryError ? <p role="alert">{libraryError}<button type="button" disabled={blocked} onClick={() => setLibraryVersion(value => value + 1)}>重试加载</button></p> : null}
+          {libraryLoaded && !libraryError && !assets.length ? <p className={styles.hint}>素材库暂无图片，请本地上传。</p> : null}
+          <div className={styles.libraryGrid}>{assets.map(asset => <button type="button" key={asset.id} aria-label={`选择素材 ${asset.filename}`} disabled={blocked || (mode === "bundle" && (items.length >= MAX_UPLOAD_COUNT || items.some(item => item.assetId === asset.id)))} onClick={() => void addAsset(asset)}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}<img src={asset.url} alt="" /><span>{asset.filename}</span>
+          </button>)}</div>
+        </div> : null}
+      </section>
+      <section className={`${styles.panel} ${styles.basePanel}`}><div className={styles.sectionHeading}><h2>上传原始底图 <small>可选</small></h2></div>
+        <p className={styles.hint}>为每项素材配对同尺寸、同构图的无文字底图。未提供时自动修复文字区域。</p>
+        {!items.length ? <div className={styles.baseEmpty}><ImagePlus size={30} aria-hidden /><span>先选择原始素材</span></div> : <div className={styles.baseList}>{items.map(item => <div key={item.id} className={styles.baseItem}>
+          {item.base ? <>{/* eslint-disable-next-line @next/next/no-img-element */}<img src={item.base.previewUrl} alt={`底图 ${item.originalName}`} /></> : <ImagePlus size={22} aria-hidden />}
+          <div><strong title={item.originalName}>{item.originalName}</strong><label className={styles.textButton}>{item.base ? "更换对应底图" : "上传对应底图"}<input aria-label={`上传底图 ${item.originalName}`} type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" disabled={blocked} onChange={event => { void pairBase(item.id, event.currentTarget.files?.[0]); event.currentTarget.value = ""; }} /></label>
+          {item.base ? <button type="button" className={styles.textButton} disabled={blocked} aria-label={`移除底图 ${item.originalName}`} onClick={() => { if (!active.current && !preparingRef.current) setItems(current => current.map(value => value.id === item.id ? { ...value, base: undefined } : value)); }}>移除底图</button> : null}</div>
+        </div>)}</div>}
+      </section>
+    </div>
+    <div className={styles.bottomRow}>
+      <section className={styles.panel}><h2>选择目标语言</h2><div className={styles.marketFields}>
+        <label>目标语言<div className={styles.language}><Languages size={19} aria-hidden /><select aria-label="目标语言" value={targetLanguage} disabled={blocked} onChange={event => { marketEdited.current = true; setTargetLanguage(event.target.value); }}>{[...new Set([...languages, targetLanguage])].map(language => <option key={language} value={language}>{languageLabels[language] ?? language}</option>)}</select></div></label>
+        <label>目标国家<select aria-label="目标国家" value={targetCountry} disabled={blocked} onChange={event => { marketEdited.current = true; setTargetCountry(event.target.value); }}>{[...new Set([...countries, targetCountry])].map(country => <option key={country}>{country}</option>)}</select></label>
+      </div><p className={styles.hint}>默认使用系统设置中的市场与语言，本次选择应用于当前全部物料。</p>{settingsError ? <p role="status" className={styles.hint}>{settingsError}</p> : null}</section>
+      <section className={`${styles.panel} ${styles.generatePanel}`}><ImageModelSelector disabled={blocked} onChange={setImageModel} value={imageModel} /><p className={styles.hint}>{items.length} 项物料 · 目标语言：{languageLabels[targetLanguage] ?? targetLanguage}</p><button data-generate-action="true" className={styles.primary} type="button" disabled={blocked || !items.length || !settingsLoaded} onClick={() => void execute({ country: targetCountry, language: targetLanguage, imageModel, jobs: items.map(item => ({ ...item, state: "pending" })) })}><WandSparkles size={17} aria-hidden />{running ? "正在生成适配图片…" : preparing ? "正在准备素材…" : `生成适配图片（${items.length}）`}</button></section>
+    </div>
+    {error ? <p role="alert" className={styles.error}>{error}</p> : null}
+    <p className={styles.footer}>辅助生成说明：保持原图像素尺寸、产品外观与构图，生成后请核对专有词与版式。SVG 会先转为最长边不超过 2048px 的 PNG。</p>
+    {run ? <section className={styles.panel}><div className={styles.sectionHeading}><h2>适配结果 <small>{completed}/{run.jobs.length} 已完成 · {run.language} / {run.country}</small></h2>{failed ? <button type="button" className={styles.secondary} disabled={blocked} onClick={() => void execute(run, true)}>重试失败项（{failed}）</button> : null}</div>
+      <div className={styles.results}>{run.jobs.map(job => <article key={job.id} className={styles.result}><div className={styles.sectionHeading}><strong>{job.originalName}</strong><span role="status">{job.state === "done" ? "转换完成" : job.state === "failed" ? `转换失败：${job.error}` : job.state === "running" ? "正在识别并适配文字…" : "等待生成"}</span></div><div className={styles.comparison}>
+        <figure>{/* eslint-disable-next-line @next/next/no-img-element */}<img src={job.previewUrl} alt={`结果对照原图 ${job.originalName}`} /><figcaption>原始素材{job.base ? " · 已配对无文字底图" : ""}</figcaption></figure>
+        {job.resultUrl ? <figure>{/* eslint-disable-next-line @next/next/no-img-element */}<img src={job.resultUrl} alt={`本地化结果 ${job.originalName}`} /><figcaption>{run.language}{job.width && job.height ? ` · ${job.width} × ${job.height}` : ""}<a href={job.resultUrl} download={`localized-${job.originalName.replace(/\.[^.]+$/, "")}.png`}><Download size={13} aria-hidden />下载图片</a></figcaption></figure> : <div className={styles.resultEmpty}>{job.state === "failed" ? "本项生成失败，可单独重试" : "适配结果将在这里显示"}</div>}
+      </div></article>)}</div>
+    </section> : null}
+  </section>;
 }
 
-const panelStyle = {
-  background: "var(--studio-glass-card, rgba(255, 255, 255, 0.42))",
-  border: "1px solid rgba(255, 255, 255, 0.72)",
-  borderRadius: 8,
-  display: "grid",
-  gap: 16,
-  padding: 16
-} as const;
-
-const controlGridStyle = {
-  alignItems: "end",
-  display: "grid",
-  gap: 14,
-  gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))"
-} as const;
-
-const fieldStyle = { display: "grid", gap: 6, fontWeight: 700 } as const;
-const mutedStyle = { color: "var(--text-muted, #4b5b67)", fontSize: 13 } as const;
-
-const primaryButtonStyle = {
-  background: "#0f7be1",
-  border: "1px solid #005ab0",
-  borderRadius: 8,
-  color: "#ffffff",
-  cursor: "pointer",
-  fontWeight: 800,
-  padding: "10px 16px"
-} as const;
-
-const secondaryButtonStyle = {
-  alignItems: "center",
-  background: "var(--studio-glass-card, rgba(255, 255, 255, 0.45))",
-  border: "1px solid rgba(255, 255, 255, 0.82)",
-  borderRadius: 8,
-  color: "#26313d",
-  cursor: "pointer",
-  display: "inline-flex",
-  fontWeight: 700,
-  justifyContent: "center",
-  minHeight: 40,
-  padding: "9px 13px"
-} as const;
-
-const figureStyle = {
-  background: "rgba(255, 255, 255, 0.22)",
-  border: "1px solid rgba(255, 255, 255, 0.58)",
-  borderRadius: 8,
-  display: "grid",
-  margin: 0,
-  overflow: "hidden"
-} as const;
-
-const imageStyle = {
-  display: "block",
-  height: "min(34vh, 360px)",
-  objectFit: "contain",
-  width: "100%"
-} as const;
-
-const captionStyle = {
-  borderTop: "1px solid rgba(255, 255, 255, 0.52)",
-  color: "#33424d",
-  fontSize: 12,
-  padding: "8px 10px"
-} as const;
-
+function imageTypeFromName(name: string) { return /\.svg$/i.test(name) ? "image/svg+xml" : /\.webp$/i.test(name) ? "image/webp" : /\.jpe?g$/i.test(name) ? "image/jpeg" : "image/png"; }
 async function normalizeUploadFile(file: File): Promise<File> {
   const isSvg = file.type === "image/svg+xml" || /\.svg$/i.test(file.name);
-  if (!SUPPORTED_IMAGE_TYPES.has(file.type) && !isSvg) {
-    throw new Error("仅支持 PNG、JPEG、WebP 或 SVG 图片");
-  }
-  if (!file.size) {
-    throw new Error("文件为空");
-  }
-  if (file.size > MAX_UPLOAD_BYTES) {
-    throw new Error("文件不能超过 30 MB");
-  }
+  if (!SUPPORTED_IMAGE_TYPES.has(file.type) && !isSvg) throw new Error("仅支持 PNG、JPEG、WebP 或 SVG 图片");
+  if (!file.size) throw new Error("文件为空");
+  if (file.size > MAX_UPLOAD_BYTES) throw new Error("文件不能超过 30 MB");
   return isSvg ? rasterizeSvgFile(file) : file;
 }
-
+async function imageSize(file: File): Promise<{ width: number; height: number }> {
+  const url = URL.createObjectURL(file);
+  try { const image = await loadImage(url); return { width: image.naturalWidth, height: image.naturalHeight }; }
+  finally { revokeObjectUrl(url); }
+}
+async function loadImage(url: string): Promise<HTMLImageElement> {
+  const image = new Image();
+  await new Promise<void>((resolve, reject) => { image.onload = () => resolve(); image.onerror = () => reject(new Error("图片读取失败")); image.src = url; });
+  return image;
+}
 async function rasterizeSvgFile(file: File): Promise<File> {
   const sourceUrl = URL.createObjectURL(file);
   try {
-    const image = new Image();
-    await new Promise<void>((resolve, reject) => {
-      image.onload = () => resolve();
-      image.onerror = () => reject(new Error("SVG 栅格化失败"));
-      image.src = sourceUrl;
-    });
-
+    const image = await loadImage(sourceUrl);
     const sourceWidth = image.naturalWidth || image.width || 1024;
     const sourceHeight = image.naturalHeight || image.height || 1024;
-    const scale = Math.min(
-      1,
-      SVG_RASTER_MAX_DIMENSION / Math.max(sourceWidth, sourceHeight)
-    );
+    const scale = Math.min(1, SVG_RASTER_MAX_DIMENSION / Math.max(sourceWidth, sourceHeight));
     const canvas = document.createElement("canvas");
-    canvas.width = Math.max(1, Math.round(sourceWidth * scale));
-    canvas.height = Math.max(1, Math.round(sourceHeight * scale));
+    canvas.width = Math.max(1, Math.round(sourceWidth * scale)); canvas.height = Math.max(1, Math.round(sourceHeight * scale));
     const context = canvas.getContext("2d");
-    if (!context) {
-      throw new Error("浏览器不支持 SVG 栅格化");
-    }
-    context.fillStyle = "#ffffff";
-    context.fillRect(0, 0, canvas.width, canvas.height);
-    context.drawImage(image, 0, 0, canvas.width, canvas.height);
-
-    const blob = await new Promise<Blob>((resolve, reject) => {
-      canvas.toBlob(
-        (value) => (value ? resolve(value) : reject(new Error("SVG 栅格化失败"))),
-        "image/png"
-      );
-    });
-    const filename = file.name.replace(/\.svg$/i, "") || "localized-source";
-    return new File([blob], `${filename}.png`, { type: "image/png" });
-  } finally {
-    revokeObjectUrl(sourceUrl);
-  }
+    if (!context) throw new Error("浏览器不支持 SVG 栅格化");
+    context.fillStyle = "#ffffff"; context.fillRect(0, 0, canvas.width, canvas.height); context.drawImage(image, 0, 0, canvas.width, canvas.height);
+    const blob = await new Promise<Blob>((resolve, reject) => { canvas.toBlob(value => value ? resolve(value) : reject(new Error("SVG 栅格化失败")), "image/png"); });
+    return new File([blob], `${file.name.replace(/\.svg$/i, "") || "localized-source"}.png`, { type: "image/png" });
+  } finally { revokeObjectUrl(sourceUrl); }
 }
-
-function revokeObjectUrl(url: string): void {
-  if (typeof URL.revokeObjectURL === "function") {
-    URL.revokeObjectURL(url);
-  }
-}
-
-function createUploadId(): string {
-  return typeof crypto !== "undefined" && "randomUUID" in crypto
-    ? crypto.randomUUID()
-    : `upload-${Date.now()}-${Math.random().toString(16).slice(2)}`;
-}
+function revokeObjectUrl(url: string) { if (typeof URL.revokeObjectURL === "function") URL.revokeObjectURL(url); }
+function createUploadId() { return typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `upload-${Date.now()}-${Math.random().toString(16).slice(2)}`; }

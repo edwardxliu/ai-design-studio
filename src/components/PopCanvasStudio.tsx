@@ -2,8 +2,10 @@
 
 import {
   CookingPot,
+  Check,
   Download,
   ImagePlus,
+  LockKeyhole,
   Maximize2,
   Move,
   Play,
@@ -14,6 +16,7 @@ import {
 } from "lucide-react";
 import {
   useEffect,
+  useId,
   useMemo,
   useRef,
   useState,
@@ -24,7 +27,6 @@ import {
 } from "react";
 import type { Asset, ProductWithProfile } from "@/src/domain/types";
 import { parseAspectRatio } from "@/src/domain/image-crop";
-import { DEFAULT_IMAGE_MODEL_CHOICE, type ImageModelChoice } from "@/src/domain/generation-models";
 import {
   allPopTemplates,
   getPopTemplate,
@@ -42,22 +44,14 @@ import {
   PopTemplateCanvas,
   type PopVariantCanvasContent
 } from "./PopTemplateCanvas";
-import { ImageModelSelector } from "./ImageModelSelector";
 import { ImageCropDialog } from "./ImageCropDialog";
 import styles from "./PopCanvasStudio.module.css";
 
-type SceneResponse = {
-  flatUrl: string;
-  flatPngUrl?: string;
+type LocalMaterial = {
   templateId: string;
-  templateVersion: string;
-  scene: {
-    url: string;
-    model: string;
-    isFallback: boolean;
-    failureReason?: string;
-  };
-  error?: string;
+  name: string;
+  pngUrl: string;
+  svgUrl: string;
 };
 
 type PopTemplateDraft = {
@@ -86,9 +80,9 @@ type PendingCrop = {
 const MIN_CANVAS_ZOOM = 0.5;
 const MAX_CANVAS_ZOOM = 2;
 const CANVAS_ZOOM_STEP = 0.25;
-const POP_PRODUCT_IMAGE = "/pop/pop-sticker-product.png";
 
 export function PopCanvasStudio({ products }: { products: ProductWithProfile[] }) {
+  const previewNamespace = useId().replace(/[^a-zA-Z0-9_-]/g, "");
   const initialProduct = products[0];
   const initialProductType = initialProduct
     ? inferPopProductType(initialProduct)
@@ -97,8 +91,9 @@ export function PopCanvasStudio({ products }: { products: ProductWithProfile[] }
   const initialTemplateId = getPopTemplateIds(initialTemplateSet)[0] ?? "";
 
   const [productId, setProductId] = useState(initialProduct?.id ?? "");
-  const [imageModel, setImageModel] = useState<ImageModelChoice>(DEFAULT_IMAGE_MODEL_CHOICE);
   const [selectedTemplateId, setSelectedTemplateId] = useState(initialTemplateId);
+  const [selectedByGroup, setSelectedByGroup] = useState<Record<string, string>>({});
+  const [editorOpen, setEditorOpen] = useState(false);
   const [drafts, setDrafts] = useState<Record<string, PopTemplateDraft>>(
     buildInitialDrafts
   );
@@ -106,19 +101,17 @@ export function PopCanvasStudio({ products }: { products: ProductWithProfile[] }
     dedupeAssets(products.flatMap((product) => product.assets))
   );
   const [dataUriCache, setDataUriCache] = useState<Record<string, string>>({});
-  const [productAssetId, setProductAssetId] = useState("");
   const [canvasZoom, setCanvasZoom] = useState(1);
-  const [placement, setPlacement] = useState(
-    getPopTemplate(initialTemplateId).placementHints[0] ?? "front panel"
-  );
   const [status, setStatus] = useState<EditorStatus>("idle");
   const [stage, setStage] = useState("");
   const [error, setError] = useState("");
-  const [result, setResult] = useState<SceneResponse | null>(null);
+  const [materials, setMaterials] = useState<LocalMaterial[]>([]);
   const [pendingCrop, setPendingCrop] = useState<PendingCrop | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uploadTargetRef = useRef<UploadTarget | null>(null);
+  const exportUrlsRef = useRef<string[]>([]);
+  const generationRevisionRef = useRef(0);
 
   const product =
     products.find((item) => item.id === productId) ?? products[0];
@@ -134,6 +127,11 @@ export function PopCanvasStudio({ products }: { products: ProductWithProfile[] }
   const selectedGroup = getPopStickerGroup(templateSet, selectedTemplateId);
   const selectedDraft =
     drafts[selectedTemplateId] ?? buildDefaultDraft(selectedTemplate);
+
+  useEffect(() => () => {
+    generationRevisionRef.current += 1;
+    exportUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -154,8 +152,8 @@ export function PopCanvasStudio({ products }: { products: ProductWithProfile[] }
   }, []);
 
   const selectedImageIds = useMemo(
-    () => Array.from(new Set(Object.values(selectedDraft.imageAssetIds).filter(Boolean))),
-    [selectedDraft.imageAssetIds]
+    () => Array.from(new Set(Object.values(drafts).flatMap((draft) => Object.values(draft.imageAssetIds)).filter(Boolean))),
+    [drafts]
   );
 
   useEffect(() => {
@@ -203,26 +201,22 @@ export function PopCanvasStudio({ products }: { products: ProductWithProfile[] }
       imageAssets.filter(
         (asset) =>
           asset.type === "product-photo" &&
-          (!asset.productId || asset.productId === product?.id)
+          (asset.productId === product?.id || product?.assets.some((item) => item.id === asset.id))
       ),
     [imageAssets, product?.id]
   );
   const effectiveProductAssetId =
-    productAssetId || productPhotoOptions[0]?.id || "";
+    productPhotoOptions[0]?.id || "";
+  const productPhoto = productPhotoOptions.find((asset) => asset.id === effectiveProductAssetId);
 
-  const contentByTemplateId = useMemo(() => {
-    const imageDataUris = Object.fromEntries(
-      Object.entries(selectedDraft.imageAssetIds)
+  const contentByTemplateId = useMemo(() => Object.fromEntries(
+    Object.entries(drafts).map(([templateId, draft]) => [templateId, {
+      textValues: draft.textValues,
+      imageDataUris: Object.fromEntries(Object.entries(draft.imageAssetIds)
         .filter(([, assetId]) => assetId && dataUriCache[assetId])
-        .map(([slotId, assetId]) => [slotId, dataUriCache[assetId]])
-    );
-    return {
-      [selectedTemplateId]: {
-        textValues: selectedDraft.textValues,
-        imageDataUris
-      } satisfies PopVariantCanvasContent
-    };
-  }, [dataUriCache, selectedDraft.imageAssetIds, selectedDraft.textValues, selectedTemplateId]);
+        .map(([slotId, assetId]) => [slotId, dataUriCache[assetId]]))
+    } satisfies PopVariantCanvasContent])
+  ), [dataUriCache, drafts]);
 
   const flatSvg = useMemo(() => {
     const content = contentByTemplateId[selectedTemplateId] ?? {
@@ -236,15 +230,6 @@ export function PopCanvasStudio({ products }: { products: ProductWithProfile[] }
     });
   }, [contentByTemplateId, selectedDraft.textValues, selectedTemplateId]);
 
-  const previewSvg = useMemo(
-    () =>
-      flatSvg.replace(
-        "<svg ",
-        '<svg style="width:100%;height:auto;display:block" '
-      ),
-    [flatSvg]
-  );
-
   function switchProduct(nextProductId: string) {
     const nextProduct =
       products.find((item) => item.id === nextProductId) ?? products[0];
@@ -254,12 +239,9 @@ export function PopCanvasStudio({ products }: { products: ProductWithProfile[] }
 
     const nextSet = getPopTemplateSet(inferPopProductType(nextProduct));
     const nextTemplateId = getPopTemplateIds(nextSet)[0];
-    const nextTemplate = getPopTemplate(nextTemplateId);
-
     setProductId(nextProduct.id);
     setSelectedTemplateId(nextTemplateId);
-    setPlacement(nextTemplate.placementHints[0] ?? "front panel");
-    setProductAssetId("");
+    setEditorOpen(false);
     markDirty();
   }
 
@@ -267,9 +249,11 @@ export function PopCanvasStudio({ products }: { products: ProductWithProfile[] }
     if (!templateIds.includes(nextTemplateId)) {
       return;
     }
-    const nextTemplate = getPopTemplate(nextTemplateId);
+    const group = getPopStickerGroup(templateSet, nextTemplateId);
+    if (group) {
+      setSelectedByGroup((current) => ({ ...current, [group.id]: nextTemplateId }));
+    }
     setSelectedTemplateId(nextTemplateId);
-    setPlacement(nextTemplate.placementHints[0] ?? "front panel");
     markDirty();
   }
 
@@ -371,54 +355,60 @@ export function PopCanvasStudio({ products }: { products: ProductWithProfile[] }
     uploadTargetRef.current = null;
   }
 
-  async function generateScene() {
-    if (!product || !selectedTemplate) {
-      return;
-    }
-
+  async function generateMaterialSet() {
+    markDirty();
+    const revision = generationRevisionRef.current;
+    const generated: LocalMaterial[] = [];
+    const createdUrls: string[] = [];
     setStatus("generating");
-    setStage("1/3 正在栅格化所选 Sticker");
-    setError("");
-    setResult(null);
-
     try {
-      const popImageBase64 = await rasterizeSvg(flatSvg);
-      setStage("2/3 正在生成写实贴装产品图");
-
-      const response = await fetch("/api/pop/generate-scene", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          taskId: "task-pop-" + selectedTemplate.id + "-" + Date.now(),
-          templateId: selectedTemplate.id,
-          productId: product.id,
-          productAssetId: effectiveProductAssetId || undefined,
-          placement,
-          textValues: selectedDraft.textValues,
-          imageAssetIds: selectedDraft.imageAssetIds,
-          imageModel,
-          popImageBase64
-        })
-      });
-      const payload: SceneResponse = await response.json();
-      if (!response.ok || payload.error) {
-        throw new Error(payload.error ?? "Request failed with " + response.status);
+      for (const [index, group] of templateSet.groups.entries()) {
+        const templateId = selectedByGroup[group.id] ?? group.variants[0].templateId;
+        const template = getPopTemplate(templateId);
+        const draft = drafts[templateId] ?? buildDefaultDraft(template);
+        const imageDataUris: Record<string, string> = {};
+        setStage(`正在生成 ${index + 1}/${templateSet.groups.length} · ${group.name}`);
+        for (const [slotId, assetId] of Object.entries(draft.imageAssetIds)) {
+          if (!assetId) continue;
+          let dataUri = dataUriCache[assetId];
+          if (!dataUri) {
+            const asset = assets.find((item) => item.id === assetId);
+            if (!asset) throw new Error("所选图片已不可用，请重新选择图片。");
+            const response = await fetch(asset.url);
+            if (!response.ok) throw new Error(`无法读取图片 ${asset.filename}，请重新选择图片。`);
+            dataUri = await blobToDataUri(await response.blob());
+          }
+          imageDataUris[slotId] = dataUri;
+        }
+        const svg = renderPopFlatSvg({ templateId, textValues: draft.textValues, imageDataUris });
+        const png = await rasterizeSvg(svg);
+        const pngUrl = URL.createObjectURL(png);
+        const svgUrl = URL.createObjectURL(new Blob([svg], { type: "image/svg+xml;charset=utf-8" }));
+        createdUrls.push(pngUrl, svgUrl);
+        generated.push({ templateId, name: template.name, pngUrl, svgUrl });
+        if (revision !== generationRevisionRef.current) {
+          createdUrls.forEach((url) => URL.revokeObjectURL(url));
+          return;
+        }
       }
-
-      setStage("3/3 完成");
-      setResult(payload);
+      exportUrlsRef.current = createdUrls;
+      setMaterials(generated);
+      setStage(`已生成 ${generated.length} 份物料，可逐项下载 PNG 或 SVG。`);
       setStatus("done");
     } catch (cause) {
+      createdUrls.forEach((url) => URL.revokeObjectURL(url));
+      if (revision !== generationRevisionRef.current) return;
+      setError(cause instanceof Error ? cause.message : "本地物料导出失败，请重试。");
       setStage("");
-      setError(
-        cause instanceof Error ? cause.message : "POP 写实贴装生成失败"
-      );
       setStatus("failed");
     }
   }
 
   function markDirty() {
-    setResult(null);
+    generationRevisionRef.current += 1;
+    exportUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
+    exportUrlsRef.current = [];
+    setMaterials([]);
     setError("");
     setStage("");
     setStatus("idle");
@@ -443,24 +433,6 @@ export function PopCanvasStudio({ products }: { products: ProductWithProfile[] }
 
   return (
     <section className={styles.studio}>
-      <header className={styles.header}>
-        <div>
-          <p className={styles.eyebrow}>POP TEMPLATE CANVAS</p>
-          <h2>产品类型 Sticker 工作台</h2>
-        </div>
-        <span
-          className={
-            status === "done"
-              ? styles.status + " " + styles.statusDone
-              : status === "failed"
-                ? styles.status + " " + styles.statusFailed
-                : styles.status
-          }
-        >
-          {statusLabel}
-        </span>
-      </header>
-
       <div className={styles.toolbar}>
         <label className={styles.field}>
           产品
@@ -484,10 +456,80 @@ export function PopCanvasStudio({ products }: { products: ProductWithProfile[] }
             {productTypeLabel}
           </div>
         </div>
-
-
+        <div className={styles.setActions}>
+          <span>本地模板模式 · 拖拽贴装预览</span>
+          <button className={styles.generateButton} disabled={status === "generating" || status === "uploading"} onClick={generateMaterialSet} type="button">
+            <Play aria-hidden="true" size={15} />
+            {status === "generating" ? "正在生成整套物料" : "生成整套 POP 物料"}
+          </button>
+        </div>
       </div>
 
+      <div className={styles.materialOverview}>
+        <div className={styles.overviewHeader}>
+          <h3>选择 POP 模板 <span>{templateSet.name}</span></h3>
+          <p><span className={styles.fixedDot} /> 固定模板 <span className={styles.optionalDot} /> 可选方案 <span aria-live="polite">· {statusLabel}</span></p>
+        </div>
+        <div className={styles.materialGrid}>
+          {templateSet.groups.map((group) => {
+            const fixed = group.variants.length === 1;
+            const chosenId = selectedByGroup[group.id] ?? group.variants[0].templateId;
+            return (
+              <section aria-label={group.name} className={styles.materialCard} key={group.id}>
+                <div className={styles.materialCardHeader}>
+                  <h4>{group.name}</h4>
+                  <span className={fixed ? styles.fixedBadge : styles.optionalBadge}>
+                    {fixed ? <LockKeyhole aria-hidden="true" size={11} /> : null}
+                    {fixed ? "固定模板" : "可选方案"}
+                  </span>
+                  <button aria-label={`展开编辑 ${group.name}`} aria-controls="pop-template-editor" aria-expanded={editorOpen && selectedGroup?.id === group.id} className={styles.expandButton} onClick={() => {
+                    setSelectedTemplateId(chosenId);
+                    setEditorOpen(true);
+                    requestAnimationFrame(() => document.getElementById("pop-template-editor")?.scrollIntoView?.({ block: "start" }));
+                  }} title={`展开编辑 ${group.name}`} type="button">
+                    <Maximize2 aria-hidden="true" size={14} />
+                  </button>
+                </div>
+                <div aria-label={`${group.name} 方案`} className={styles.materialVariants} role={fixed ? undefined : "radiogroup"}>
+                  {group.variants.map((variant) => {
+                    const content = contentByTemplateId[variant.templateId];
+                    const svg = namespacePreviewSvg(
+                      renderPopFlatSvg({ templateId: variant.templateId, textValues: content?.textValues ?? {}, imageDataUris: content?.imageDataUris ?? {} }),
+                      `${previewNamespace}-${variant.templateId}`
+                    );
+                    return (
+                      <label className={`${styles.variantCard} ${chosenId === variant.templateId && !fixed ? styles.variantSelected : ""}`} key={variant.templateId}>
+                        {!fixed ? <span className={styles.variantLabel}>
+                          {variant.label}
+                          <input aria-label={`${group.name} ${variant.label}`} checked={chosenId === variant.templateId} name={`pop-${group.id}`} onChange={() => selectTemplate(variant.templateId)} type="radio" value={variant.templateId} />
+                          {chosenId === variant.templateId ? <Check aria-hidden="true" size={11} /> : null}
+                        </span> : null}
+                        <div aria-hidden="true" className={styles.variantArtwork} dangerouslySetInnerHTML={{ __html: svg }} />
+                      </label>
+                    );
+                  })}
+                </div>
+              </section>
+            );
+          })}
+        </div>
+        <p className={styles.overviewHint}>每个可选物料组选一个方案，固定模板全部包含。整套生成后可逐项下载图片，展开卡片可修改文字和裁切图片。</p>
+        {stage ? <p aria-live="polite" className={styles.stage}>{stage}</p> : null}
+        {error ? <p className={styles.error} role="alert">{error}</p> : null}
+      </div>
+
+      {materials.length ? <section aria-label="整套 POP 物料" className={styles.result}>
+        <div className={styles.resultHeader}><h3>整套物料（{materials.length}）</h3><span className={styles.resultMode}>本地模板导出</span></div>
+        <p className={styles.overviewHint}>以下为所选方案与全部固定模板的下载链接，PNG 为平面图片，SVG 保留模板矢量内容。</p>
+        <div className={styles.materialResults}>{materials.map((material) => <article key={material.templateId}>
+          <img alt={material.name} src={material.pngUrl} />
+          <strong>{material.name}</strong>
+          <div><a aria-label={`下载 PNG · ${material.name}`} download={`${material.templateId}.png`} href={material.pngUrl}>下载 PNG</a><a aria-label={`下载 SVG · ${material.name}`} download={`${material.templateId}.svg`} href={material.svgUrl}>下载 SVG</a></div>
+        </article>)}</div>
+      </section> : null}
+
+      {editorOpen ? <div className={styles.editorSection} id="pop-template-editor">
+      <div className={styles.editorBar}><strong>编辑模板 · {selectedGroup?.name}</strong><button className={styles.resetPlacementButton} onClick={() => setEditorOpen(false)} type="button">收起编辑</button></div>
       <div className={styles.workspace}>
         <div className={styles.canvasPane}>
           <div className={styles.canvasHeader}>
@@ -644,10 +686,13 @@ export function PopCanvasStudio({ products }: { products: ProductWithProfile[] }
           </div>
         </aside>
       </div>
+      </div> : null}
 
       <StickerProductComposer
         flatSvg={flatSvg}
-        key={selectedTemplateId}
+        key={`${product.id}-${selectedTemplateId}-${effectiveProductAssetId}`}
+        productName={product.displayName ?? product.modelName ?? product.id}
+        productImageUrl={productPhoto?.url}
         templateName={selectedTemplate.name}
       />
       <input
@@ -695,11 +740,16 @@ const DEFAULT_STICKER_PLACEMENT: StickerPlacement = {
 
 function StickerProductComposer({
   flatSvg,
-  templateName
+  templateName,
+  productName,
+  productImageUrl
 }: {
   flatSvg: string;
   templateName: string;
+  productName: string;
+  productImageUrl?: string;
 }) {
+  const previewNamespace = useId().replace(/[^a-zA-Z0-9_-]/g, "");
   const [placement, setPlacement] = useState<StickerPlacement>(DEFAULT_STICKER_PLACEMENT);
   const [exportState, setExportState] = useState<"idle" | "exporting" | "done" | "failed">("idle");
   const [exportError, setExportError] = useState("");
@@ -716,6 +766,10 @@ function StickerProductComposer({
       }
     };
   }, []);
+
+  useEffect(() => {
+    clearExport();
+  }, [flatSvg]);
 
   function resetPlacement() {
     setPlacement(DEFAULT_STICKER_PLACEMENT);
@@ -824,6 +878,7 @@ function StickerProductComposer({
   }
 
   async function exportComposition() {
+    if (!productImageUrl) return;
     setExportState("exporting");
     setExportError("");
     const svgUrl = URL.createObjectURL(
@@ -832,18 +887,19 @@ function StickerProductComposer({
 
     try {
       const [productImage, stickerImage] = await Promise.all([
-        loadImage(POP_PRODUCT_IMAGE),
+        loadImage(productImageUrl),
         loadImage(svgUrl)
       ]);
       const canvas = document.createElement("canvas");
-      canvas.width = productImage.naturalWidth || productImage.width;
-      canvas.height = productImage.naturalHeight || productImage.height;
+      const productWidth = productImage.naturalWidth || productImage.width;
+      const productHeight = productImage.naturalHeight || productImage.height;
+      canvas.width = canvas.height = Math.max(productWidth, productHeight);
       const context = canvas.getContext("2d");
       if (!context) {
         throw new Error("浏览器无法创建贴装画布。");
       }
 
-      context.drawImage(productImage, 0, 0, canvas.width, canvas.height);
+      context.drawImage(productImage, (canvas.width - productWidth) / 2, (canvas.height - productHeight) / 2, productWidth, productHeight);
       const stickerWidth = (placement.width / 100) * canvas.width;
       const stickerHeight =
         stickerWidth *
@@ -883,7 +939,7 @@ function StickerProductComposer({
     top: placement.y + "%",
     width: placement.width + "%"
   } as CSSProperties;
-  const displaySvg = flatSvg.replace(
+  const displaySvg = namespacePreviewSvg(flatSvg, previewNamespace).replace(
     "<svg ",
     '<svg style="width:100%;height:auto;display:block;pointer-events:none" '
   );
@@ -894,7 +950,7 @@ function StickerProductComposer({
         <div>
           <p className={styles.eyebrow}>PRODUCT STICKER COMPOSITOR</p>
           <h3 id="pop-compositor-title">产品贴装预览</h3>
-          <span>固定演示产品 · {templateName}</span>
+          <span>{productName} · {templateName} · 本地拖拽合成</span>
         </div>
         <div className={styles.compositorActions}>
           <label className={styles.sizeControl}>
@@ -922,7 +978,7 @@ function StickerProductComposer({
           </button>
           <button
             className={styles.exportButton}
-            disabled={exportState === "exporting"}
+            disabled={!productImageUrl || exportState === "exporting"}
             onClick={exportComposition}
             type="button"
           >
@@ -940,8 +996,8 @@ function StickerProductComposer({
         onPointerUp={endDrag}
         ref={stageRef}
       >
-        <img alt="POP 固定演示冰箱产品" draggable={false} src={POP_PRODUCT_IMAGE} />
-        <div
+        {productImageUrl ? <img alt={`${productName} 本地贴装产品图`} draggable={false} src={productImageUrl} /> : <p className={styles.missingPhoto}>当前产品暂无产品图，请先在资产中心补充产品图片。</p>}
+        {productImageUrl ? <div
           aria-label="可拖动 Sticker"
           className={styles.stickerOverlay}
           onKeyDown={handleKeyboard}
@@ -963,7 +1019,7 @@ function StickerProductComposer({
           >
             <Maximize2 aria-hidden="true" size={13} />
           </button>
-        </div>
+        </div> : null}
       </div>
 
       <div className={styles.compositorFooter}>
@@ -1003,6 +1059,14 @@ function canvasToBlob(canvas: HTMLCanvasElement): Promise<Blob> {
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
+}
+
+/** Inline SVG fragment references resolve across the document, so each preview needs its own IDs. */
+function namespacePreviewSvg(svg: string, namespace: string): string {
+  const ids = new Map(Array.from(svg.matchAll(/\bid="([^"]+)"/g), ([, id]) => [id, `pop-${namespace}-${id}`]));
+  return svg
+    .replace(/\bid="([^"]+)"/g, (_match, id: string) => `id="${ids.get(id)}"`)
+    .replace(/url\(#([^)]+)\)/g, (match, id: string) => ids.has(id) ? `url(#${ids.get(id)})` : match);
 }
 function buildInitialDrafts(): Record<string, PopTemplateDraft> {
   return Object.fromEntries(
@@ -1067,7 +1131,7 @@ function blobToDataUri(blob: Blob): Promise<string> {
   });
 }
 
-async function rasterizeSvg(svg: string): Promise<string | undefined> {
+async function rasterizeSvg(svg: string): Promise<Blob> {
   const blob = new Blob([svg], {
     type: "image/svg+xml;charset=utf-8"
   });
@@ -1088,11 +1152,11 @@ async function rasterizeSvg(svg: string): Promise<string | undefined> {
     canvas.height = Math.max(1, height * 2);
     const context = canvas.getContext("2d");
     if (!context) {
-      return undefined;
+      throw new Error("浏览器无法创建物料导出画布。");
     }
 
     context.drawImage(image, 0, 0, canvas.width, canvas.height);
-    return canvas.toDataURL("image/png").split(",")[1];
+    return await canvasToBlob(canvas);
   } finally {
     URL.revokeObjectURL(url);
   }

@@ -50,7 +50,7 @@ function createUploadedFile(name: string, type: string, content: string): File {
 
 function createUploadRequest(
   image: File,
-  fields: Record<string, string> = {}
+  fields: Record<string, string | File> = {}
 ): Request {
   const values = new Map<string, FormDataEntryValue>([["image", image]]);
   for (const [key, value] of Object.entries(fields)) {
@@ -64,6 +64,33 @@ function createUploadRequest(
 }
 
 describe("localize route", () => {
+  it("passes a matching clean base with the original image", async () => {
+    const response = await POST(createUploadRequest(createUploadedFile("original.png", "image/png", "original"), { baseImage: createUploadedFile("clean.png", "image/png", "clean") }));
+    expect(response.status).toBe(200);
+    expect(mocks.localizeGeneratedImage).toHaveBeenCalledWith(expect.objectContaining({ baseImageBytes: Buffer.from("clean"), baseImageContentType: "image/png" }));
+  });
+
+  it("rejects misaligned clean bases before generation", async () => {
+    mocks.readImageDimensions.mockResolvedValueOnce({ width: 1600, height: 900 }).mockResolvedValueOnce({ width: 800, height: 450 });
+    const response = await POST(createUploadRequest(createUploadedFile("original.png", "image/png", "original"), { baseImage: createUploadedFile("clean.png", "image/png", "clean") }));
+    expect(response.status).toBe(400);
+    expect(mocks.localizeGeneratedImage).not.toHaveBeenCalled();
+    await expect(response.json()).resolves.toMatchObject({ error: expect.stringContaining("尺寸") });
+  });
+
+  it("rejects unsupported or malformed optional bases", async () => {
+    const response = await POST(createUploadRequest(createUploadedFile("original.png", "image/png", "original"), { baseImage: createUploadedFile("clean.svg", "image/svg+xml", "<svg/>") }));
+    expect(response.status).toBe(415);
+    expect(mocks.localizeGeneratedImage).not.toHaveBeenCalled();
+    const malformed = await POST(createUploadRequest(createUploadedFile("original.png", "image/png", "original"), { baseImage: "not-a-file" }));
+    expect(malformed.status).toBe(400);
+  });
+
+  it.each([{ label: "empty", content: "" }, { label: "oversized", content: "x".repeat(30 * 1024 * 1024 + 1) }])("rejects a $label clean base before generation", async ({ content }) => {
+    const response = await POST(createUploadRequest(createUploadedFile("original.png", "image/png", "original"), { baseImage: createUploadedFile("clean.png", "image/png", content) }));
+    expect(response.status).toBe(400);
+    expect(mocks.localizeGeneratedImage).not.toHaveBeenCalled();
+  });
   it("accepts a user upload and preserves its source dimensions", async () => {
     const response = await POST(
       createUploadRequest(
