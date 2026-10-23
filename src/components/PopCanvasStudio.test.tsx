@@ -1,9 +1,11 @@
 import {
   act,
+  cleanup,
   fireEvent,
   render,
   screen,
-  waitFor
+  waitFor,
+  within
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -11,6 +13,7 @@ import { demoProducts } from "@/src/domain/test-fixtures";
 import { PopCanvasStudio } from "./PopCanvasStudio";
 
 const fetchMock = vi.fn();
+const objectUrlBlobs = new Map<string, Blob>();
 const canvasContext = {
   arc: vi.fn(),
   beginPath: vi.fn(),
@@ -37,33 +40,19 @@ class MockImage {
   onerror: (() => void) | null = null;
   onload: (() => void) | null = null;
   width = 800;
+  source = "";
 
-  set src(_value: string) {
+  set src(value: string) {
+    this.source = value;
     queueMicrotask(() => this.onload?.());
   }
 }
 
 beforeEach(() => {
   fetchMock.mockReset();
+  objectUrlBlobs.clear();
   fetchMock.mockImplementation(
     async (input: RequestInfo | URL, init?: RequestInit) => {
-      if (String(input) === "/api/pop/generate-scene") {
-        return {
-          ok: true,
-          json: async () => ({
-            flatUrl: "/generated/selected-flat.svg",
-            flatPngUrl: "/generated/selected-flat.png",
-            templateId: "oven-body-strip",
-            templateVersion: "3.0",
-            scene: {
-              url: "/generated/selected-scene.png",
-              model: "gpt-image-1",
-              isFallback: false
-            }
-          })
-        };
-      }
-
       if (String(input) === "/api/upload" && init?.method === "POST") {
         return {
           ok: true,
@@ -83,6 +72,10 @@ beforeEach(() => {
         };
       }
 
+      if (String(input).endsWith(".png")) {
+        return { ok: true, blob: async () => new Blob(["local-image"], { type: "image/png" }) };
+      }
+
       return {
         ok: true,
         json: async () => ({
@@ -98,8 +91,10 @@ beforeEach(() => {
   vi.stubGlobal(
     "URL",
     class MockURL extends URL {
-      static createObjectURL() {
-        return "blob:pop-preview";
+      static createObjectURL(blob: Blob) {
+        const url = `blob:pop-preview-${objectUrlBlobs.size}`;
+        objectUrlBlobs.set(url, blob);
+        return url;
       }
 
       static revokeObjectURL() {
@@ -118,9 +113,11 @@ beforeEach(() => {
       callback(new Blob(["cropped"], { type: "image/png" }));
     }
   );
+  vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => undefined);
 });
 
 afterEach(() => {
+  cleanup();
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
 });
@@ -131,6 +128,7 @@ describe("PopCanvasStudio", () => {
     await act(async () => {
       await Promise.resolve();
     });
+    await userEvent.click(screen.getByRole("button", { name: "展开编辑 Main Sticker - USP" }));
 
     expect(screen.getByTestId("pop-template-canvas").tagName).toBe("CANVAS");
     expect(screen.getByTestId("pop-product-type")).toHaveTextContent("冰箱模板");
@@ -146,6 +144,7 @@ describe("PopCanvasStudio", () => {
     render(<PopCanvasStudio products={demoProducts} />);
 
     await user.selectOptions(screen.getByLabelText("产品"), "product-mega-oven");
+    await user.click(screen.getByRole("button", { name: "展开编辑 Main Sticker" }));
 
     expect(screen.getByTestId("pop-product-type")).toHaveTextContent("烤箱模板");
     expect(
@@ -156,6 +155,7 @@ describe("PopCanvasStudio", () => {
 
   it("selects exactly one concrete Sticker variant by clicking the Canvas", async () => {
     render(<PopCanvasStudio products={demoProducts} />);
+    await userEvent.click(screen.getByRole("button", { name: "展开编辑 Main Sticker - USP" }));
     const canvas = screen.getByTestId("pop-template-canvas");
 
     vi.spyOn(canvas, "getBoundingClientRect").mockReturnValue({
@@ -193,6 +193,7 @@ describe("PopCanvasStudio", () => {
   it("zooms the Canvas without reducing its backing resolution", async () => {
     const user = userEvent.setup();
     render(<PopCanvasStudio products={demoProducts} />);
+    await user.click(screen.getByRole("button", { name: "展开编辑 Main Sticker - USP" }));
     const canvas = screen.getByTestId("pop-template-canvas");
 
     expect(canvas).toHaveStyle({ width: "1320px" });
@@ -206,6 +207,7 @@ describe("PopCanvasStudio", () => {
   it("uploads a replacement image directly into the selected gray slot", async () => {
     const user = userEvent.setup();
     render(<PopCanvasStudio products={demoProducts} />);
+    await user.click(screen.getByRole("button", { name: "展开编辑 Main Sticker - USP" }));
 
     const fileInput = document.querySelector(
       'input[type="file"]'
@@ -232,44 +234,94 @@ describe("PopCanvasStudio", () => {
     });
   });
 
-  it("submits only the currently selected Sticker to the AI scene route", async () => {
+  it("keeps one choice per group and generates every chosen and fixed material locally", async () => {
     const user = userEvent.setup();
     render(<PopCanvasStudio products={demoProducts} />);
 
-    await user.selectOptions(screen.getByLabelText("图像模型"), "doubao");
-
     await user.selectOptions(screen.getByLabelText("产品"), "product-mega-oven");
-    await user.selectOptions(
-      screen.getByLabelText("当前 Sticker"),
-      "oven-body-strip"
-    );
-    await user.click(
-      screen.getByRole("button", { name: "生成所选 Sticker 贴装图" })
-    );
+    await user.click(screen.getByRole("radio", { name: "Main Sticker 方案 B" }));
+    await user.click(screen.getByRole("button", { name: "展开编辑 Main Sticker" }));
+    await user.clear(screen.getByLabelText("主标题"));
+    await user.type(screen.getByLabelText("主标题"), "Chosen oven message");
+    await user.click(screen.getByRole("radio", { name: "Body Sticker 方案 C" }));
+    expect(screen.getByRole("radio", { name: "Main Sticker 方案 B" })).toBeChecked();
+    expect(screen.getByRole("radio", { name: "Main Sticker 方案 A" })).not.toBeChecked();
+    expect(screen.getByRole("radio", { name: "Body Sticker 方案 C" })).toBeChecked();
+    expect(screen.getAllByText("固定模板")).toHaveLength(4);
+    expect(screen.queryByLabelText("图像模型")).not.toBeInTheDocument();
+    expect(screen.getByText("本地模板模式 · 拖拽贴装预览")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "生成整套 POP 物料" }));
+    const results = await screen.findByRole("region", { name: "整套 POP 物料" });
+    expect(within(results).getAllByRole("link", { name: /下载 PNG/ })).toHaveLength(6);
+    expect(within(results).getAllByRole("link", { name: /下载 SVG/ }).map((link) => link.getAttribute("download"))).toEqual([
+      "oven-main-feature.svg", "oven-corner-brand.svg", "oven-inner-display.svg",
+      "oven-wobbler.svg", "oven-body-feature.svg", "oven-top-sticker.svg"
+    ]);
+    const svgLink = within(results).getByRole("link", { name: "下载 SVG · Main Sticker / Feature Grid" });
+    const exportedSvg = await readBlob(objectUrlBlobs.get(svgLink.getAttribute("href")!)!);
+    expect(exportedSvg).toContain("Chosen oven message");
+    expect(fetchMock.mock.calls.some(([url]) => String(url) === "/api/pop/generate-scene")).toBe(false);
+  });
 
-    await waitFor(() => {
-      expect(
-        fetchMock.mock.calls.some(
-          ([url]) => String(url) === "/api/pop/generate-scene"
-        )
-      ).toBe(true);
-    });
+  it("uses the selected product photo for placement and clears old material output on product switch", async () => {
+    const user = userEvent.setup();
+    render(<PopCanvasStudio products={demoProducts} />);
+    expect(screen.getByAltText("SPACE Master BCD-640 本地贴装产品图")).toHaveAttribute("src", "/demo-assets/space-master-front.png");
+    await user.click(screen.getByRole("button", { name: "生成整套 POP 物料" }));
+    await screen.findByRole("region", { name: "整套 POP 物料" });
+    await user.selectOptions(screen.getByLabelText("产品"), "product-mega-oven");
+    expect(screen.getByAltText("MEGA SERIES 2.0 Freestanding Oven 本地贴装产品图")).toHaveAttribute("src", "/demo-assets/mega-oven-front.png");
+    expect(screen.queryByRole("region", { name: "整套 POP 物料" })).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "导出当前贴装图" }));
+    await screen.findByRole("link", { name: "再次下载" });
+    const compositionDraw = vi.mocked(canvasContext.drawImage).mock.calls.find(([image]) => (image as unknown as MockImage).source === "/demo-assets/mega-oven-front.png");
+    expect(compositionDraw).toBeDefined();
+  });
 
-    const generationCall = fetchMock.mock.calls.find(
-      ([url]) => String(url) === "/api/pop/generate-scene"
-    );
-    const request = generationCall?.[1] as RequestInit;
-    const payload = JSON.parse(String(request.body));
+  it("shows a missing product photo instead of substituting another product", async () => {
+    const product = { ...demoProducts[1], id: "product-empty-oven", assets: [] };
+    render(<PopCanvasStudio products={[product]} />);
+    await screen.findByText("当前产品暂无产品图，请先在资产中心补充产品图片。");
+    expect(screen.queryByRole("img", { name: /本地贴装产品图/ })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "导出当前贴装图" })).toBeDisabled();
+  });
 
-    expect(payload.templateId).toBe("oven-body-strip");
-    expect(payload.imageModel).toBe("doubao");
-    expect(payload.popImageBase64).toBe("cG9w");
-    expect(payload.textValues).toEqual({
-      headline: "Headline Space"
-    });
-    expect(await screen.findByAltText("POP 写实贴装场景")).toHaveAttribute(
-      "src",
-      "/generated/selected-scene.png"
-    );
+  it("keeps each inline preview's image clip local to that SVG instance", async () => {
+    const user = userEvent.setup();
+    const { container } = render(<PopCanvasStudio products={demoProducts} />);
+    await user.click(screen.getByRole("button", { name: "展开编辑 Main Sticker - USP" }));
+    await user.selectOptions(screen.getByLabelText("USP 主图"), "asset-space-master-front");
+    await user.click(screen.getByRole("radio", { name: "Main Sticker - USP 方案 B" }));
+    await user.selectOptions(screen.getByLabelText("USP 主图"), "asset-space-master-front");
+    const group = screen.getByRole("region", { name: "Main Sticker - USP" });
+    await waitFor(() => expect(group.querySelectorAll("svg image")).toHaveLength(2));
+
+    const imagePreviews = Array.from(container.querySelectorAll("svg")).filter((svg) => svg.querySelector("image"));
+    expect(imagePreviews).toHaveLength(3); // USP A, USP B, and the selected compositor sticker.
+    expect(imagePreviews.map((svg) => {
+      const clipId = svg.querySelector("image")!.getAttribute("clip-path")!.match(/url\(#([^)]*)\)/)![1];
+      const resolvedClip = document.getElementById(clipId);
+      expect(resolvedClip?.closest("svg")).toBe(svg);
+      return resolvedClip?.querySelector("rect")?.getAttribute("height");
+    })).toEqual(["918", "952", "952"]);
+    const ids = Array.from(container.querySelectorAll("svg [id]")).map((element) => element.id);
+    expect(new Set(ids).size).toBe(ids.length);
+
+    await user.click(screen.getByRole("button", { name: "生成整套 POP 物料" }));
+    const download = await screen.findByRole("link", { name: "下载 SVG · Main Sticker - USP / Overlay" });
+    const exportedSvg = await readBlob(objectUrlBlobs.get(download.getAttribute("href")!)!);
+    const flatDocument = new DOMParser().parseFromString(exportedSvg, "image/svg+xml");
+    expect(flatDocument.querySelector("clipPath rect")?.getAttribute("height")).toBe("952");
+    expect(flatDocument.querySelector("image")?.getAttribute("clip-path")).toBe("url(#clip-811923693)");
+    expect(flatDocument.querySelector("linearGradient")?.getAttribute("id")).toBe("popBlue");
   });
 });
+
+function readBlob(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(reader.error);
+    reader.readAsText(blob);
+  });
+}

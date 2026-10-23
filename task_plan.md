@@ -297,3 +297,12 @@
 - Preserve the completed UI changes, user data, credentials, and existing unrelated test failures. No paid generation without a clear need and user direction.
 - Status: completed for the multipart defect. Production-minified regression, rebuilt direct/proxy request parsing, and the authorized invalid-model upstream check passed. Actual valid-model image generation remains untested by explicit scope.
 - Verification: focused 8/8 tests passed; full low-concurrency suite 219/224 passed with exactly the five previously reproduced baseline failures; production build/type validation passed; preview restored on 127.0.0.1:3101 and style-transfer GET returned 200.
+
+## Stage 26 - Remaining demo brief workflows (2026-10-23)
+- User requested completing the remaining changes from the previously supplied demo brief.
+- [x] Recheck the supplied PDF, previous decisions, current checkout, and the three remaining workflow implementations.
+- [x] Resolve the POP generation behavior conflict and confirm the bounded in-chat design before implementation. User explicitly keeps local POP composition; do not restore AI placement.
+- [x] Implement and verify the approved white-background, localization, and POP workflow changes with regression tests and visual checks.
+- Preserve completed navigation/settings/style-transfer work, existing data, the multipart CRLF fix, and unrelated behavior.
+- Scope is the existing three workflows, not a new platform/task subsystem or model-training feature. No paid generation or new external uploads during validation without separate authorization.
+- Status: completed for the approved three-workflow scope. Final full suite 250/254 passed with the four unrelated baseline failures retained; type validation and production build passed. Desktop/tablet/mobile and mocked retry/pairing flows verified; production POP produced six valid local PNGs without API writes. Preview running at http://127.0.0.1:3101/pop. No deployment, commit, paid generation, or new external upload.

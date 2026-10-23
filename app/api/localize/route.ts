@@ -55,7 +55,32 @@ export async function POST(request: Request) {
     );
   }
 
-  const taskId = `localize-${Date.now()}`;
+  let baseImageBytes: Buffer | undefined;
+  let baseImageContentType: string | undefined;
+  const baseEntry = form.get("baseImage");
+  if (baseEntry !== null) {
+    if (!isUploadedFile(baseEntry)) {
+      return NextResponse.json({ error: "底图必须是对应素材的图片文件。" }, { status: 400 });
+    }
+    baseImageContentType = baseEntry.type.toLowerCase();
+    if (!SUPPORTED_UPLOAD_TYPES.has(baseImageContentType)) {
+      return NextResponse.json({ error: "底图仅支持 PNG、JPEG 或 WebP 图片。" }, { status: 415 });
+    }
+    baseImageBytes = Buffer.from(await baseEntry.arrayBuffer());
+    if (!baseImageBytes.length || baseImageBytes.length > MAX_UPLOAD_BYTES) {
+      return NextResponse.json({ error: "底图为空或超过 30 MB 上传限制。" }, { status: 400 });
+    }
+    try {
+      const baseDimensions = await readImageDimensions(baseImageBytes);
+      if (baseDimensions.width !== dimensions.width || baseDimensions.height !== dimensions.height) {
+        return NextResponse.json({ error: `底图尺寸必须与对应原图完全一致（${dimensions.width} × ${dimensions.height}），请检查配对。` }, { status: 400 });
+      }
+    } catch (error) {
+      return NextResponse.json({ error: error instanceof Error ? error.message : "无法读取底图尺寸。" }, { status: 400 });
+    }
+  }
+
+  const taskId = `localize-${crypto.randomUUID()}`;
   const imageStore = createDemoAssetStore();
   const sourceName = safeSourceName(imageEntry.name);
 
@@ -65,6 +90,7 @@ export async function POST(request: Request) {
       sourceUrl: `upload:${sourceName}`,
       imageBytes: bytes,
       contentType,
+      ...(baseImageBytes ? { baseImageBytes, baseImageContentType } : {}),
       country: String(form.get("country") ?? "Mexico"),
       language: String(form.get("language") ?? "Spanish"),
       size: chooseImageProviderSize(dimensions),

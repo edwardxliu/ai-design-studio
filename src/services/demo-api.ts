@@ -417,6 +417,9 @@ export type LocalizeImageInput = {
   sourceUrl: string;
   imageBytes: Buffer;
   contentType: string;
+  /** Optional clean canvas paired with this source; always follows the original reference. */
+  baseImageBytes?: Buffer;
+  baseImageContentType?: string;
   country: string;
   language: string;
   size?: "1024x1024" | "1536x1024" | "1024x1536";
@@ -445,7 +448,12 @@ export async function localizeGeneratedImage(
     input.sourceWidth && input.sourceHeight
       ? `Preserve the original ${input.sourceWidth}x${input.sourceHeight} canvas ratio and keep every text block and key object inside the safe area.`
       : "Preserve the original canvas ratio and safe area.",
-    "Only the text language changes; do not add or remove any graphic elements."
+    "Only the text language changes; do not add or remove any graphic elements.",
+    ...(input.baseImageBytes ? [
+      "Image 1 is the original reference: read all source text, branding, and text positions from Image 1.",
+      "Image 2 is the corresponding clean base: use its clean product, background and layout as the output canvas, then place translated text in the matching positions from Image 1.",
+      "Do not copy the old text back onto the clean base. Keep the source product and layout unchanged."
+    ] : [])
   ].join(" ");
 
   const sourceImages = RASTER_IMAGE_TYPES.has(input.contentType)
@@ -457,6 +465,13 @@ export async function localizeGeneratedImage(
         }
       ]
     : [];
+
+  if (input.baseImageBytes) {
+    if (!sourceImages.length || !input.baseImageContentType || !RASTER_IMAGE_TYPES.has(input.baseImageContentType)) {
+      throw new Error("原图与底图必须为对应的 PNG、JPEG 或 WebP 图片。");
+    }
+    sourceImages.push({ bytes: input.baseImageBytes, contentType: input.baseImageContentType, filename: "paired-clean-base" + (input.baseImageContentType === "image/jpeg" ? ".jpg" : input.baseImageContentType === "image/webp" ? ".webp" : ".png") });
+  }
 
   const result = await provider.editImage({
     taskId: input.taskId,
